@@ -16,9 +16,22 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@amap/amap-jsapi-loader": "^1.0.1",
+    "@ant-design/icons-vue": "^7.0.1",
+    "@types/crypto-js": "^4.2.2",
+    "@wangeditor/editor": "^5.1.23",
+    "@wangeditor/editor-for-vue": "^5.1.12",
+    "ant-design-vue": "^4.2.6",
+    "axios": "^1.13.2",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.19",
+    "echarts": "^6.0.0",
     "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
     "vue": "^3.5.25",
-    "vue-router": "^4.6.3"
+    "vue-echarts": "^8.0.1",
+    "vue-router": "^4.6.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
@@ -30,6 +43,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "~10.5.1",
     "jiti": "^2.6.1",
+    "less": "^4.5.1",
     "npm-run-all2": "^8.0.4",
     "prettier": "3.6.2",
     "typescript": "~5.9.0",
