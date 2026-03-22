@@ -8,6 +8,6 @@ public class GuardServerJavaApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(GuardServerJavaApplication.class, args);
+        System.out.println("GuardServerJavaApplication running");
     }
-
 }

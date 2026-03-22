@@ -21,3 +21,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "guard-android"
 include ':app'
+
+systemProp.http.proxyHost=127.0.0.1
+systemProp.http.proxyPort=7890
+systemProp.https.proxyHost=127.0.0.1
+systemProp.https.proxyPort=7890
