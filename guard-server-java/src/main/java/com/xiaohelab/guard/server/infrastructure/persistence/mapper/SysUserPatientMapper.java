@@ -7,71 +7,88 @@ import java.util.List;
 
 /**
  * sys_user_patient 数据访问层。
- * 关联关系状态机：PENDING_CONFIRM → ACTIVE → TRANSFERRED（仅原主监护人）
- * 监护人邀请接受后在同一事务内激活此记录。
+ * relation_role: PRIMARY_GUARDIAN / GUARDIAN
+ * relation_status: PENDING / ACTIVE / REVOKED
+ * transfer_state: NONE / PENDING_CONFIRM / ACCEPTED / REJECTED / CANCELLED / EXPIRED
+ * 列名与 V1__init_schema.sql 保持一致，无 is_primary / role 字段。
  */
 @Mapper
 public interface SysUserPatientMapper {
 
-    @Select("SELECT id, user_id, patient_id, role, relation_status, is_primary, " +
-            "transfer_request_no, transfer_target_user_id, transfer_initiated_at, " +
-            "transfer_completed_at, created_at, updated_at " +
-            "FROM sys_user_patient WHERE id = #{id}")
+    String COLS = "id, user_id, patient_id, relation_role, relation_status, transfer_state, " +
+            "transfer_request_id, transfer_target_user_id, transfer_requested_by, " +
+            "transfer_requested_at, transfer_reason, transfer_cancelled_by, transfer_cancelled_at, " +
+            "transfer_cancel_reason, transfer_expire_at, transfer_confirmed_at, " +
+            "transfer_rejected_at, transfer_reject_reason, created_at, updated_at";
+
+    @Select("SELECT " + COLS + " FROM sys_user_patient WHERE id = #{id}")
     SysUserPatientDO findById(Long id);
 
     /** 查询用户对指定患者的唯一关联记录 */
-    @Select("SELECT id, user_id, patient_id, role, relation_status, is_primary, " +
-            "transfer_request_no, transfer_target_user_id, transfer_initiated_at, " +
-            "transfer_completed_at, created_at, updated_at " +
-            "FROM sys_user_patient WHERE user_id = #{userId} AND patient_id = #{patientId} LIMIT 1")
+    @Select("SELECT " + COLS + " FROM sys_user_patient " +
+            "WHERE user_id = #{userId} AND patient_id = #{patientId} LIMIT 1")
     SysUserPatientDO findByUserIdAndPatientId(@Param("userId") Long userId,
                                               @Param("patientId") Long patientId);
 
-    /** 查询患者的主监护人（is_primary=true AND status=ACTIVE） */
-    @Select("SELECT id, user_id, patient_id, role, relation_status, is_primary, " +
-            "transfer_request_no, transfer_target_user_id, transfer_initiated_at, " +
-            "transfer_completed_at, created_at, updated_at " +
-            "FROM sys_user_patient WHERE patient_id = #{patientId} " +
-            "AND is_primary = TRUE AND relation_status = 'ACTIVE' LIMIT 1")
+    /** 查询患者的主监护人（relation_role=PRIMARY_GUARDIAN AND relation_status=ACTIVE） */
+    @Select("SELECT " + COLS + " FROM sys_user_patient WHERE patient_id = #{patientId} " +
+            "AND relation_role = 'PRIMARY_GUARDIAN' AND relation_status = 'ACTIVE' LIMIT 1")
     SysUserPatientDO findPrimaryByPatientId(Long patientId);
 
+    /** 根据 transfer_request_id 查找转移记录 */
+    @Select("SELECT " + COLS + " FROM sys_user_patient WHERE transfer_request_id = #{transferRequestId}")
+    SysUserPatientDO findByTransferRequestId(String transferRequestId);
+
     /** 查询患者的全部活跃关联用户（ACTIVE） */
-    @Select("SELECT id, user_id, patient_id, role, relation_status, is_primary, " +
-            "transfer_request_no, transfer_target_user_id, transfer_initiated_at, " +
-            "transfer_completed_at, created_at, updated_at " +
-            "FROM sys_user_patient WHERE patient_id = #{patientId} AND relation_status = 'ACTIVE'")
+    @Select("SELECT " + COLS + " FROM sys_user_patient " +
+            "WHERE patient_id = #{patientId} AND relation_status = 'ACTIVE'")
     List<SysUserPatientDO> listActiveByPatientId(Long patientId);
 
+    /** 分页查询用户关联的所有患者 */
+    @Select("SELECT " + COLS + " FROM sys_user_patient " +
+            "WHERE user_id = #{userId} AND relation_status = 'ACTIVE' " +
+            "ORDER BY created_at LIMIT #{limit} OFFSET #{offset}")
+    List<SysUserPatientDO> listByUserId(@Param("userId") Long userId,
+                                         @Param("limit") int limit,
+                                         @Param("offset") int offset);
+
+    @Select("SELECT COUNT(*) FROM sys_user_patient WHERE user_id=#{userId} AND relation_status='ACTIVE'")
+    long countByUserId(Long userId);
+
     /** 创建新关联记录 */
-    @Insert("INSERT INTO sys_user_patient(user_id, patient_id, role, relation_status, is_primary, " +
-            "created_at, updated_at) " +
-            "VALUES(#{userId}, #{patientId}, #{role}, #{relationStatus}, #{isPrimary}, NOW(), NOW())")
+    @Insert("INSERT INTO sys_user_patient(user_id, patient_id, relation_role, relation_status, " +
+            "transfer_state, created_at, updated_at) " +
+            "VALUES(#{userId}, #{patientId}, #{relationRole}, #{relationStatus}, " +
+            "#{transferState}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(SysUserPatientDO record);
 
     /** 更新关联状态 */
-    @Update("UPDATE sys_user_patient SET relation_status=#{relationStatus}, updated_at=NOW() " +
-            "WHERE id=#{id}")
-    int updateStatus(SysUserPatientDO record);
+    @Update("UPDATE sys_user_patient SET relation_status=#{relationStatus}, updated_at=NOW() WHERE id=#{id}")
+    int updateRelationStatus(@Param("id") Long id, @Param("relationStatus") String relationStatus);
 
-    /**
-     * 主监护人转移——写入转移申请信息（ACTIVE → 转移进行中）。
-     * 转移完成在 completeTransfer 方法中执行。
-     */
-    @Update("UPDATE sys_user_patient SET transfer_request_no=#{transferRequestNo}, " +
-            "transfer_target_user_id=#{transferTargetUserId}, " +
-            "transfer_initiated_at=NOW(), updated_at=NOW() " +
-            "WHERE id=#{id} AND is_primary = TRUE AND relation_status = 'ACTIVE'")
+    /** 发起主监护人转移申请 */
+    @Update("UPDATE sys_user_patient SET transfer_state='PENDING_CONFIRM', " +
+            "transfer_request_id=#{transferRequestId}, transfer_target_user_id=#{transferTargetUserId}, " +
+            "transfer_requested_by=#{transferRequestedBy}, transfer_requested_at=NOW(), " +
+            "transfer_reason=#{transferReason}, transfer_expire_at=#{transferExpireAt}, " +
+            "updated_at=NOW() " +
+            "WHERE id=#{id} AND relation_role='PRIMARY_GUARDIAN' AND relation_status='ACTIVE' " +
+            "AND transfer_state='NONE'")
     int initiateTransfer(SysUserPatientDO record);
 
-    /**
-     * 完成转移：原主监护人状态改为 TRANSFERRED，新主监护人 is_primary=true。
-     * 调用方需在同一事务内完成两条更新 + 写 Outbox。
-     */
-    @Update("UPDATE sys_user_patient SET relation_status='TRANSFERRED', " +
-            "transfer_completed_at=NOW(), is_primary=FALSE, updated_at=NOW() " +
-            "WHERE id=#{id}")
-    int markTransferred(Long id);
+    /** 更新转移状态（确认/拒绝/取消/过期均走此方法） */
+    @Update("UPDATE sys_user_patient SET transfer_state=#{transferState}, " +
+            "transfer_confirmed_at=#{transferConfirmedAt}, transfer_rejected_at=#{transferRejectedAt}, " +
+            "transfer_reject_reason=#{transferRejectReason}, " +
+            "transfer_cancelled_by=#{transferCancelledBy}, transfer_cancelled_at=#{transferCancelledAt}, " +
+            "transfer_cancel_reason=#{transferCancelReason}, updated_at=NOW() WHERE id=#{id}")
+    int updateTransferState(SysUserPatientDO record);
+
+    /** 变更 relation_role（主监护人转移完成后互换角色） */
+    @Update("UPDATE sys_user_patient SET relation_role=#{relationRole}, transfer_state='NONE', " +
+            "updated_at=NOW() WHERE id=#{id}")
+    int updateRole(@Param("id") Long id, @Param("relationRole") String relationRole);
 
     /** 检查用户是否对患者有 ACTIVE 关联（权限校验用） */
     @Select("SELECT COUNT(*) FROM sys_user_patient " +
