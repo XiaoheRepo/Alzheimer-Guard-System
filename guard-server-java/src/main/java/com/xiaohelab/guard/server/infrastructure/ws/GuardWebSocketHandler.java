@@ -77,7 +77,7 @@ public class GuardWebSocketHandler extends TextWebSocketHandler {
             if (token == null || !jwtTokenProvider.validate(token)) return null;
 
             Claims claims = jwtTokenProvider.parse(token);
-            return Long.parseLong(jwtTokenProvider.getUserId(claims));
+            return jwtTokenProvider.getUserId(claims);  // 已返回 Long，无需 parseLong
         } catch (Exception e) {
             log.warn("[WS] token 解析失败. error={}", e.getMessage());
             return null;

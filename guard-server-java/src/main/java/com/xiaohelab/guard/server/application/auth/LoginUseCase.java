@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 
 /**
  * 用户登录用例。
@@ -50,9 +49,9 @@ public class LoginUseCase {
         // 4. 更新最后登录时间与 IP（异步也可，此处同步写入）
         sysUserMapper.updateLoginInfo(user.getId(), "");
 
-        // 5. 生成 JWT
+        // 5. 生成 JWT（userId 为 Long，与 JwtTokenProvider.generate 签名一致）
         String token = jwtTokenProvider.generate(
-                String.valueOf(user.getId()), user.getUsername(), user.getRole());
+                user.getId(), user.getUsername(), user.getRole());
 
         return new LoginResult(token, user);
     }
