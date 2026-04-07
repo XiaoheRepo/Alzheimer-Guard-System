@@ -3,6 +3,8 @@ package com.xiaohelab.guard.server.infrastructure.persistence.mapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
+
 /**
  * sys_user 数据访问层。
  * 只做数据映射，不包含业务规则。
@@ -41,4 +43,38 @@ public interface SysUserMapper {
     /** 检查用户名是否已存在 */
     @Select("SELECT COUNT(1) FROM sys_user WHERE username = #{username}")
     int countByUsername(String username);
+
+    /** 按手机号查询（邀请前置查询使用） */
+    @Select("SELECT id, username, password_hash, display_name, phone, role, status, " +
+            "last_login_at, last_login_ip, created_at, updated_at FROM sys_user WHERE phone = #{phone}")
+    SysUserDO findByPhone(String phone);
+
+    /** 管理员用户列表，支持 role / status / keyword 过滤，分页 */
+    @Select("<script>" +
+            "SELECT id, username, password_hash, display_name, phone, role, status, " +
+            "last_login_at, last_login_ip, created_at, updated_at FROM sys_user " +
+            "<where>" +
+            "  <if test='role != null and role != \"\"'>AND role = #{role}</if>" +
+            "  <if test='status != null and status != \"\"'>AND status = #{status}</if>" +
+            "  <if test='keyword != null and keyword != \"\"'>AND (username ILIKE CONCAT('%',#{keyword},'%') OR display_name ILIKE CONCAT('%',#{keyword},'%') OR phone ILIKE CONCAT('%',#{keyword},'%'))</if>" +
+            "</where>" +
+            "ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}" +
+            "</script>")
+    List<SysUserDO> listByFilter(@Param("role") String role,
+                                  @Param("status") String status,
+                                  @Param("keyword") String keyword,
+                                  @Param("limit") int limit,
+                                  @Param("offset") int offset);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM sys_user " +
+            "<where>" +
+            "  <if test='role != null and role != \"\"'>AND role = #{role}</if>" +
+            "  <if test='status != null and status != \"\"'>AND status = #{status}</if>" +
+            "  <if test='keyword != null and keyword != \"\"'>AND (username ILIKE CONCAT('%',#{keyword},'%') OR display_name ILIKE CONCAT('%',#{keyword},'%') OR phone ILIKE CONCAT('%',#{keyword},'%'))</if>" +
+            "</where>" +
+            "</script>")
+    long countByFilter(@Param("role") String role,
+                       @Param("status") String status,
+                       @Param("keyword") String keyword);
 }

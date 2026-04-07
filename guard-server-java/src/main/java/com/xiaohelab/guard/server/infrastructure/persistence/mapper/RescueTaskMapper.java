@@ -1,4 +1,4 @@
-﻿package com.xiaohelab.guard.server.infrastructure.persistence.mapper;
+package com.xiaohelab.guard.server.infrastructure.persistence.mapper;
 
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.RescueTaskDO;
 import org.apache.ibatis.annotations.*;

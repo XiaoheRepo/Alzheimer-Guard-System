@@ -1,4 +1,4 @@
-﻿package com.xiaohelab.guard.server.infrastructure.persistence.mapper;
+package com.xiaohelab.guard.server.infrastructure.persistence.mapper;
 
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
 import org.apache.ibatis.annotations.*;
@@ -61,4 +61,33 @@ public interface ClueRecordMapper {
             "reviewed_at=NOW(), updated_at=NOW() " +
             "WHERE id=#{id} AND review_status='PENDING'")
     int review(ClueRecordDO clue);
+
+    /** 管理员 override：强制设为 OVERRIDDEN */
+    @Update("UPDATE clue_record SET review_status='OVERRIDDEN', override=TRUE, " +
+            "override_by=#{overrideBy}, override_reason=#{overrideReason}, " +
+            "reviewed_at=NOW(), updated_at=NOW() WHERE id=#{id}")
+    int override(ClueRecordDO clue);
+
+    /** 管理员 reject：设为 REJECTED */
+    @Update("UPDATE clue_record SET review_status='REJECTED', rejected_by=#{rejectedBy}, " +
+            "reject_reason=#{rejectReason}, reviewed_at=NOW(), updated_at=NOW() WHERE id=#{id}")
+    int reject(ClueRecordDO clue);
+
+    /** 管理员分配线索给复核员 */
+    @Update("UPDATE clue_record SET assignee_user_id=#{assigneeUserId}, assigned_at=NOW(), " +
+            "updated_at=NOW() WHERE id=#{id}")
+    int assign(ClueRecordDO clue);
+
+    /** 管理员复核队列：PENDING 状态线索分页 */
+    @Select("SELECT id, clue_no, task_id, patient_id, tag_code, source_type, " +
+            "location_lat, location_lng, coord_system, description, photo_url, " +
+            "risk_score, is_valid, suspect_flag, suspect_reason, " +
+            "review_status, assignee_user_id, assigned_at, reviewed_at, " +
+            "created_at, updated_at " +
+            "FROM clue_record WHERE review_status='PENDING' AND suspect_flag=TRUE " +
+            "ORDER BY risk_score DESC LIMIT #{limit} OFFSET #{offset}")
+    List<ClueRecordDO> listReviewQueue(@Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("SELECT COUNT(*) FROM clue_record WHERE review_status='PENDING' AND suspect_flag=TRUE")
+    long countReviewQueue();
 }

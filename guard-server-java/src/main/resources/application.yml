@@ -80,6 +80,8 @@ guard:
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}
   entry-token:
     ttl-seconds: 120
+  ws-ticket:
+    ttl-seconds: 30
   public-entry-base-url: ${PUBLIC_ENTRY_BASE_URL:https://app.example.com}
   outbox:
     polling-interval-ms: 1000
