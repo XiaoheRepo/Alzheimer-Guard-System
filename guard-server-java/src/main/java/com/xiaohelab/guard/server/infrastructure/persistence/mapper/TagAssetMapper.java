@@ -70,4 +70,33 @@ public interface TagAssetMapper {
     @Update("UPDATE tag_asset SET status='BOUND', recovered_at=NOW(), updated_at=NOW() " +
             "WHERE id=#{id} AND status='LOST'")
     int recover(Long id);
+
+    /** 按状态与患者ID分页查询（管理员用） */
+    @Select("<script>SELECT " + COLS + " FROM tag_asset " +
+            "<where>" +
+            "<if test='status != null'>status=#{status}</if>" +
+            "<if test='patientId != null'>AND patient_id=#{patientId}</if>" +
+            "</where>" +
+            " ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}</script>")
+    List<TagAssetDO> listByFilter(@Param("status") String status,
+                                   @Param("patientId") Long patientId,
+                                   @Param("limit") int limit,
+                                   @Param("offset") int offset);
+
+    @Select("<script>SELECT COUNT(*) FROM tag_asset " +
+            "<where>" +
+            "<if test='status != null'>status=#{status}</if>" +
+            "<if test='patientId != null'>AND patient_id=#{patientId}</if>" +
+            "</where></script>")
+    long countByFilter(@Param("status") String status, @Param("patientId") Long patientId);
+
+    /** 按 tagCode 分配（UNBOUND → ALLOCATED） */
+    @Update("UPDATE tag_asset SET status='ALLOCATED', apply_record_id=#{applyRecordId}, updated_at=NOW() " +
+            "WHERE tag_code=#{tagCode} AND status='UNBOUND'")
+    int allocateByTagCode(@Param("tagCode") String tagCode, @Param("applyRecordId") Long applyRecordId);
+
+    /** 释放已分配标签（ALLOCATED → UNBOUND） */
+    @Update("UPDATE tag_asset SET status='UNBOUND', apply_record_id=NULL, updated_at=NOW() " +
+            "WHERE tag_code=#{tagCode} AND status='ALLOCATED'")
+    int releaseByTagCode(String tagCode);
 }

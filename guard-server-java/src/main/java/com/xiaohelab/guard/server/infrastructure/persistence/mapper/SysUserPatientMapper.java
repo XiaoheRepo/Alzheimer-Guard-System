@@ -94,4 +94,19 @@ public interface SysUserPatientMapper {
     @Select("SELECT COUNT(*) FROM sys_user_patient " +
             "WHERE user_id=#{userId} AND patient_id=#{patientId} AND relation_status='ACTIVE'")
     long countActiveRelation(@Param("userId") Long userId, @Param("patientId") Long patientId);
+
+    /** 分页查询患者的转移记录（可按 transfer_state 过滤） */
+    @Select("<script>SELECT " + COLS + " FROM sys_user_patient " +
+            "WHERE patient_id=#{patientId} AND transfer_request_id IS NOT NULL " +
+            "<if test='state != null'>AND transfer_state=#{state}</if>" +
+            " ORDER BY transfer_requested_at DESC LIMIT #{limit} OFFSET #{offset}</script>")
+    List<SysUserPatientDO> listTransfersByPatientId(@Param("patientId") Long patientId,
+                                                     @Param("state") String state,
+                                                     @Param("limit") int limit,
+                                                     @Param("offset") int offset);
+
+    @Select("<script>SELECT COUNT(*) FROM sys_user_patient " +
+            "WHERE patient_id=#{patientId} AND transfer_request_id IS NOT NULL " +
+            "<if test='state != null'>AND transfer_state=#{state}</if></script>")
+    long countTransfersByPatientId(@Param("patientId") Long patientId, @Param("state") String state);
 }

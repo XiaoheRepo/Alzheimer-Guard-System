@@ -1,6 +1,7 @@
 package com.xiaohelab.guard.server.interfaces.material;
 
 import com.xiaohelab.guard.server.application.material.MaterialOrderService;
+import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
@@ -118,6 +119,28 @@ public class MaterialController {
         Long userId = securityContext.currentUserId();
         TagAssetDO tag = materialOrderService.reportLost(patientId, userId, tagCode);
         return ApiResponse.ok(buildTagVO(tag), traceId);
+    }
+
+    // ===== 3.4.25 工单资源链 =====
+
+    /** 读取工单资源链状态 */
+    @GetMapping("/api/v1/material/orders/{orderId}/resource-link")
+    public ApiResponse<Map<String, Object>> getResourceLink(
+            @PathVariable Long orderId,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        TagApplyRecordDO order = materialOrderService.getOrder(orderId);
+        Long userId = securityContext.currentUserId();
+        // FAMILY 访问校验：确认工单属于当前用户
+        if (!order.getApplicantUserId().equals(userId)) throw BizException.of("E_MAT_4030");
+        if (order.getResourceLink() == null || order.getResourceLink().isBlank())
+            throw BizException.of("E_MAT_4041");
+        return ApiResponse.ok(Map.of(
+                "order_id", String.valueOf(order.getId()),
+                "resource_link", order.getResourceLink(),
+                "resource_token_expire_at", (Object) null,
+                "status", "ACTIVE"
+        ), traceId);
     }
 
     // ===== VO 构建 =====

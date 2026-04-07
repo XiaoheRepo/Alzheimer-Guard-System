@@ -68,4 +68,24 @@ public interface SysOutboxLogMapper {
     /** event_id 幂等校验 */
     @Select("SELECT COUNT(*) FROM sys_outbox_log WHERE event_id = #{eventId}")
     long countByEventId(String eventId);
+
+    /** 分页查询 DEAD 队列（超级管理员用于故障诊断） */
+    @Select("SELECT event_id, topic, aggregate_id, partition_key, payload::text, request_id, " +
+            "trace_id, phase, retry_count, last_error, last_intervention_by, last_intervention_at, " +
+            "created_at, updated_at " +
+            "FROM sys_outbox_log WHERE phase='DEAD' ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}")
+    List<SysOutboxLogDO> listDead(@Param("limit") int limit, @Param("offset") int offset);
+
+    @Select("SELECT COUNT(*) FROM sys_outbox_log WHERE phase='DEAD'")
+    long countDead();
+
+    /** 将 DEAD 事件重置为 PENDING（受控重放） */
+    @Update("UPDATE sys_outbox_log SET phase='PENDING', retry_count=0, last_error=NULL, " +
+            "last_intervention_at=NOW(), last_intervention_by=#{operatorId}, " +
+            "replay_reason=#{replayReason}, replay_token=#{replayToken}, replayed_at=NOW(), " +
+            "updated_at=NOW() WHERE event_id=#{eventId} AND phase='DEAD'")
+    int replayDead(@Param("eventId") String eventId,
+                   @Param("operatorId") Long operatorId,
+                   @Param("replayReason") String replayReason,
+                   @Param("replayToken") String replayToken);
 }

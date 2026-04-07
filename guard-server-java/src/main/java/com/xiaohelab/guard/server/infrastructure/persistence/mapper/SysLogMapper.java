@@ -58,4 +58,22 @@ public interface SysLogMapper {
 
     @Select("SELECT COUNT(*) FROM sys_log WHERE object_id = #{objectId}")
     long countByObjectId(@Param("objectId") String objectId);
+
+    /** 按 module + objectId 查询（用于物料工单时间线、标签历史等） */
+    @Select("SELECT id, module, action, action_id, result_code, executed_at, operator_user_id, " +
+            "operator_username, object_id, result, risk_level, detail::text, action_source, " +
+            "request_id, trace_id, created_at " +
+            "FROM sys_log WHERE module=#{module} AND object_id=#{objectId} " +
+            "ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}")
+    List<SysLogDO> listByModuleAndObjectId(@Param("module") String module,
+                                            @Param("objectId") String objectId,
+                                            @Param("limit") int limit,
+                                            @Param("offset") int offset);
+
+    @Select("SELECT COUNT(*) FROM sys_log WHERE module=#{module} AND object_id=#{objectId}")
+    long countByModuleAndObjectId(@Param("module") String module, @Param("objectId") String objectId);
+
+    /** 超级管理员清理过期审计日志（SUPERADMIN 专属操作） */
+    @Delete("DELETE FROM sys_log WHERE created_at < #{beforeTime}::timestamptz")
+    long purgeBeforeTime(@Param("beforeTime") String beforeTime);
 }

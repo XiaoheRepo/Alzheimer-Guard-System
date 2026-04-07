@@ -7,9 +7,15 @@ import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.GuardianInvitationDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserPatientDO;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.GuardianInvitationMapper;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -36,6 +42,10 @@ public class PatientController {
     private final PatientProfileService patientService;
     private final GuardianInvitationService invitationService;
     private final SysUserMapper sysUserMapper;
+    private final SysUserPatientMapper sysUserPatientMapper;
+    private final GuardianInvitationMapper invitationMapper;
+    private final TagAssetMapper tagAssetMapper;
+    private final SysLogMapper sysLogMapper;
     private final SecurityContext securityContext;
 
     // ===== 患者档案 =====
@@ -244,6 +254,153 @@ public class PatientController {
         Long userId = securityContext.currentUserId();
         invitationService.cancelTransfer(transferReqId, userId, req.getCancelReason());
         return ApiResponse.ok(Map.of("transfer_request_id", transferReqId, "status", "CANCELLED"), traceId);
+    }
+
+    // ===== 3.3.13 转移记录查询 =====
+
+    /** 查询患者的主监护人转移记录列表 */
+    @GetMapping("/api/v1/patients/{patientId}/guardians/transfers")
+    public ApiResponse<PageResponse<Map<String, Object>>> listTransfers(
+            @PathVariable Long patientId,
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String transferState,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+            throw BizException.of("E_PRO_4030");
+
+        List<SysUserPatientDO> list = sysUserPatientMapper.listTransfersByPatientId(
+                patientId, transferState, pageSize, (pageNo - 1) * pageSize);
+        long total = sysUserPatientMapper.countTransfersByPatientId(patientId, transferState);
+        List<Map<String, Object>> items = list.stream().map(r -> Map.<String, Object>of(
+                "transfer_request_id", r.getTransferRequestId() != null ? r.getTransferRequestId() : "",
+                "from_user_id", String.valueOf(r.getTransferRequestedBy() != null ? r.getTransferRequestedBy() : 0),
+                "to_user_id", String.valueOf(r.getTransferTargetUserId() != null ? r.getTransferTargetUserId() : 0),
+                "transfer_state", r.getTransferState() != null ? r.getTransferState() : "",
+                "requested_at", r.getTransferRequestedAt() != null ? r.getTransferRequestedAt().toString() : "",
+                "expire_at", r.getTransferExpireAt() != null ? r.getTransferExpireAt().toString() : ""
+        )).toList();
+        return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
+                .items(items).pageNo(pageNo).pageSize(pageSize)
+                .total(total).hasNext(total > (long) pageNo * pageSize)
+                .build(), traceId);
+    }
+
+    // ===== 3.3.15 邀请详情 =====
+
+    /** 查询单条邀请详情 */
+    @GetMapping("/api/v1/patients/{patientId}/guardians/invitations/{inviteId}")
+    public ApiResponse<Map<String, Object>> getInvitationDetail(
+            @PathVariable Long patientId,
+            @PathVariable String inviteId,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+            throw BizException.of("E_PRO_4030");
+
+        GuardianInvitationDO inv = invitationMapper.findByInviteId(inviteId);
+        if (inv == null) throw BizException.of("E_PRO_4043");
+        return ApiResponse.ok(Map.<String, Object>of(
+                "invite_id", inv.getInviteId(),
+                "patient_id", String.valueOf(inv.getPatientId()),
+                "inviter_user_id", String.valueOf(inv.getInviterUserId() != null ? inv.getInviterUserId() : 0),
+                "invitee_user_id", String.valueOf(inv.getInviteeUserId() != null ? inv.getInviteeUserId() : 0),
+                "relation_role", inv.getRelationRole() != null ? inv.getRelationRole() : "",
+                "status", inv.getStatus() != null ? inv.getStatus() : "",
+                "reason", inv.getReason() != null ? inv.getReason() : "",
+                "expire_at", inv.getExpireAt() != null ? inv.getExpireAt().toString() : "",
+                "created_at", inv.getCreatedAt() != null ? inv.getCreatedAt().toString() : ""
+        ), traceId);
+    }
+
+    // ===== 3.3.16 转移详情 =====
+
+    /** 查询单条转移记录详情 */
+    @GetMapping("/api/v1/patients/{patientId}/guardians/transfers/{transferReqId}")
+    public ApiResponse<Map<String, Object>> getTransferDetail(
+            @PathVariable Long patientId,
+            @PathVariable String transferReqId,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+            throw BizException.of("E_PRO_4030");
+
+        SysUserPatientDO rel = sysUserPatientMapper.findByTransferRequestId(transferReqId);
+        if (rel == null) throw BizException.of("E_PRO_4045");
+        return ApiResponse.ok(Map.<String, Object>of(
+                "transfer_request_id", rel.getTransferRequestId(),
+                "patient_id", String.valueOf(rel.getPatientId()),
+                "from_user_id", String.valueOf(rel.getTransferRequestedBy() != null ? rel.getTransferRequestedBy() : 0),
+                "to_user_id", String.valueOf(rel.getTransferTargetUserId() != null ? rel.getTransferTargetUserId() : 0),
+                "transfer_state", rel.getTransferState() != null ? rel.getTransferState() : "",
+                "reason", rel.getTransferReason() != null ? rel.getTransferReason() : "",
+                "requested_at", rel.getTransferRequestedAt() != null ? rel.getTransferRequestedAt().toString() : "",
+                "expire_at", rel.getTransferExpireAt() != null ? rel.getTransferExpireAt().toString() : "",
+                "confirmed_at", rel.getTransferConfirmedAt() != null ? rel.getTransferConfirmedAt().toString() : ""
+        ), traceId);
+    }
+
+    // ===== 3.4.28 患者标签详情 =====
+
+    /** 读取患者维度标签详情 */
+    @GetMapping("/api/v1/patients/{patientId}/tags/{tagCode}")
+    public ApiResponse<Map<String, Object>> getPatientTag(
+            @PathVariable Long patientId,
+            @PathVariable String tagCode,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+            throw BizException.of("E_PRO_4030");
+
+        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
+        if (tag == null || !patientId.equals(tag.getPatientId())) throw BizException.of("E_MAT_4044");
+        return ApiResponse.ok(Map.<String, Object>of(
+                "tag_code", tag.getTagCode(),
+                "patient_id", String.valueOf(tag.getPatientId()),
+                "status", tag.getStatus(),
+                "bind_time", tag.getUpdatedAt() != null ? tag.getUpdatedAt().toString() : "",
+                "updated_at", tag.getUpdatedAt() != null ? tag.getUpdatedAt().toString() : ""
+        ), traceId);
+    }
+
+    // ===== 3.4.29 标签历史 =====
+
+    /** 读取标签历史流转轨迹 */
+    @GetMapping("/api/v1/patients/{patientId}/tags/{tagCode}/history")
+    public ApiResponse<PageResponse<Map<String, Object>>> getTagHistory(
+            @PathVariable Long patientId,
+            @PathVariable String tagCode,
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+            throw BizException.of("E_PRO_4030");
+
+        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
+        if (tag == null) throw BizException.of("E_MAT_4044");
+
+        List<SysLogDO> logs = sysLogMapper.listByModuleAndObjectId(
+                "TAG_ASSET", tagCode, pageSize, (pageNo - 1) * pageSize);
+        long total = sysLogMapper.countByModuleAndObjectId("TAG_ASSET", tagCode);
+        List<Map<String, Object>> items = logs.stream().map(l -> Map.<String, Object>of(
+                "history_id", String.valueOf(l.getId()),
+                "from_status", "",
+                "to_status", l.getAction() != null ? l.getAction() : "",
+                "operator_user_id", String.valueOf(l.getOperatorUserId() != null ? l.getOperatorUserId() : 0),
+                "reason", l.getResult() != null ? l.getResult() : "",
+                "created_at", l.getCreatedAt() != null ? l.getCreatedAt().toString() : ""
+        )).toList();
+        return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
+                .items(items).pageNo(pageNo).pageSize(pageSize)
+                .total(total).hasNext(total > (long) pageNo * pageSize)
+                .build(), traceId);
     }
 
     // ===== 用户查询（邀请前置） =====
