@@ -1,5 +1,7 @@
 package com.xiaohelab.guard.server.interfaces.profile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaohelab.guard.server.application.guardian.GuardianInvitationService;
 import com.xiaohelab.guard.server.application.patient.PatientProfileService;
 import com.xiaohelab.guard.server.common.exception.BizException;
@@ -24,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.Period;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +51,7 @@ public class PatientController {
     private final TagAssetMapper tagAssetMapper;
     private final SysLogMapper sysLogMapper;
     private final SecurityContext securityContext;
+    private final ObjectMapper objectMapper;
 
     // ===== 患者档案 =====
 
@@ -401,6 +406,81 @@ public class PatientController {
                 .items(items).pageNo(pageNo).pageSize(pageSize)
                 .total(total).hasNext(total > (long) pageNo * pageSize)
                 .build(), traceId);
+    }
+
+    // ===== 3.6.1 患者脱敏档案 =====
+
+    /** 扫码场景下的患者脱敏信息视图（监护人/管理员） */
+    @GetMapping("/api/v1/patients/{patientId}/profile")
+    public ApiResponse<Map<String, Object>> getMaskedProfile(
+            @PathVariable Long patientId,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        PatientProfileDO profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
+
+        String maskedName = profile.getName() != null && !profile.getName().isEmpty()
+                ? profile.getName().charAt(0) + "**" : "**";
+
+        int age = 0;
+        if (profile.getBirthday() != null) {
+            age = Period.between(profile.getBirthday(), LocalDate.now()).getYears();
+        }
+
+        String bloodType = "";
+        List<String> chronicDiseases = Collections.emptyList();
+        String allergyNotes = "";
+        if (profile.getMedicalHistory() != null && !profile.getMedicalHistory().isBlank()) {
+            try {
+                JsonNode mh = objectMapper.readTree(profile.getMedicalHistory());
+                bloodType = mh.path("blood_type").asText("");
+                JsonNode cd = mh.path("chronic_diseases");
+                if (cd.isArray()) {
+                    chronicDiseases = new java.util.ArrayList<>();
+                    for (JsonNode n : cd) ((java.util.ArrayList<String>) chronicDiseases).add(n.asText());
+                }
+                allergyNotes = mh.path("allergy_notes").asText("");
+            } catch (Exception ignored) { /* JSON 解析失败则留空 */ }
+        }
+
+        var data = new java.util.LinkedHashMap<String, Object>();
+        data.put("patient_id", String.valueOf(patientId));
+        data.put("patient_name_masked", maskedName);
+        data.put("gender", profile.getGender() != null ? profile.getGender() : "");
+        data.put("age", age);
+        data.put("blood_type", bloodType);
+        data.put("chronic_diseases", chronicDiseases);
+        data.put("allergy_notes", allergyNotes);
+        data.put("avatar_url", profile.getPhotoUrl() != null ? profile.getPhotoUrl() : "");
+        data.put("lost_status", profile.getLostStatus() != null ? profile.getLostStatus() : "NORMAL");
+        return ApiResponse.ok(data, traceId);
+    }
+
+    // ===== 3.6.6 患者标签列表 =====
+
+    /** 查看患者绑定的全部标签（监护人/管理员） */
+    @GetMapping("/api/v1/patients/{patientId}/tags")
+    public ApiResponse<Map<String, Object>> listPatientTags(
+            @PathVariable Long patientId,
+            @RequestParam(required = false) String status,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        Long userId = securityContext.currentUserId();
+        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+            throw BizException.of("E_PRO_4030");
+
+        String statusFilter = status != null ? status : "BOUND";
+        List<TagAssetDO> tags = tagAssetMapper.listByFilter(statusFilter, patientId, 100, 0);
+        List<Map<String, Object>> tagVos = tags.stream().map(t -> {
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("tag_code", t.getTagCode());
+            m.put("tag_status", t.getStatus());
+            m.put("tag_type", t.getTagType() != null ? t.getTagType() : "");
+            m.put("bound_at", t.getUpdatedAt() != null ? t.getUpdatedAt().toString() : null);
+            m.put("lost_at", t.getLostAt() != null ? t.getLostAt().toString() : null);
+            return (Map<String, Object>) m;
+        }).toList();
+        return ApiResponse.ok(Map.of("patient_id", String.valueOf(patientId), "tags", tagVos), traceId);
     }
 
     // ===== 用户查询（邀请前置） =====

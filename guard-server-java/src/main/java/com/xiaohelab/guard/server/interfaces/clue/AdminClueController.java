@@ -84,6 +84,42 @@ public class AdminClueController {
                 .build(), traceId);
     }
 
+    /** 3.6.2 — 疑似线索队列（suspect_flag = TRUE） */
+    @GetMapping("/api/v1/admin/clues/suspected")
+    public ApiResponse<PageResponse<Map<String, Object>>> suspectedQueue(
+            @RequestParam(defaultValue = "1") int pageNo,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @RequestParam(required = false) Long taskId,
+            @RequestParam(name = "patient_id", required = false) Long patientId,
+            @RequestParam(name = "review_status", required = false) String reviewStatus,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        requireAdmin();
+        int offset = (pageNo - 1) * pageSize;
+        List<ClueRecordDO> list = clueRecordMapper.listSuspected(reviewStatus, taskId, patientId, pageSize, offset);
+        long total = clueRecordMapper.countSuspectedFiltered(reviewStatus, taskId, patientId);
+
+        List<Map<String, Object>> items = list.stream().map(c -> {
+            var m = new java.util.LinkedHashMap<String, Object>();
+            m.put("clue_id", String.valueOf(c.getId()));
+            m.put("task_id", c.getTaskId() == null ? null : String.valueOf(c.getTaskId()));
+            m.put("patient_id", c.getPatientId() == null ? null : String.valueOf(c.getPatientId()));
+            m.put("location", Map.of(
+                    "lat", c.getLocationLat() != null ? c.getLocationLat() : 0.0,
+                    "lng", c.getLocationLng() != null ? c.getLocationLng() : 0.0));
+            m.put("risk_score", c.getRiskScore() != null ? c.getRiskScore() : 0);
+            m.put("suspect_reason", c.getSuspectReason() != null ? c.getSuspectReason() : "");
+            m.put("reported_at", c.getCreatedAt() != null ? c.getCreatedAt().toString() : null);
+            m.put("review_status", c.getReviewStatus() != null ? c.getReviewStatus() : "");
+            return (Map<String, Object>) m;
+        }).toList();
+
+        return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
+                .items(items).pageNo(pageNo).pageSize(pageSize).total(total)
+                .hasNext(total > (long) pageNo * pageSize)
+                .build(), traceId);
+    }
+
     /** 3.2.12 — 分配线索复核责任人（写 sys_log） */
     @PostMapping("/api/v1/admin/clues/{clueId}/assign")
     @Transactional

@@ -51,6 +51,10 @@ public interface TagApplyRecordMapper {
     @Select("SELECT COUNT(*) FROM tag_apply_record WHERE applicant_user_id = #{applicantUserId}")
     long countByApplicant(Long applicantUserId);
 
+    /** 按资源令牌解析工单（resource_link 末段包含 token） */
+    @Select("SELECT " + COLS + " FROM tag_apply_record WHERE resource_link LIKE CONCAT('%/', #{token}) ORDER BY created_at DESC LIMIT 1")
+    TagApplyRecordDO findByResourceToken(@Param("token") String token);
+
     /** 提交申请 */
     @Insert("INSERT INTO tag_apply_record(order_no, patient_id, applicant_user_id, quantity, " +
             "apply_note, status, delivery_address, created_at, updated_at) " +

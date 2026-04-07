@@ -4,8 +4,12 @@ import com.xiaohelab.guard.server.application.material.MaterialOrderService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientProfileMapper;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagApplyRecordMapper;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -32,6 +36,9 @@ import java.util.Map;
 public class MaterialController {
 
     private final MaterialOrderService materialOrderService;
+    private final PatientProfileMapper patientProfileMapper;
+    private final TagApplyRecordMapper tagApplyRecordMapper;
+    private final TagAssetMapper tagAssetMapper;
     private final SecurityContext securityContext;
 
     /** 创建申领工单 */
@@ -143,6 +150,35 @@ public class MaterialController {
         ), traceId);
     }
 
+    // ===== 3.4.2 资源令牌解析 =====
+
+    /** 3.4.2 GET /api/v1/material/resources/{resource_token} — 解析资源令牌，返回患者与物资基础信息 */
+    @GetMapping("/api/v1/material/resources/{resourceToken}")
+    public ApiResponse<Map<String, Object>> resolveResourceToken(
+            @PathVariable String resourceToken,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        TagApplyRecordDO order = tagApplyRecordMapper.findByResourceToken(resourceToken);
+        if (order == null) throw BizException.of("E_MAT_4002");
+
+        PatientProfileDO patient = patientProfileMapper.findById(order.getPatientId());
+        if (patient == null) throw BizException.of("E_MAT_4002");
+
+        String maskedName = maskName(patient.getName());
+
+        TagAssetDO tag = order.getTagCode() != null ? tagAssetMapper.findByTagCode(order.getTagCode()) : null;
+
+        return ApiResponse.ok(Map.of(
+                "patient_id", String.valueOf(order.getPatientId()),
+                "patient_name_masked", maskedName,
+                "tag_code", order.getTagCode() != null ? order.getTagCode() : "",
+                "tag_type", tag != null && tag.getTagType() != null ? tag.getTagType() : "",
+                "order_id", String.valueOf(order.getId()),
+                "status", order.getStatus(),
+                "resource_expires_at", (Object) null
+        ), traceId);
+    }
+
     // ===== VO 构建 =====
 
     private Map<String, Object> buildOrderVO(TagApplyRecordDO o) {
@@ -164,6 +200,11 @@ public class MaterialController {
                 "tag_type", tag.getTagType() != null ? tag.getTagType() : "",
                 "status", tag.getStatus()
         );
+    }
+
+    private String maskName(String name) {
+        if (name == null || name.isEmpty()) return "**";
+        return name.charAt(0) + "**";
     }
 
     // ===== DTO =====

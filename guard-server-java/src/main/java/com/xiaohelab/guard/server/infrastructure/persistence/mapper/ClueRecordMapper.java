@@ -130,4 +130,29 @@ public interface ClueRecordMapper {
 
     @Select("SELECT COUNT(*) FROM clue_record WHERE review_status='PENDING' AND suspect_flag=TRUE")
     long countReviewQueue();
+
+    /** 3.6.2 可疑线索复核工单池（suspect_flag=TRUE，带可选过滤） */
+    @Select("<script>SELECT id, clue_no, task_id, patient_id, tag_code, source_type, " +
+            "location_lat, location_lng, coord_system, description, photo_url, " +
+            "risk_score, is_valid, suspect_flag, suspect_reason, " +
+            "review_status, assignee_user_id, assigned_at, reviewed_at, " +
+            "created_at, updated_at " +
+            "FROM clue_record WHERE suspect_flag=TRUE " +
+            "<if test='reviewStatus != null'>AND review_status=#{reviewStatus} </if>" +
+            "<if test='taskId != null'>AND task_id=#{taskId} </if>" +
+            "<if test='patientId != null'>AND patient_id=#{patientId} </if>" +
+            "ORDER BY risk_score DESC LIMIT #{limit} OFFSET #{offset}</script>")
+    List<ClueRecordDO> listSuspected(@Param("reviewStatus") String reviewStatus,
+                                      @Param("taskId") Long taskId,
+                                      @Param("patientId") Long patientId,
+                                      @Param("limit") int limit,
+                                      @Param("offset") int offset);
+
+    @Select("<script>SELECT COUNT(*) FROM clue_record WHERE suspect_flag=TRUE " +
+            "<if test='reviewStatus != null'>AND review_status=#{reviewStatus} </if>" +
+            "<if test='taskId != null'>AND task_id=#{taskId} </if>" +
+            "<if test='patientId != null'>AND patient_id=#{patientId} </if></script>")
+    long countSuspectedFiltered(@Param("reviewStatus") String reviewStatus,
+                                 @Param("taskId") Long taskId,
+                                 @Param("patientId") Long patientId);
 }
