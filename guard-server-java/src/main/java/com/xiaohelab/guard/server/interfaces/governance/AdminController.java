@@ -15,12 +15,17 @@ import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 管理员后台接口（需 ADMIN 或 SUPERADMIN 角色）。
@@ -35,6 +40,8 @@ public class AdminController {
     private final MaterialOrderService materialOrderService;
     private final ClueRecordMapper clueRecordMapper;
     private final SecurityContext securityContext;
+    private final PasswordEncoder passwordEncoder;
+    private final StringRedisTemplate redisTemplate;
 
     // ===== 用户管理 =====
 
@@ -342,6 +349,59 @@ public class AdminController {
         return ApiResponse.ok(Map.of("clue_id", String.valueOf(clueId), "review_status", "REJECTED"), traceId);
     }
 
+    // ===== 密码重置 =====
+
+    /**
+     * 强制重置用户密码（仅 SUPERADMIN）。
+     * 3.8.3 PUT /api/v1/admin/users/{userId}/password:reset
+     */
+    @PutMapping("/api/v1/admin/users/{userId}/password:reset")
+    public ApiResponse<Map<String, Object>> resetPassword(
+            @PathVariable Long userId,
+            @RequestHeader(value = "X-Action-Source", required = false) String actionSource,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
+            @Valid @RequestBody ResetPasswordRequest req) {
+
+        if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
+        if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
+
+        SysUserDO target = sysUserMapper.findById(userId);
+        if (target == null) throw BizException.of("E_USR_4041");
+
+        // 更新密码
+        sysUserMapper.updatePassword(userId, passwordEncoder.encode(req.getNewPassword()));
+
+        // 强制使目标用户所有旧 JWT 失效（TTL = 24h 覆盖最长 token 有效期）
+        Instant now = Instant.now();
+        redisTemplate.opsForValue().set(
+                "jwt:invalidate_before:" + userId,
+                String.valueOf(now.toEpochMilli()),
+                24L, TimeUnit.HOURS);
+
+        // 审计日志
+        SysLogDO log = new SysLogDO();
+        log.setModule("USER");
+        log.setAction("RESET_PASSWORD");
+        log.setActionId("reset_pwd_" + userId);
+        log.setObjectId(String.valueOf(userId));
+        log.setResultCode("OK");
+        log.setResult("密码强制重置成功");
+        log.setRiskLevel("HIGH");
+        log.setOperatorUserId(securityContext.currentUserId());
+        log.setOperatorUsername(securityContext.currentUsername());
+        log.setExecutedAt(now);
+        log.setCreatedAt(now);
+        if (req.getReason() != null) log.setDetail(req.getReason());
+        log.setTraceId(traceId);
+        sysLogMapper.insert(log);
+
+        return ApiResponse.ok(Map.of(
+                "user_id", String.valueOf(userId),
+                "password_reset_at", now.toString(),
+                "force_relogin", true
+        ), traceId);
+    }
+
     // ===== 内部工具 =====
 
     private void requireAdmin() {
@@ -423,5 +483,13 @@ public class AdminController {
     @Data
     public static class RejectClueRequest {
         @NotBlank private String rejectReason;
+    }
+
+    @Data
+    public static class ResetPasswordRequest {
+        @NotBlank
+        @Size(min = 8, max = 64, message = "密码长度 8~64 位")
+        private String newPassword;
+        private String reason;
     }
 }

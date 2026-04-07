@@ -6,6 +6,7 @@ import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.ClueRecordMapper;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
@@ -29,6 +30,7 @@ public class ClueController {
 
     private final ReportClueUseCase reportClueUseCase;
     private final ClueRecordMapper clueRecordMapper;
+    private final SysLogMapper sysLogMapper;
     private final SysUserPatientMapper sysUserPatientMapper;
     private final SecurityContext securityContext;
 
@@ -118,6 +120,92 @@ public class ClueController {
     }
 
     // ===== 工具方法 =====
+
+    /** 3.2.8 GET /api/v1/clues/{clueId} — 线索完整详情 */
+    @GetMapping("/api/v1/clues/{clueId}")
+    public ApiResponse<Map<String, Object>> getClueDetail(
+            @PathVariable Long clueId,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        ClueRecordDO clue = clueRecordMapper.findByIdFull(clueId);
+        if (clue == null) throw BizException.of("E_CLUE_4043");
+
+        String userRole = securityContext.currentRole();
+        boolean isAdmin = "ADMIN".equals(userRole) || "SUPERADMIN".equals(userRole)
+                || "SUPER_ADMIN".equals(userRole);
+        if (!isAdmin && clue.getPatientId() != null) {
+            long rel = sysUserPatientMapper.countActiveRelation(securityContext.currentUserId(), clue.getPatientId());
+            if (rel == 0) throw BizException.of("E_GOV_4030");
+        }
+
+        var data = new java.util.LinkedHashMap<String, Object>();
+        data.put("clue_id", String.valueOf(clue.getId()));
+        data.put("task_id", clue.getTaskId() == null ? null : String.valueOf(clue.getTaskId()));
+        data.put("patient_id", clue.getPatientId() == null ? null : String.valueOf(clue.getPatientId()));
+        data.put("tag_code", clue.getTagCode());
+        data.put("source_type", clue.getSourceType());
+        data.put("coord_system", "WGS84");
+        data.put("location", Map.of("lat", clue.getLocationLat(), "lng", clue.getLocationLng()));
+        data.put("description", clue.getDescription());
+        data.put("photo_url", clue.getPhotoUrl());
+        data.put("is_valid", Boolean.TRUE.equals(clue.getIsValid()));
+        data.put("suspect_reason", clue.getSuspectReason());
+        data.put("override", Boolean.TRUE.equals(clue.getOverride()));
+        data.put("override_reason", clue.getOverrideReason());
+        data.put("rejected_by", clue.getRejectedBy() == null ? null : String.valueOf(clue.getRejectedBy()));
+        data.put("reject_reason", clue.getRejectReason());
+        data.put("reported_at", clue.getCreatedAt() == null ? null : clue.getCreatedAt().toString());
+        data.put("reviewed_at", clue.getReviewedAt() == null ? null : clue.getReviewedAt().toString());
+        return ApiResponse.ok(data, traceId);
+    }
+
+    /** 3.2.11 GET /api/v1/clues/{clueId}/timeline — 线索处理轨迹（游标分页，来自 sys_log） */
+    @GetMapping("/api/v1/clues/{clueId}/timeline")
+    public ApiResponse<Map<String, Object>> getClueTimeline(
+            @PathVariable Long clueId,
+            @RequestParam(defaultValue = "50") int pageSize,
+            @RequestParam(required = false) String cursor,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        ClueRecordDO clue = clueRecordMapper.findById(clueId);
+        if (clue == null) throw BizException.of("E_CLUE_4043");
+
+        String userRole = securityContext.currentRole();
+        boolean isAdmin = "ADMIN".equals(userRole) || "SUPERADMIN".equals(userRole)
+                || "SUPER_ADMIN".equals(userRole);
+        if (!isAdmin && clue.getPatientId() != null) {
+            long rel = sysUserPatientMapper.countActiveRelation(securityContext.currentUserId(), clue.getPatientId());
+            if (rel == 0) throw BizException.of("E_PRO_4030");
+        }
+
+        int offset = 0;
+        if (cursor != null && !cursor.isBlank()) {
+            try {
+                offset = Integer.parseInt(new String(java.util.Base64.getDecoder().decode(cursor)));
+            } catch (Exception ignored) {}
+        }
+
+        List<com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO> logs =
+                sysLogMapper.listByObjectId(String.valueOf(clueId), pageSize, offset);
+        long total = sysLogMapper.countByObjectId(String.valueOf(clueId));
+        boolean hasNext = (long)(offset + pageSize) < total;
+        String nextCursor = hasNext
+                ? java.util.Base64.getEncoder().encodeToString(String.valueOf(offset + pageSize).getBytes())
+                : null;
+
+        List<Map<String, Object>> items = logs.stream()
+                .map(l -> Map.<String, Object>of(
+                        "timeline_id", String.valueOf(l.getId()),
+                        "action", l.getAction() == null ? "" : l.getAction(),
+                        "operator_user_id", l.getOperatorUserId() == null ? "" : String.valueOf(l.getOperatorUserId()),
+                        "remark", l.getDetail() == null ? "" : l.getDetail(),
+                        "created_at", l.getCreatedAt() == null ? "" : l.getCreatedAt().toString()))
+                .toList();
+
+        return ApiResponse.ok(Map.of(
+                "items", items, "page_size", pageSize,
+                "next_cursor", (Object) nextCursor, "has_next", hasNext), traceId);
+    }
 
     private String buildAnonymousSnapshot(ReportClueRequest req) {
         return String.format("{\"contact\":\"%s\",\"nickname\":\"%s\"}",

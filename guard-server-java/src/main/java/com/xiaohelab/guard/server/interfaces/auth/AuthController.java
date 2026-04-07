@@ -3,9 +3,13 @@ package com.xiaohelab.guard.server.interfaces.auth;
 import com.xiaohelab.guard.server.application.auth.LoginUseCase;
 import com.xiaohelab.guard.server.application.auth.RegisterUseCase;
 import com.xiaohelab.guard.server.application.user.UserService;
+import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
+import com.xiaohelab.guard.server.security.service.JwtTokenProvider;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -14,7 +18,10 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
 
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +41,7 @@ public class AuthController {
     private final UserService userService;
     private final SecurityContext securityContext;
     private final StringRedisTemplate redisTemplate;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${guard.ws-ticket.ttl-seconds:30}")
     private long wsTicketTtlSeconds;
@@ -68,6 +76,41 @@ public class AuthController {
                 "user_id", String.valueOf(result.getUserId()),
                 "username", result.getUsername(),
                 "role", result.getRole()
+        ), traceId);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 注销登录（JWT 黑名单）
+    // POST /api/v1/auth/logout
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @PostMapping("/logout")
+    public ApiResponse<Map<String, Object>> logout(
+            @RequestHeader(value = "Authorization", required = false) String bearerHeader,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
+
+        if (!StringUtils.hasText(bearerHeader) || !bearerHeader.startsWith("Bearer ")) {
+            throw BizException.of("E_GOV_4011");
+        }
+        String token = bearerHeader.substring(7);
+        Claims claims;
+        try {
+            claims = jwtTokenProvider.parse(token);
+        } catch (JwtException e) {
+            throw BizException.of("E_GOV_4011");
+        }
+        String jti = jwtTokenProvider.getJti(claims);
+        if (jti == null) throw BizException.of("E_REQ_4001");
+
+        long ttlMs = jwtTokenProvider.getRemainingMs(claims);
+        if (ttlMs > 0) {
+            redisTemplate.opsForValue().set(
+                    "jwt:blacklist:" + jti, "1", ttlMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+        }
+
+        return ApiResponse.ok(Map.of(
+                "revoked_token_jti", jti,
+                "logged_out_at", Instant.now().toString()
         ), traceId);
     }
 

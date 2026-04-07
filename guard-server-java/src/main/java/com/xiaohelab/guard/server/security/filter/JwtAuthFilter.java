@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,6 +37,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final List<String> RESERVED_HEADERS = List.of("X-User-Id", "X-User-Role", "X-Internal-Token");
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -58,7 +60,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
         if (StringUtils.hasText(token) && jwtTokenProvider.validate(token)) {
             Claims claims = jwtTokenProvider.parse(token);
+
+            // 检查 JTI 黑名单（logout 主动注销）
+            String jti = jwtTokenProvider.getJti(claims);
+            if (jti != null && Boolean.TRUE.equals(redisTemplate.hasKey("jwt:blacklist:" + jti))) {
+                chain.doFilter(request, response);
+                return;
+            }
+
             Long userId = jwtTokenProvider.getUserId(claims);
+
+            // 检查强制重新登录（密码重置后所有旧 token 失效）
+            if (userId != null) {
+                String forceAtStr = redisTemplate.opsForValue().get("jwt:invalidate_before:" + userId);
+                if (forceAtStr != null) {
+                    long issuedAtMs = claims.getIssuedAt() != null ? claims.getIssuedAt().getTime() : 0L;
+                    if (issuedAtMs < Long.parseLong(forceAtStr)) {
+                        chain.doFilter(request, response);
+                        return;
+                    }
+                }
+            }
+
             String role = jwtTokenProvider.getRole(claims);
             String username = claims.getSubject();
 

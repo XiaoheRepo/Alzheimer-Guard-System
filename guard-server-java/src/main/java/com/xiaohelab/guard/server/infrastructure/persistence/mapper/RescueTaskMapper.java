@@ -65,10 +65,50 @@ public interface RescueTaskMapper {
     int closeConditionally(RescueTaskDO task);
 
     /** 管理员强制关闭（不使用乐观锁，ACTIVE 状态检查仍保留） */
-    @Update("UPDATE rescue_task SET status='CLOSED', close_reason=#{closeReason}, " +
+    @Update("UPDATE rescue_task SET status='RESOLVED', close_reason=#{closeReason}, " +
             "remark=#{remark}, closed_at=NOW(), updated_at=NOW() " +
             "WHERE id=#{id} AND status='ACTIVE'")
     int forceClose(@Param("id") Long id,
                    @Param("closeReason") String closeReason,
                    @Param("remark") String remark);
+
+    /** 管理端全量任务列表（支持 status/source 过滤） */
+    @Select("<script>" +
+            "SELECT id, task_no, patient_id, status, source, remark, " +
+            "ai_analysis_summary, poster_url, close_reason, event_version, " +
+            "created_by, created_at, closed_at, updated_at " +
+            "FROM rescue_task " +
+            "<where>" +
+            "<if test='status != null'>AND status = #{status}</if>" +
+            "<if test='source != null'>AND source = #{source}</if>" +
+            "</where>" +
+            "ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}" +
+            "</script>")
+    List<RescueTaskDO> listAll(@Param("status") String status,
+                               @Param("source") String source,
+                               @Param("limit") int limit,
+                               @Param("offset") int offset);
+
+    /** 管理端全量任务计数 */
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM rescue_task " +
+            "<where>" +
+            "<if test='status != null'>AND status = #{status}</if>" +
+            "<if test='source != null'>AND source = #{source}</if>" +
+            "</where>" +
+            "</script>")
+    long countAll(@Param("status") String status, @Param("source") String source);
+
+    /** 按状态统计任务数 */
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM rescue_task " +
+            "<where>" +
+            "<if test='status != null'>AND status = #{status}</if>" +
+            "<if test='timeFrom != null'>AND created_at &gt;= #{timeFrom}::timestamptz</if>" +
+            "<if test='timeTo != null'>AND created_at &lt;= #{timeTo}::timestamptz</if>" +
+            "</where>" +
+            "</script>")
+    long countByStatus(@Param("status") String status,
+                       @Param("timeFrom") String timeFrom,
+                       @Param("timeTo") String timeTo);
 }

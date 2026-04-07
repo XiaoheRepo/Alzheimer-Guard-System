@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * JWT 令牌工具：负责生成、解析、校验 access_token。
@@ -37,6 +38,7 @@ public class JwtTokenProvider {
     public String generate(Long userId, String username, String role) {
         Date now = new Date();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(username)
                 .claims(Map.of("userId", userId, "role", role))
                 .issuedAt(now)
@@ -79,5 +81,17 @@ public class JwtTokenProvider {
     /** 从 Claims 中提取角色 */
     public String getRole(Claims claims) {
         return (String) claims.get("role");
+    }
+
+    /** 从 Claims 中提取 JTI（JWT ID） */
+    public String getJti(Claims claims) {
+        return claims.getId();
+    }
+
+    /** 获取 JWT 还剩余的有效毫秒数（已过期则返回 0） */
+    public long getRemainingMs(Claims claims) {
+        if (claims.getExpiration() == null) return expirationMs;
+        long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
+        return Math.max(0L, remaining);
     }
 }

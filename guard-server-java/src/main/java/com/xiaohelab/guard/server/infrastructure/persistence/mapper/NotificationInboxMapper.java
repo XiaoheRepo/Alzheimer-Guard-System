@@ -61,4 +61,26 @@ public interface NotificationInboxMapper {
     @Update("UPDATE notification_inbox SET read_status='READ', read_at=NOW(), updated_at=NOW() " +
             "WHERE user_id=#{userId} AND read_status='UNREAD'")
     int markAllRead(Long userId);
+
+    /** 按关联任务 ID 查询告警摘要（支持按 level 过滤），用于 3.1.15 */
+    @Select("<script>" +
+            "SELECT notification_id, user_id, type, title, content, level, " +
+            "related_task_id, related_patient_id, read_status, read_at, trace_id, " +
+            "created_at, updated_at " +
+            "FROM notification_inbox " +
+            "WHERE related_task_id = #{taskId} " +
+            "<if test='level != null'>AND level = #{level}</if>" +
+            "ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}" +
+            "</script>")
+    List<NotificationInboxDO> listByRelatedTaskId(@Param("taskId") Long taskId,
+                                                   @Param("level") String level,
+                                                   @Param("limit") int limit,
+                                                   @Param("offset") int offset);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM notification_inbox " +
+            "WHERE related_task_id = #{taskId} " +
+            "<if test='level != null'>AND level = #{level}</if>" +
+            "</script>")
+    long countByRelatedTaskId(@Param("taskId") Long taskId, @Param("level") String level);
 }

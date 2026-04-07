@@ -45,4 +45,17 @@ public interface SysLogMapper {
 
     @Select("SELECT COUNT(*) FROM sys_log")
     long count();
+
+    /** 按 objectId 查询审计记录（用于任务/线索审计轨迹） */
+    @Select("SELECT id, module, action, action_id, result_code, executed_at, operator_user_id, " +
+            "operator_username, object_id, result, risk_level, detail::text, action_source, " +
+            "request_id, trace_id, created_at " +
+            "FROM sys_log WHERE object_id = #{objectId} " +
+            "ORDER BY created_at DESC, id DESC LIMIT #{limit} OFFSET #{offset}")
+    List<SysLogDO> listByObjectId(@Param("objectId") String objectId,
+                                   @Param("limit") int limit,
+                                   @Param("offset") int offset);
+
+    @Select("SELECT COUNT(*) FROM sys_log WHERE object_id = #{objectId}")
+    long countByObjectId(@Param("objectId") String objectId);
 }

@@ -13,9 +13,49 @@ public interface ClueRecordMapper {
             "location_lat, location_lng, coord_system, description, photo_url, " +
             "risk_score, is_valid, suspect_flag, suspect_reason, " +
             "review_status, assignee_user_id, assigned_at, reviewed_at, " +
+            "override, override_by, override_reason, rejected_by, reject_reason, " +
             "created_at, updated_at " +
             "FROM clue_record WHERE id = #{id}")
     ClueRecordDO findById(Long id);
+
+    @Select("SELECT id, clue_no, task_id, patient_id, tag_code, source_type, " +
+            "location_lat, location_lng, coord_system, description, photo_url, " +
+            "risk_score, is_valid, suspect_flag, suspect_reason, " +
+            "review_status, assignee_user_id, assigned_at, reviewed_at, " +
+            "override, override_by, override_reason, rejected_by, reject_reason, " +
+            "created_at, updated_at " +
+            "FROM clue_record WHERE id = #{id}")
+    ClueRecordDO findByIdFull(Long id);
+
+    /** 分页统计（支持时间范围过滤） */
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM clue_record " +
+            "<where>" +
+            "<if test='timeFrom != null'>AND created_at &gt;= #{timeFrom}::timestamptz </if>" +
+            "<if test='timeTo != null'>AND created_at &lt;= #{timeTo}::timestamptz </if>" +
+            "</where></script>")
+    long countAll(@Param("timeFrom") String timeFrom, @Param("timeTo") String timeTo);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM clue_record WHERE suspect_flag=TRUE " +
+            "<if test='timeFrom != null'>AND created_at &gt;= #{timeFrom}::timestamptz </if>" +
+            "<if test='timeTo != null'>AND created_at &lt;= #{timeTo}::timestamptz </if>" +
+            "</script>")
+    long countSuspected(@Param("timeFrom") String timeFrom, @Param("timeTo") String timeTo);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM clue_record WHERE review_status='OVERRIDDEN' " +
+            "<if test='timeFrom != null'>AND created_at &gt;= #{timeFrom}::timestamptz </if>" +
+            "<if test='timeTo != null'>AND created_at &lt;= #{timeTo}::timestamptz </if>" +
+            "</script>")
+    long countOverridden(@Param("timeFrom") String timeFrom, @Param("timeTo") String timeTo);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM clue_record WHERE review_status='REJECTED' " +
+            "<if test='timeFrom != null'>AND created_at &gt;= #{timeFrom}::timestamptz </if>" +
+            "<if test='timeTo != null'>AND created_at &lt;= #{timeTo}::timestamptz </if>" +
+            "</script>")
+    long countRejected(@Param("timeFrom") String timeFrom, @Param("timeTo") String timeTo);
 
     @Select("SELECT id, clue_no, task_id, patient_id, tag_code, source_type, " +
             "location_lat, location_lng, coord_system, description, photo_url, " +

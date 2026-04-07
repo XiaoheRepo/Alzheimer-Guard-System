@@ -78,6 +78,13 @@ guard:
     secret: ${JWT_SECRET:guard-server-secret-key-must-be-at-least-256-bits-long-for-hs256}
     expiration-ms: ${JWT_EXPIRATION:86400000}
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}
+  ai:
+    api-key: ${DASHSCOPE_API_KEY:}
+    model-name: ${AI_MODEL_NAME:qwen-max-latest}
+    # 每用户每日 token 配额（毕设默认 20000）
+    user-daily-quota: ${AI_USER_DAILY_QUOTA:20000}
+    # 每患者每日 token 配额
+    patient-daily-quota: ${AI_PATIENT_DAILY_QUOTA:50000}
   entry-token:
     ttl-seconds: 120
   ws-ticket:
