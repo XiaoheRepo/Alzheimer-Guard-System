@@ -222,7 +222,11 @@ router.beforeEach((to, _from, next) => {
   }
 
   const allowedRoles = to.meta.roles ?? []
-  if (allowedRoles.length > 0 && authStore.role && !allowedRoles.includes(authStore.role as 'ADMIN' | 'SUPERADMIN')) {
+  if (
+    allowedRoles.length > 0 &&
+    authStore.role &&
+    !allowedRoles.includes(authStore.role as 'ADMIN' | 'SUPERADMIN')
+  ) {
     return next({ name: 'Forbidden' })
   }
 
