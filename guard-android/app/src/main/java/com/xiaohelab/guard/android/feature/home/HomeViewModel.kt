@@ -11,10 +11,25 @@ import com.xiaohelab.guard.android.domain.model.TaskStatus
 import com.xiaohelab.guard.android.domain.repository.PatientRepository
 import com.xiaohelab.guard.android.domain.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -59,7 +74,7 @@ class HomeViewModel @Inject constructor(
             when (val pResult = patientRepository.getMyPatients()) {
                 is ApiResult.Success -> {
                     val patients = pResult.data
-                    val savedId = settingsManager.getCurrentPatientId()
+                    val savedId = settingsManager.currentPatientId.first()
                     val selectedId = patients.find { it.id == savedId }?.id
                         ?: patients.firstOrNull()?.id
                     _state.update { it.copy(patients = patients, selectedPatientId = selectedId) }

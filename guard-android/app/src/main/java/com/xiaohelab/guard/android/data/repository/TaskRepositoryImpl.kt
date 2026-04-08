@@ -5,7 +5,6 @@ import com.xiaohelab.guard.android.core.database.dao.TaskSnapshotDao
 import com.xiaohelab.guard.android.core.database.entity.TaskSnapshotEntity
 import com.xiaohelab.guard.android.core.network.safeApiCall
 import com.xiaohelab.guard.android.core.common.map
-import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.data.mapper.toDomain
 import com.xiaohelab.guard.android.data.remote.api.TaskApiService
 import com.xiaohelab.guard.android.data.remote.dto.CloseTaskRequestDto
@@ -55,7 +54,7 @@ class TaskRepositoryImpl @Inject constructor(
                     status = dto.status.uppercase(),
                     source = dto.source.uppercase(),
                     startTime = dto.startTime,
-                    latestEventTime = dto.latestEventTime,
+                    latestEventTime = dto.latestEventTime ?: "",
                     remark = dto.remark,
                     posterUrl = dto.posterUrl,
                     version = dto.version
@@ -77,7 +76,7 @@ class TaskRepositoryImpl @Inject constructor(
                 status = dto.status.uppercase(),
                 source = dto.source.uppercase(),
                 startTime = dto.startTime,
-                latestEventTime = dto.latestEventTime,
+                latestEventTime = dto.latestEventTime ?: "",
                 remark = dto.remark,
                 posterUrl = dto.posterUrl,
                 version = dto.version

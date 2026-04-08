@@ -5,7 +5,6 @@ import com.xiaohelab.guard.android.core.database.dao.NotificationDao
 import com.xiaohelab.guard.android.core.database.entity.NotificationEntity
 import com.xiaohelab.guard.android.core.network.safeApiCall
 import com.xiaohelab.guard.android.core.common.map
-import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.data.mapper.toDomain
 import com.xiaohelab.guard.android.data.remote.api.NotificationApiService
 import com.xiaohelab.guard.android.domain.model.Notification
@@ -29,7 +28,7 @@ class NotificationRepositoryImpl @Inject constructor(
                     type = e.type,
                     title = e.title,
                     content = e.content,
-                    isRead = e.readStatus,
+                    isRead = e.readStatus == "READ",
                     createdAt = e.createdAt,
                     relatedId = e.relatedId,
                     relatedType = e.relatedType
@@ -52,7 +51,7 @@ class NotificationRepositoryImpl @Inject constructor(
                     type = dto.type,
                     title = dto.title,
                     content = dto.content,
-                    readStatus = dto.isRead,
+                    readStatus = if (dto.isRead) "READ" else "UNREAD",
                     createdAt = dto.createdAt,
                     relatedId = dto.relatedId,
                     relatedType = dto.relatedType

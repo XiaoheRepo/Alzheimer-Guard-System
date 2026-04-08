@@ -4,7 +4,7 @@
  */
 
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw, RouteMeta } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { WHITE_LIST } from '@/constants'
 

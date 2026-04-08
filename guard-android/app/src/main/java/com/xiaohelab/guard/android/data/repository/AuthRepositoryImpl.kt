@@ -4,7 +4,6 @@ import com.xiaohelab.guard.android.core.common.ApiResult
 import com.xiaohelab.guard.android.core.datastore.TokenManager
 import com.xiaohelab.guard.android.core.network.safeApiCall
 import com.xiaohelab.guard.android.core.common.map
-import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.data.mapper.toDomain
 import com.xiaohelab.guard.android.data.remote.api.AuthApiService
 import com.xiaohelab.guard.android.data.remote.dto.ChangePasswordRequestDto
@@ -31,7 +30,7 @@ class AuthRepositoryImpl @Inject constructor(
                 role = result.data.role
             )
         }
-        return result
+        return result.map { it.toDomain() }
     }
 
     override suspend fun register(

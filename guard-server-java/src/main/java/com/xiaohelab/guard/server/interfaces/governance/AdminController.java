@@ -1,24 +1,23 @@
 package com.xiaohelab.guard.server.interfaces.governance;
 
+import com.xiaohelab.guard.server.application.clue.ClueService;
 import com.xiaohelab.guard.server.application.material.MaterialOrderService;
+import com.xiaohelab.guard.server.application.task.CloseRescueTaskUseCase;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
+import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
+import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysConfigDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysOutboxLogDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.ClueRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.RescueTaskMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysConfigMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysOutboxLogMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagApplyRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -47,11 +46,9 @@ public class AdminController {
     private final SysUserMapper sysUserMapper;
     private final SysLogMapper sysLogMapper;
     private final MaterialOrderService materialOrderService;
-    private final ClueRecordMapper clueRecordMapper;
-    private final TagApplyRecordMapper tagApplyRecordMapper;
-    private final TagAssetMapper tagAssetMapper;
+    private final ClueService clueService;
+    private final CloseRescueTaskUseCase closeRescueTaskUseCase;
     private final SysOutboxLogMapper outboxLogMapper;
-    private final RescueTaskMapper rescueTaskMapper;
     private final SysConfigMapper sysConfigMapper;
     private final SecurityContext securityContext;
     private final PasswordEncoder passwordEncoder;
@@ -108,7 +105,7 @@ public class AdminController {
         long total;
         if (module != null && !module.isBlank()) {
             list = sysLogMapper.listByModule(module, pageSize, (pageNo - 1) * pageSize);
-            total = sysLogMapper.count(); // 简化：总数不过滤 module
+            total = sysLogMapper.count();
         } else {
             list = sysLogMapper.listByFilter(pageSize, (pageNo - 1) * pageSize);
             total = sysLogMapper.count();
@@ -139,7 +136,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<TagApplyRecordDO> list = materialOrderService.adminListOrders(status, pageNo, pageSize);
+        List<TagApplyRecordEntity> list = materialOrderService.adminListOrders(status, pageNo, pageSize);
         long total = materialOrderService.adminCountOrders(status);
         List<Map<String, Object>> items = list.stream().map(o -> Map.<String, Object>of(
                 "order_id", String.valueOf(o.getId()),
@@ -294,8 +291,8 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<ClueRecordDO> list = clueRecordMapper.listReviewQueue(pageSize, (pageNo - 1) * pageSize);
-        long total = clueRecordMapper.countReviewQueue();
+        List<ClueRecordEntity> list = clueService.listReviewQueue(pageSize, (pageNo - 1) * pageSize);
+        long total = clueService.countReviewQueue();
         List<Map<String, Object>> items = list.stream().map(this::buildClueVO).toList();
         return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
                 .items(items).pageNo(pageNo).pageSize(pageSize)
@@ -310,8 +307,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        ClueRecordDO clue = clueRecordMapper.findById(clueId);
-        if (clue == null) throw BizException.of("E_CLUE_4041");
+        ClueRecordEntity clue = clueService.getById(clueId); // throws E_CLUE_4043 if absent
         return ApiResponse.ok(buildClueVO(clue), traceId);
     }
 
@@ -323,11 +319,8 @@ public class AdminController {
             @Valid @RequestBody AssignClueRequest req) {
 
         requireAdmin();
-        ClueRecordDO clue = clueRecordMapper.findById(clueId);
-        if (clue == null) throw BizException.of("E_CLUE_4041");
-        clue.setAssigneeUserId(req.getAssigneeUserId());
-        clueRecordMapper.assign(clue);
-        return ApiResponse.ok(Map.of("clue_id", String.valueOf(clueId),
+        ClueRecordEntity clue = clueService.assign(clueId, req.getAssigneeUserId());
+        return ApiResponse.ok(Map.of("clue_id", String.valueOf(clue.getId()),
                 "assignee_user_id", String.valueOf(req.getAssigneeUserId())), traceId);
     }
 
@@ -339,12 +332,8 @@ public class AdminController {
             @Valid @RequestBody OverrideClueRequest req) {
 
         requireAdmin();
-        ClueRecordDO clue = clueRecordMapper.findById(clueId);
-        if (clue == null) throw BizException.of("E_CLUE_4041");
-        clue.setOverrideBy(securityContext.currentUserId());
-        clue.setOverrideReason(req.getOverrideReason());
-        clueRecordMapper.override(clue);
-        return ApiResponse.ok(Map.of("clue_id", String.valueOf(clueId), "review_status", "OVERRIDDEN"), traceId);
+        ClueRecordEntity clue = clueService.override(clueId, securityContext.currentUserId(), req.getOverrideReason());
+        return ApiResponse.ok(Map.of("clue_id", String.valueOf(clue.getId()), "review_status", "OVERRIDDEN"), traceId);
     }
 
     /** 管理员 reject 线索 */
@@ -355,12 +344,8 @@ public class AdminController {
             @Valid @RequestBody RejectClueRequest req) {
 
         requireAdmin();
-        ClueRecordDO clue = clueRecordMapper.findById(clueId);
-        if (clue == null) throw BizException.of("E_CLUE_4041");
-        clue.setRejectedBy(securityContext.currentUserId());
-        clue.setRejectReason(req.getRejectReason());
-        clueRecordMapper.reject(clue);
-        return ApiResponse.ok(Map.of("clue_id", String.valueOf(clueId), "review_status", "REJECTED"), traceId);
+        ClueRecordEntity clue = clueService.reject(clueId, securityContext.currentUserId(), req.getRejectReason());
+        return ApiResponse.ok(Map.of("clue_id", String.valueOf(clue.getId()), "review_status", "REJECTED"), traceId);
     }
 
     // ===== 3.4.20 管理员工单详情 =====
@@ -372,8 +357,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        TagApplyRecordDO order = tagApplyRecordMapper.findById(orderId);
-        if (order == null) throw BizException.of("E_MAT_4041");
+        TagApplyRecordEntity order = materialOrderService.getOrder(orderId); // throws E_ORDER_4041
         return ApiResponse.ok(Map.ofEntries(
                 Map.entry("order_id", String.valueOf(order.getId())),
                 Map.entry("order_no", order.getOrderNo()),
@@ -431,8 +415,9 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<TagAssetDO> list = tagAssetMapper.listByFilter(status, patientId, pageSize, (pageNo - 1) * pageSize);
-        long total = tagAssetMapper.countByFilter(status, patientId);
+        List<TagAssetEntity> list = materialOrderService.adminListTagsByFilter(
+                status, patientId, pageSize, (pageNo - 1) * pageSize);
+        long total = materialOrderService.adminCountTagsByFilter(status, patientId);
         List<Map<String, Object>> items = list.stream().map(t -> Map.<String, Object>of(
                 "tag_code", t.getTagCode(),
                 "tag_type", t.getTagType() != null ? t.getTagType() : "",
@@ -455,8 +440,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_MAT_4044");
+        TagAssetEntity tag = materialOrderService.getTagByCode(tagCode); // throws E_TAG_4041
         return ApiResponse.ok(Map.<String, Object>of(
                 "tag_code", tag.getTagCode(),
                 "tag_type", tag.getTagType() != null ? tag.getTagType() : "",
@@ -478,9 +462,7 @@ public class AdminController {
             @Valid @RequestBody AllocateTagRequest req) {
 
         requireAdmin();
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_MAT_4044");
-        int updated = tagAssetMapper.allocateByTagCode(tagCode, req.getOrderId());
+        int updated = materialOrderService.adminAllocateTag(tagCode, req.getOrderId());
         if (updated == 0) throw BizException.of("E_MAT_4098");
         return ApiResponse.ok(Map.of(
                 "tag_code", tagCode,
@@ -500,9 +482,7 @@ public class AdminController {
             @Valid @RequestBody ReleaseTagRequest req) {
 
         requireAdmin();
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_MAT_4044");
-        int updated = tagAssetMapper.releaseByTagCode(tagCode);
+        int updated = materialOrderService.adminReleaseTag(tagCode);
         if (updated == 0) throw BizException.of("E_MAT_4098");
         return ApiResponse.ok(Map.of(
                 "tag_code", tagCode,
@@ -520,7 +500,6 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        // 毕设精简：使用 sys_log 统计作为近似指标
         long totalLogs = sysLogMapper.count();
         return ApiResponse.ok(Map.<String, Object>of(
                 "window", window,
@@ -544,7 +523,6 @@ public class AdminController {
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
         if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
 
-        // 写审计日志
         SysLogDO log = new SysLogDO();
         log.setModule("SYSTEM");
         log.setAction("SUPER_EXPORT_DATA");
@@ -630,10 +608,11 @@ public class AdminController {
 
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
         if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
-        if (rescueTaskMapper.findById(taskId) == null) throw BizException.of("E_TASK_4041");
 
-        int updated = rescueTaskMapper.forceClose(taskId, req.getReason(), req.getReason());
-        if (updated == 0) throw BizException.of("E_TASK_4093");
+        closeRescueTaskUseCase.execute(
+                taskId, securityContext.currentUserId(), "SUPER_ADMIN",
+                RescueTaskEntity.CloseType.RESOLVED,
+                req.getReason(), req.getReason());
 
         return ApiResponse.ok(Map.of(
                 "task_id", String.valueOf(taskId),
@@ -657,7 +636,6 @@ public class AdminController {
         if ("detail".equals(scope) && !securityContext.isSuperAdmin())
             throw BizException.of("E_GOV_4032");
 
-        // 毕设精简：从 sys_log 统计安全相关事件
         long failedLogin = sysLogMapper.countByModuleAndObjectId("AUTH", "LOGIN_FAIL");
         long riskOps = sysLogMapper.countByModuleAndObjectId("SYSTEM", "HIGH_RISK");
         long bannedUsers = sysUserMapper.countByFilter(null, "BANNED", null);
@@ -773,17 +751,14 @@ public class AdminController {
         SysUserDO target = sysUserMapper.findById(userId);
         if (target == null) throw BizException.of("E_USR_4041");
 
-        // 更新密码
         sysUserMapper.updatePassword(userId, passwordEncoder.encode(req.getNewPassword()));
 
-        // 强制使目标用户所有旧 JWT 失效（TTL = 24h 覆盖最长 token 有效期）
         Instant now = Instant.now();
         redisTemplate.opsForValue().set(
                 "jwt:invalidate_before:" + userId,
                 String.valueOf(now.toEpochMilli()),
                 24L, TimeUnit.HOURS);
 
-        // 审计日志
         SysLogDO log = new SysLogDO();
         log.setModule("USER");
         log.setAction("RESET_PASSWORD");
@@ -825,7 +800,7 @@ public class AdminController {
         );
     }
 
-    private Map<String, Object> buildClueVO(ClueRecordDO c) {
+    private Map<String, Object> buildClueVO(ClueRecordEntity c) {
         return Map.of(
                 "clue_id", String.valueOf(c.getId()),
                 "clue_no", c.getClueNo(),

@@ -7,10 +7,25 @@ import com.xiaohelab.guard.android.core.common.ApiResult
 import com.xiaohelab.guard.android.core.datastore.AppSettingsManager
 import com.xiaohelab.guard.android.domain.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -43,7 +58,7 @@ class CreateTaskViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val pid = savedStateHandle.get<String>("patientId")
-                ?: settingsManager.getCurrentPatientId()
+                ?: settingsManager.currentPatientId.first()
             if (pid != null) _state.update { it.copy(patientId = pid) }
         }
     }

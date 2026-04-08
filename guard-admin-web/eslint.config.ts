@@ -19,4 +19,13 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
   skipFormatting,
+
+  // 路由页约定使用单词文件名（index.vue / detail.vue），关闭 multi-word 限制
+  {
+    name: 'app/views-overrides',
+    files: ['src/views/**/*.vue', 'src/layouts/**/*.vue'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  },
 )
