@@ -2,16 +2,17 @@ package com.xiaohelab.guard.server.application.material;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.IdGenerator;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagApplyRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
+import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
+import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
+import com.xiaohelab.guard.server.domain.tag.repository.TagApplyRecordRepository;
+import com.xiaohelab.guard.server.domain.tag.repository.TagAssetRepository;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
+import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 
 /**
@@ -24,9 +25,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MaterialOrderService {
 
-    private final TagApplyRecordMapper orderMapper;
-    private final TagAssetMapper tagAssetMapper;
-    private final SysUserPatientMapper sysUserPatientMapper;
+    private final TagApplyRecordRepository orderRepository;
+    private final TagAssetRepository tagAssetRepository;
+    private final GuardianRepository guardianRepository;
+    private final SysLogMapper sysLogMapper;
 
     // ===== 用户端操作 =====
 
@@ -34,25 +36,19 @@ public class MaterialOrderService {
      * 创建申领工单（用户发起）。
      */
     @Transactional
-    public TagApplyRecordDO createOrder(Long applicantUserId, Long patientId,
-                                         Integer quantity, String applyNote, String deliveryAddress) {
+    public TagApplyRecordEntity createOrder(Long applicantUserId, Long patientId,
+                                            Integer quantity, String applyNote, String deliveryAddress) {
         // 归属权校验
-        if (sysUserPatientMapper.countActiveRelation(applicantUserId, patientId) == 0) {
+        if (guardianRepository.countActiveRelation(applicantUserId, patientId) == 0) {
             throw BizException.of("E_TASK_4030");
         }
         // 防重复：同一患者只能有一个进行中的工单
-        if (orderMapper.findOpenByPatientId(patientId) != null) {
+        if (orderRepository.findOpenByPatientId(patientId).isPresent()) {
             throw BizException.of("E_ORDER_4091");
         }
-        TagApplyRecordDO order = new TagApplyRecordDO();
-        order.setOrderNo(IdGenerator.orderNo());
-        order.setPatientId(patientId);
-        order.setApplicantUserId(applicantUserId);
-        order.setQuantity(quantity);
-        order.setApplyNote(applyNote);
-        order.setStatus("PENDING");
-        order.setDeliveryAddress(deliveryAddress);
-        orderMapper.insert(order);
+        TagApplyRecordEntity order = TagApplyRecordEntity.create(
+                IdGenerator.orderNo(), patientId, applicantUserId, quantity, applyNote, deliveryAddress);
+        orderRepository.insert(order);
         return order;
     }
 
@@ -60,15 +56,14 @@ public class MaterialOrderService {
      * 用户申请取消（→ CANCEL_PENDING，等待管理员审核）。
      */
     @Transactional
-    public TagApplyRecordDO cancelOrder(Long orderId, Long userId, String cancelReason) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity cancelOrder(Long orderId, Long userId, String cancelReason) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!order.getApplicantUserId().equals(userId)) throw BizException.of("E_TASK_4030");
         if (!"PENDING".equals(order.getStatus()) && !"PROCESSING".equals(order.getStatus())) {
             throw BizException.of("E_ORDER_4093");
         }
-        order.setStatus("CANCEL_PENDING");
-        order.setCancelReason(cancelReason);
-        orderMapper.update(order);
+        order.requestCancel(cancelReason);
+        orderRepository.update(order);
         return order;
     }
 
@@ -76,13 +71,12 @@ public class MaterialOrderService {
      * 用户确认收货（SHIPPED → COMPLETED）。
      */
     @Transactional
-    public TagApplyRecordDO confirmReceipt(Long orderId, Long userId) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity confirmReceipt(Long orderId, Long userId) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!order.getApplicantUserId().equals(userId)) throw BizException.of("E_TASK_4030");
         if (!"SHIPPED".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("COMPLETED");
-        order.setClosedAt(Instant.now());
-        orderMapper.update(order);
+        order.confirmReceipt();
+        orderRepository.update(order);
         return order;
     }
 
@@ -92,12 +86,11 @@ public class MaterialOrderService {
      * 管理员审批通过（PENDING → PROCESSING）。
      */
     @Transactional
-    public TagApplyRecordDO adminApprove(Long orderId) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminApprove(Long orderId) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"PENDING".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("PROCESSING");
-        order.setApprovedAt(Instant.now());
-        orderMapper.update(order);
+        order.approve();
+        orderRepository.update(order);
         return order;
     }
 
@@ -105,23 +98,19 @@ public class MaterialOrderService {
      * 管理员发货（PROCESSING → SHIPPED，锁定标签码）。
      */
     @Transactional
-    public TagApplyRecordDO adminShip(Long orderId, String tagCode,
-                                       String trackingNumber, String courierName, String resourceLink) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminShip(Long orderId, String tagCode,
+                                          String trackingNumber, String courierName, String resourceLink) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"PROCESSING".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
 
         // 标签分配：将标签与工单绑定
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_TAG_4041");
+        TagAssetEntity tag = tagAssetRepository.findByTagCode(tagCode)
+                .orElseThrow(() -> BizException.of("E_TAG_4041"));
         if (!"UNBOUND".equals(tag.getStatus())) throw BizException.of("E_TAG_4093");
-        tagAssetMapper.allocate(tag.getId(), orderId);
+        tagAssetRepository.allocate(tag.getId(), orderId);
 
-        order.setStatus("SHIPPED");
-        order.setTagCode(tagCode);
-        order.setTrackingNumber(trackingNumber);
-        order.setCourierName(courierName);
-        order.setResourceLink(resourceLink);
-        orderMapper.update(order);
+        order.ship(tagCode, trackingNumber, courierName, resourceLink);
+        orderRepository.update(order);
         return order;
     }
 
@@ -129,12 +118,11 @@ public class MaterialOrderService {
      * 管理员批准取消申请（CANCEL_PENDING → CANCELLED）。
      */
     @Transactional
-    public TagApplyRecordDO adminApproveCancelRequest(Long orderId) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminApproveCancelRequest(Long orderId) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"CANCEL_PENDING".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("CANCELLED");
-        order.setClosedAt(Instant.now());
-        orderMapper.update(order);
+        order.approveCancelRequest();
+        orderRepository.update(order);
         return order;
     }
 
@@ -142,11 +130,11 @@ public class MaterialOrderService {
      * 管理员拒绝取消申请（CANCEL_PENDING → PROCESSING）。
      */
     @Transactional
-    public TagApplyRecordDO adminRejectCancelRequest(Long orderId) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminRejectCancelRequest(Long orderId) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"CANCEL_PENDING".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("PROCESSING");
-        orderMapper.update(order);
+        order.rejectCancelRequest();
+        orderRepository.update(order);
         return order;
     }
 
@@ -154,12 +142,11 @@ public class MaterialOrderService {
      * 管理员标记物流异常（SHIPPED → EXCEPTION）。
      */
     @Transactional
-    public TagApplyRecordDO adminMarkException(Long orderId, String exceptionDesc) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminMarkException(Long orderId, String exceptionDesc) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"SHIPPED".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("EXCEPTION");
-        order.setExceptionDesc(exceptionDesc);
-        orderMapper.update(order);
+        order.markException(exceptionDesc);
+        orderRepository.update(order);
         return order;
     }
 
@@ -167,13 +154,11 @@ public class MaterialOrderService {
      * 管理员重新发货（EXCEPTION → SHIPPED）。
      */
     @Transactional
-    public TagApplyRecordDO adminReship(Long orderId, String trackingNumber, String courierName) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminReship(Long orderId, String trackingNumber, String courierName) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"EXCEPTION".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("SHIPPED");
-        order.setTrackingNumber(trackingNumber);
-        order.setCourierName(courierName);
-        orderMapper.update(order);
+        order.reship(trackingNumber, courierName);
+        orderRepository.update(order);
         return order;
     }
 
@@ -181,12 +166,11 @@ public class MaterialOrderService {
      * 管理员强制关闭异常工单（EXCEPTION → COMPLETED）。
      */
     @Transactional
-    public TagApplyRecordDO adminCloseException(Long orderId) {
-        TagApplyRecordDO order = requireOrder(orderId);
+    public TagApplyRecordEntity adminCloseException(Long orderId) {
+        TagApplyRecordEntity order = requireOrder(orderId);
         if (!"EXCEPTION".equals(order.getStatus())) throw BizException.of("E_ORDER_4093");
-        order.setStatus("COMPLETED");
-        order.setClosedAt(Instant.now());
-        orderMapper.update(order);
+        order.closeException();
+        orderRepository.update(order);
         return order;
     }
 
@@ -196,34 +180,34 @@ public class MaterialOrderService {
      * 用户绑定标签（ALLOCATED/UNBOUND → BOUND）。
      */
     @Transactional
-    public TagAssetDO bindTag(Long patientId, Long userId, String tagCode) {
-        if (sysUserPatientMapper.countActiveRelation(userId, patientId) == 0) {
+    public TagAssetEntity bindTag(Long patientId, Long userId, String tagCode) {
+        if (guardianRepository.countActiveRelation(userId, patientId) == 0) {
             throw BizException.of("E_TASK_4030");
         }
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_TAG_4041");
+        TagAssetEntity tag = tagAssetRepository.findByTagCode(tagCode)
+                .orElseThrow(() -> BizException.of("E_TAG_4041"));
         if (!"ALLOCATED".equals(tag.getStatus()) && !"UNBOUND".equals(tag.getStatus())) {
             throw BizException.of("E_TAG_4093");
         }
-        tagAssetMapper.bindToPatient(tag.getId(), patientId);
-        return tagAssetMapper.findByTagCode(tagCode);
+        tagAssetRepository.bindToPatient(tag.getId(), patientId);
+        return tagAssetRepository.findByTagCode(tagCode).orElseThrow(() -> BizException.of("E_TAG_4041"));
     }
 
     /**
      * 用户上报标签丢失（BOUND → LOST）。
      */
     @Transactional
-    public TagAssetDO reportLost(Long patientId, Long userId, String tagCode) {
-        if (sysUserPatientMapper.countActiveRelation(userId, patientId) == 0) {
+    public TagAssetEntity reportLost(Long patientId, Long userId, String tagCode) {
+        if (guardianRepository.countActiveRelation(userId, patientId) == 0) {
             throw BizException.of("E_TASK_4030");
         }
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_TAG_4041");
+        TagAssetEntity tag = tagAssetRepository.findByTagCode(tagCode)
+                .orElseThrow(() -> BizException.of("E_TAG_4041"));
         if (!"BOUND".equals(tag.getStatus()) || !patientId.equals(tag.getPatientId())) {
             throw BizException.of("E_TAG_4093");
         }
-        tagAssetMapper.markLost(tag.getId());
-        return tagAssetMapper.findByTagCode(tagCode);
+        tagAssetRepository.markLost(tag.getId());
+        return tagAssetRepository.findByTagCode(tagCode).orElseThrow(() -> BizException.of("E_TAG_4041"));
     }
 
     // ===== 管理员标签库存操作 =====
@@ -234,13 +218,9 @@ public class MaterialOrderService {
     @Transactional
     public void adminImportTags(List<String> tagCodes, String tagType, String batchNo) {
         for (String code : tagCodes) {
-            if (tagAssetMapper.findByTagCode(code) != null) continue; // 幂等跳过
-            TagAssetDO tag = new TagAssetDO();
-            tag.setTagCode(code);
-            tag.setTagType(tagType);
-            tag.setStatus("UNBOUND");
-            tag.setImportBatchNo(batchNo);
-            tagAssetMapper.insert(tag);
+            if (tagAssetRepository.findByTagCode(code).isPresent()) continue; // 幂等跳过
+            TagAssetEntity tag = TagAssetEntity.create(code, tagType, batchNo);
+            tagAssetRepository.insert(tag);
         }
     }
 
@@ -248,66 +228,90 @@ public class MaterialOrderService {
      * 管理员作废标签。
      */
     @Transactional
-    public TagAssetDO adminVoidTag(String tagCode, String voidReason) {
-        TagAssetDO tag = requireTag(tagCode);
-        tagAssetMapper.voidTag(tag.getId(), voidReason);
-        return tagAssetMapper.findByTagCode(tagCode);
+    public TagAssetEntity adminVoidTag(String tagCode, String voidReason) {
+        TagAssetEntity tag = requireTag(tagCode);
+        tagAssetRepository.voidTag(tag.getId(), voidReason);
+        return tagAssetRepository.findByTagCode(tagCode).orElseThrow(() -> BizException.of("E_TAG_4041"));
     }
 
     /**
      * 管理员重置标签（LOST/VOID → UNBOUND）。
      */
     @Transactional
-    public TagAssetDO adminResetTag(String tagCode) {
-        TagAssetDO tag = requireTag(tagCode);
-        tagAssetMapper.resetTag(tag.getId());
-        return tagAssetMapper.findByTagCode(tagCode);
+    public TagAssetEntity adminResetTag(String tagCode) {
+        TagAssetEntity tag = requireTag(tagCode);
+        tagAssetRepository.resetTag(tag.getId());
+        return tagAssetRepository.findByTagCode(tagCode).orElseThrow(() -> BizException.of("E_TAG_4041"));
     }
 
     /**
      * 管理员恢复丢失标签（LOST → BOUND）。
      */
     @Transactional
-    public TagAssetDO adminRecoverTag(String tagCode) {
-        TagAssetDO tag = requireTag(tagCode);
+    public TagAssetEntity adminRecoverTag(String tagCode) {
+        TagAssetEntity tag = requireTag(tagCode);
         if (!"LOST".equals(tag.getStatus())) throw BizException.of("E_TAG_4093");
-        tagAssetMapper.recover(tag.getId());
-        return tagAssetMapper.findByTagCode(tagCode);
+        tagAssetRepository.recover(tag.getId());
+        return tagAssetRepository.findByTagCode(tagCode).orElseThrow(() -> BizException.of("E_TAG_4041"));
     }
 
     // ===== 查询 =====
 
-    public List<TagApplyRecordDO> listMyOrders(Long userId, int pageNo, int pageSize) {
-        return orderMapper.listByApplicant(userId, pageSize, (pageNo - 1) * pageSize);
+    public List<TagApplyRecordEntity> listMyOrders(Long userId, int pageNo, int pageSize) {
+        return orderRepository.listByApplicant(userId, pageSize, (pageNo - 1) * pageSize);
     }
 
     public long countMyOrders(Long userId) {
-        return orderMapper.countByApplicant(userId);
+        return orderRepository.countByApplicant(userId);
     }
 
-    public List<TagApplyRecordDO> adminListOrders(String status, int pageNo, int pageSize) {
-        return orderMapper.listByStatus(status, pageSize, (pageNo - 1) * pageSize);
+    public List<TagApplyRecordEntity> adminListOrders(String status, int pageNo, int pageSize) {
+        return orderRepository.listByStatus(status, pageSize, (pageNo - 1) * pageSize);
     }
 
     public long adminCountOrders(String status) {
-        return orderMapper.countByStatus(status);
+        return orderRepository.countByStatus(status);
     }
 
-    public TagApplyRecordDO getOrder(Long orderId) {
+    public TagApplyRecordEntity getOrder(Long orderId) {
         return requireOrder(orderId);
+    }
+
+    /** 按标签码查询标签资产（供 PatientController / MaterialController 使用）。 */
+    public TagAssetEntity getTagByCode(String tagCode) {
+        return tagAssetRepository.findByTagCode(tagCode)
+                .orElseThrow(() -> BizException.of("E_TAG_4041"));
+    }
+
+    /** 按患者 ID + 状态过滤查询标签列表（供 PatientController 使用）。 */
+    public List<TagAssetEntity> listPatientTags(Long patientId, String status, int limit, int offset) {
+        return tagAssetRepository.listByFilter(status, patientId, limit, offset);
+    }
+
+    /** 按资源令牌解析申领工单（供 MaterialController 使用）。 */
+    public TagApplyRecordEntity resolveByResourceToken(String token) {
+        return orderRepository.findByResourceToken(token)
+                .orElseThrow(() -> BizException.of("E_ORDER_4041"));
+    }
+
+    /** 查询标签历史审计日志（供 PatientController 使用）。 */
+    public List<SysLogDO> listTagHistory(String tagCode, int limit, int offset) {
+        return sysLogMapper.listByModuleAndObjectId("TAG_ASSET", tagCode, limit, offset);
+    }
+
+    public long countTagHistory(String tagCode) {
+        return sysLogMapper.countByModuleAndObjectId("TAG_ASSET", tagCode);
     }
 
     // ===== 内部工具 =====
 
-    private TagApplyRecordDO requireOrder(Long orderId) {
-        TagApplyRecordDO o = orderMapper.findById(orderId);
-        if (o == null) throw BizException.of("E_ORDER_4041");
-        return o;
+    private TagApplyRecordEntity requireOrder(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> BizException.of("E_ORDER_4041"));
     }
 
-    private TagAssetDO requireTag(String tagCode) {
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_TAG_4041");
-        return tag;
+    private TagAssetEntity requireTag(String tagCode) {
+        return tagAssetRepository.findByTagCode(tagCode)
+                .orElseThrow(() -> BizException.of("E_TAG_4041"));
     }
 }

@@ -2,18 +2,16 @@ package com.xiaohelab.guard.server.application.clue;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.IdGenerator;
+import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
+import com.xiaohelab.guard.server.domain.clue.repository.ClueRepository;
 import com.xiaohelab.guard.server.domain.event.EventTopics;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.RescueTaskDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.ClueRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.RescueTaskMapper;
+import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
+import com.xiaohelab.guard.server.domain.task.RescueTaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 
 /**
  * 线索上报用例（匿名/登录用户均可）。
@@ -24,8 +22,8 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class ReportClueUseCase {
 
-    private final ClueRecordMapper clueRecordMapper;
-    private final RescueTaskMapper rescueTaskMapper;
+    private final ClueRepository clueRepository;
+    private final RescueTaskRepository rescueTaskRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     /**
@@ -40,32 +38,22 @@ public class ReportClueUseCase {
      * @param photoUrl    照片地址（单张）
      */
     @Transactional
-    public ClueRecordDO execute(String requestId, Long taskId, Long submitterId,
-                                String submitterInfo, double locationLat, double locationLng,
-                                String description, String photoUrl) {
+    public ClueRecordEntity execute(String requestId, Long taskId, Long submitterId,
+                                    String submitterInfo, double locationLat, double locationLng,
+                                    String description, String photoUrl) {
         // 1. 校验任务是否存在且 ACTIVE
-        RescueTaskDO task = rescueTaskMapper.findById(taskId);
-        if (task == null) {
-            throw BizException.of("E_TASK_4041");
-        }
+        RescueTaskEntity task = rescueTaskRepository.findById(taskId)
+                .orElseThrow(() -> BizException.of("E_TASK_4041"));
         if (!"ACTIVE".equals(task.getStatus())) {
             throw BizException.of("E_CLUE_4091");
         }
 
         // 2. 写入 clue_record（初始状态 PENDING，等待 AI 研判）
-        ClueRecordDO clue = new ClueRecordDO();
-        clue.setClueNo(IdGenerator.clueNo());
-        clue.setTaskId(taskId);
-        clue.setPatientId(task.getPatientId());
-        clue.setSourceType(submitterId == null ? "SCAN" : "MANUAL");
-        clue.setLocationLat(locationLat);
-        clue.setLocationLng(locationLng);
-        clue.setCoordSystem("WGS84");
-        clue.setDescription(description);
-        clue.setPhotoUrl(photoUrl);
-        clue.setRiskScore(BigDecimal.ZERO);   // AI 研判后更新
-        clue.setReviewStatus("PENDING");
-        clueRecordMapper.insert(clue);
+        ClueRecordEntity clue = ClueRecordEntity.create(
+                IdGenerator.clueNo(), taskId, task.getPatientId(),
+                submitterId == null ? "SCAN" : "MANUAL",
+                locationLat, locationLng, description, photoUrl);
+        clueRepository.insert(clue);
 
         // 3. 直接发布 clue.reported.raw 到 Kafka（不走 Outbox，削峰链路）
         String eventPayload = buildPayload(clue);
@@ -80,7 +68,7 @@ public class ReportClueUseCase {
         return clue;
     }
 
-    private String buildPayload(ClueRecordDO clue) {
+    private String buildPayload(ClueRecordEntity clue) {
         return String.format(
                 "{\"clue_no\":\"%s\",\"task_id\":%d,\"patient_id\":%d," +
                 "\"location_lat\":%f,\"location_lng\":%f,\"description\":\"%s\"}",

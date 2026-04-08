@@ -24,6 +24,12 @@ public interface PatientProfileMapper {
             "FROM patient_profile WHERE short_code = #{shortCode}")
     PatientProfileDO findByShortCode(String shortCode);
 
+    @Select("SELECT id, profile_no, name, gender, birthday, short_code, pin_code_hash, pin_code_salt, " +
+            "photo_url, medical_history::text, fence_enabled, fence_center_lat, fence_center_lng, " +
+            "fence_radius_m, lost_status, lost_status_event_time, profile_version, created_at, updated_at " +
+            "FROM patient_profile WHERE profile_no = #{profileNo}")
+    PatientProfileDO findByProfileNo(String profileNo);
+
     /** 新建档案（short_code 由调用方传入，已通过序列发号） */
     @Insert("INSERT INTO patient_profile(profile_no, name, gender, birthday, short_code, pin_code_hash, " +
             "pin_code_salt, photo_url, medical_history, fence_enabled, lost_status, lost_status_event_time, " +

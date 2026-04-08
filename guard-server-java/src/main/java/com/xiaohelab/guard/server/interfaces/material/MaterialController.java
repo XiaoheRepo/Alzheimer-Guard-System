@@ -1,15 +1,13 @@
 package com.xiaohelab.guard.server.interfaces.material;
 
 import com.xiaohelab.guard.server.application.material.MaterialOrderService;
+import com.xiaohelab.guard.server.application.patient.PatientProfileService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientProfileMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagApplyRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
+import com.xiaohelab.guard.server.domain.patient.entity.PatientEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -36,9 +34,7 @@ import java.util.Map;
 public class MaterialController {
 
     private final MaterialOrderService materialOrderService;
-    private final PatientProfileMapper patientProfileMapper;
-    private final TagApplyRecordMapper tagApplyRecordMapper;
-    private final TagAssetMapper tagAssetMapper;
+    private final PatientProfileService patientService;
     private final SecurityContext securityContext;
 
     /** 创建申领工单 */
@@ -48,7 +44,7 @@ public class MaterialController {
             @Valid @RequestBody CreateOrderRequest req) {
 
         Long userId = securityContext.currentUserId();
-        TagApplyRecordDO order = materialOrderService.createOrder(
+        TagApplyRecordEntity order = materialOrderService.createOrder(
                 userId, req.getPatientId(), req.getQuantity(),
                 req.getApplyNote(), req.getDeliveryAddress());
         return ApiResponse.ok(buildOrderVO(order), traceId);
@@ -62,7 +58,7 @@ public class MaterialController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        List<TagApplyRecordDO> list = materialOrderService.listMyOrders(userId, pageNo, pageSize);
+        List<TagApplyRecordEntity> list = materialOrderService.listMyOrders(userId, pageNo, pageSize);
         long total = materialOrderService.countMyOrders(userId);
         List<Map<String, Object>> items = list.stream().map(this::buildOrderVO).toList();
         return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
@@ -77,7 +73,7 @@ public class MaterialController {
             @PathVariable Long orderId,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        TagApplyRecordDO order = materialOrderService.getOrder(orderId);
+        TagApplyRecordEntity order = materialOrderService.getOrder(orderId);
         return ApiResponse.ok(buildOrderVO(order), traceId);
     }
 
@@ -89,7 +85,7 @@ public class MaterialController {
             @Valid @RequestBody CancelOrderRequest req) {
 
         Long userId = securityContext.currentUserId();
-        TagApplyRecordDO order = materialOrderService.cancelOrder(orderId, userId, req.getCancelReason());
+        TagApplyRecordEntity order = materialOrderService.cancelOrder(orderId, userId, req.getCancelReason());
         return ApiResponse.ok(buildOrderVO(order), traceId);
     }
 
@@ -100,7 +96,7 @@ public class MaterialController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        TagApplyRecordDO order = materialOrderService.confirmReceipt(orderId, userId);
+        TagApplyRecordEntity order = materialOrderService.confirmReceipt(orderId, userId);
         return ApiResponse.ok(buildOrderVO(order), traceId);
     }
 
@@ -112,7 +108,7 @@ public class MaterialController {
             @Valid @RequestBody BindTagRequest req) {
 
         Long userId = securityContext.currentUserId();
-        TagAssetDO tag = materialOrderService.bindTag(patientId, userId, req.getTagCode());
+        TagAssetEntity tag = materialOrderService.bindTag(patientId, userId, req.getTagCode());
         return ApiResponse.ok(buildTagVO(tag), traceId);
     }
 
@@ -124,7 +120,7 @@ public class MaterialController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        TagAssetDO tag = materialOrderService.reportLost(patientId, userId, tagCode);
+        TagAssetEntity tag = materialOrderService.reportLost(patientId, userId, tagCode);
         return ApiResponse.ok(buildTagVO(tag), traceId);
     }
 
@@ -136,7 +132,7 @@ public class MaterialController {
             @PathVariable Long orderId,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        TagApplyRecordDO order = materialOrderService.getOrder(orderId);
+        TagApplyRecordEntity order = materialOrderService.getOrder(orderId);
         Long userId = securityContext.currentUserId();
         // FAMILY 访问校验：确认工单属于当前用户
         if (!order.getApplicantUserId().equals(userId)) throw BizException.of("E_MAT_4030");
@@ -158,15 +154,13 @@ public class MaterialController {
             @PathVariable String resourceToken,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        TagApplyRecordDO order = tagApplyRecordMapper.findByResourceToken(resourceToken);
-        if (order == null) throw BizException.of("E_MAT_4002");
-
-        PatientProfileDO patient = patientProfileMapper.findById(order.getPatientId());
-        if (patient == null) throw BizException.of("E_MAT_4002");
+        TagApplyRecordEntity order = materialOrderService.resolveByResourceToken(resourceToken);
+        PatientEntity patient = patientService.getPatientById(order.getPatientId());
 
         String maskedName = maskName(patient.getName());
 
-        TagAssetDO tag = order.getTagCode() != null ? tagAssetMapper.findByTagCode(order.getTagCode()) : null;
+        TagAssetEntity tag = order.getTagCode() != null
+                ? materialOrderService.getTagByCode(order.getTagCode()) : null;
 
         return ApiResponse.ok(Map.of(
                 "patient_id", String.valueOf(order.getPatientId()),
@@ -181,7 +175,7 @@ public class MaterialController {
 
     // ===== VO 构建 =====
 
-    private Map<String, Object> buildOrderVO(TagApplyRecordDO o) {
+    private Map<String, Object> buildOrderVO(TagApplyRecordEntity o) {
         return Map.of(
                 "order_id", String.valueOf(o.getId()),
                 "order_no", o.getOrderNo(),
@@ -194,7 +188,7 @@ public class MaterialController {
         );
     }
 
-    private Map<String, Object> buildTagVO(TagAssetDO tag) {
+    private Map<String, Object> buildTagVO(TagAssetEntity tag) {
         return Map.of(
                 "tag_code", tag.getTagCode(),
                 "tag_type", tag.getTagType() != null ? tag.getTagType() : "",

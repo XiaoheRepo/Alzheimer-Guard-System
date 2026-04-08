@@ -3,21 +3,18 @@ package com.xiaohelab.guard.server.interfaces.profile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaohelab.guard.server.application.guardian.GuardianInvitationService;
+import com.xiaohelab.guard.server.application.material.MaterialOrderService;
 import com.xiaohelab.guard.server.application.patient.PatientProfileService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.GuardianInvitationDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
+import com.xiaohelab.guard.server.domain.guardian.entity.GuardianInvitationEntity;
+import com.xiaohelab.guard.server.domain.guardian.entity.GuardianRelationEntity;
+import com.xiaohelab.guard.server.domain.patient.entity.PatientEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserPatientDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.GuardianInvitationMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -45,11 +42,8 @@ public class PatientController {
 
     private final PatientProfileService patientService;
     private final GuardianInvitationService invitationService;
+    private final MaterialOrderService materialOrderService;
     private final SysUserMapper sysUserMapper;
-    private final SysUserPatientMapper sysUserPatientMapper;
-    private final GuardianInvitationMapper invitationMapper;
-    private final TagAssetMapper tagAssetMapper;
-    private final SysLogMapper sysLogMapper;
     private final SecurityContext securityContext;
     private final ObjectMapper objectMapper;
 
@@ -62,7 +56,7 @@ public class PatientController {
             @Valid @RequestBody CreatePatientRequest req) {
 
         Long userId = securityContext.currentUserId();
-        PatientProfileDO profile = patientService.createPatient(
+        PatientEntity profile = patientService.createPatient(
                 userId, req.getName(), req.getGender(),
                 req.getBirthday() != null ? LocalDate.parse(req.getBirthday()) : null,
                 req.getPhotoUrl(), req.getMedicalHistory(), req.getPinCode());
@@ -77,7 +71,7 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        PatientProfileDO profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
+        PatientEntity profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
         return ApiResponse.ok(buildProfileVO(profile), traceId);
     }
 
@@ -87,7 +81,7 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        List<PatientProfileDO> list = patientService.listMyPatients(userId);
+        List<PatientEntity> list = patientService.listMyPatients(userId);
         List<Map<String, Object>> vos = list.stream().map(this::buildProfileVO).toList();
         return ApiResponse.ok(vos, traceId);
     }
@@ -100,7 +94,7 @@ public class PatientController {
             @Valid @RequestBody UpdatePatientRequest req) {
 
         Long userId = securityContext.currentUserId();
-        PatientProfileDO profile = patientService.updatePatient(
+        PatientEntity profile = patientService.updatePatient(
                 patientId, userId, securityContext.isAdmin(),
                 req.getName(), req.getGender(),
                 req.getBirthday() != null ? LocalDate.parse(req.getBirthday()) : null,
@@ -117,7 +111,7 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        PatientProfileDO profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
+        PatientEntity profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
         return ApiResponse.ok(Map.of(
                 "patient_id", String.valueOf(patientId),
                 "fence_enabled", profile.getFenceEnabled() != null && profile.getFenceEnabled(),
@@ -135,7 +129,7 @@ public class PatientController {
             @Valid @RequestBody UpdateFenceRequest req) {
 
         Long userId = securityContext.currentUserId();
-        PatientProfileDO profile = patientService.updateFence(
+        PatientEntity profile = patientService.updateFence(
                 patientId, userId, securityContext.isAdmin(),
                 req.getFenceEnabled(), req.getFenceCenterLat(),
                 req.getFenceCenterLng(), req.getFenceRadiusM());
@@ -155,7 +149,7 @@ public class PatientController {
             @Valid @RequestBody CreateInvitationRequest req) {
 
         Long userId = securityContext.currentUserId();
-        GuardianInvitationDO inv = invitationService.createInvitation(
+        GuardianInvitationEntity inv = invitationService.createInvitation(
                 patientId, userId, req.getInviteeUserId(), req.getRelationRole(), req.getReason());
         return ApiResponse.ok(buildInvitationVO(inv), traceId);
     }
@@ -168,7 +162,7 @@ public class PatientController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        List<GuardianInvitationDO> list = invitationService.listInvitations(patientId, pageNo, pageSize);
+        List<GuardianInvitationEntity> list = invitationService.listInvitations(patientId, pageNo, pageSize);
         long total = invitationService.countInvitations(patientId);
         List<Map<String, Object>> items = list.stream().map(this::buildInvitationVO).toList();
         return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
@@ -187,7 +181,7 @@ public class PatientController {
 
         Long userId = securityContext.currentUserId();
         boolean accept = "ACCEPT".equalsIgnoreCase(req.getAction());
-        GuardianInvitationDO inv = invitationService.respondInvitation(inviteId, userId, accept, req.getReason());
+        GuardianInvitationEntity inv = invitationService.respondInvitation(inviteId, userId, accept, req.getReason());
         return ApiResponse.ok(buildInvitationVO(inv), traceId);
     }
 
@@ -209,7 +203,7 @@ public class PatientController {
             @PathVariable Long patientId,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        List<SysUserPatientDO> list = invitationService.listGuardians(patientId);
+        List<GuardianRelationEntity> list = invitationService.listGuardians(patientId);
         List<Map<String, Object>> vos = list.stream().map(r -> Map.<String, Object>of(
                 "user_id", String.valueOf(r.getUserId()),
                 "patient_id", String.valueOf(r.getPatientId()),
@@ -229,7 +223,7 @@ public class PatientController {
             @Valid @RequestBody InitiateTransferRequest req) {
 
         Long userId = securityContext.currentUserId();
-        SysUserPatientDO rel = invitationService.initiateTransfer(
+        GuardianRelationEntity rel = invitationService.initiateTransfer(
                 patientId, userId, req.getTargetUserId(), req.getReason());
         return ApiResponse.ok(buildTransferVO(rel), traceId);
     }
@@ -244,7 +238,7 @@ public class PatientController {
 
         Long userId = securityContext.currentUserId();
         boolean accept = "ACCEPT".equalsIgnoreCase(req.getAction());
-        SysUserPatientDO rel = invitationService.confirmTransfer(transferReqId, userId, accept, req.getReason());
+        GuardianRelationEntity rel = invitationService.confirmTransfer(transferReqId, userId, accept, req.getReason());
         return ApiResponse.ok(buildTransferVO(rel), traceId);
     }
 
@@ -273,12 +267,11 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+        if (!securityContext.isAdmin() && !invitationService.hasActiveRelation(userId, patientId))
             throw BizException.of("E_PRO_4030");
 
-        List<SysUserPatientDO> list = sysUserPatientMapper.listTransfersByPatientId(
-                patientId, transferState, pageSize, (pageNo - 1) * pageSize);
-        long total = sysUserPatientMapper.countTransfersByPatientId(patientId, transferState);
+        List<GuardianRelationEntity> list = invitationService.listTransfers(patientId, transferState, pageNo, pageSize);
+        long total = invitationService.countTransfers(patientId, transferState);
         List<Map<String, Object>> items = list.stream().map(r -> Map.<String, Object>of(
                 "transfer_request_id", r.getTransferRequestId() != null ? r.getTransferRequestId() : "",
                 "from_user_id", String.valueOf(r.getTransferRequestedBy() != null ? r.getTransferRequestedBy() : 0),
@@ -303,11 +296,10 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+        if (!securityContext.isAdmin() && !invitationService.hasActiveRelation(userId, patientId))
             throw BizException.of("E_PRO_4030");
 
-        GuardianInvitationDO inv = invitationMapper.findByInviteId(inviteId);
-        if (inv == null) throw BizException.of("E_PRO_4043");
+        GuardianInvitationEntity inv = invitationService.getInvitation(inviteId);
         return ApiResponse.ok(Map.<String, Object>of(
                 "invite_id", inv.getInviteId(),
                 "patient_id", String.valueOf(inv.getPatientId()),
@@ -331,11 +323,10 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+        if (!securityContext.isAdmin() && !invitationService.hasActiveRelation(userId, patientId))
             throw BizException.of("E_PRO_4030");
 
-        SysUserPatientDO rel = sysUserPatientMapper.findByTransferRequestId(transferReqId);
-        if (rel == null) throw BizException.of("E_PRO_4045");
+        GuardianRelationEntity rel = invitationService.getTransferDetail(transferReqId);
         return ApiResponse.ok(Map.<String, Object>of(
                 "transfer_request_id", rel.getTransferRequestId(),
                 "patient_id", String.valueOf(rel.getPatientId()),
@@ -359,11 +350,11 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+        if (!securityContext.isAdmin() && !invitationService.hasActiveRelation(userId, patientId))
             throw BizException.of("E_PRO_4030");
 
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null || !patientId.equals(tag.getPatientId())) throw BizException.of("E_MAT_4044");
+        TagAssetEntity tag = materialOrderService.getTagByCode(tagCode);
+        if (!patientId.equals(tag.getPatientId())) throw BizException.of("E_MAT_4044");
         return ApiResponse.ok(Map.<String, Object>of(
                 "tag_code", tag.getTagCode(),
                 "patient_id", String.valueOf(tag.getPatientId()),
@@ -385,15 +376,12 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+        if (!securityContext.isAdmin() && !invitationService.hasActiveRelation(userId, patientId))
             throw BizException.of("E_PRO_4030");
 
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null) throw BizException.of("E_MAT_4044");
-
-        List<SysLogDO> logs = sysLogMapper.listByModuleAndObjectId(
-                "TAG_ASSET", tagCode, pageSize, (pageNo - 1) * pageSize);
-        long total = sysLogMapper.countByModuleAndObjectId("TAG_ASSET", tagCode);
+        materialOrderService.getTagByCode(tagCode); // existence check
+        List<SysLogDO> logs = materialOrderService.listTagHistory(tagCode, pageSize, (pageNo - 1) * pageSize);
+        long total = materialOrderService.countTagHistory(tagCode);
         List<Map<String, Object>> items = logs.stream().map(l -> Map.<String, Object>of(
                 "history_id", String.valueOf(l.getId()),
                 "from_status", "",
@@ -417,7 +405,7 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        PatientProfileDO profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
+        PatientEntity profile = patientService.getPatient(patientId, userId, securityContext.isAdmin());
 
         String maskedName = profile.getName() != null && !profile.getName().isEmpty()
                 ? profile.getName().charAt(0) + "**" : "**";
@@ -466,11 +454,11 @@ public class PatientController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        if (!securityContext.isAdmin() && sysUserPatientMapper.countActiveRelation(userId, patientId) == 0)
+        if (!securityContext.isAdmin() && !invitationService.hasActiveRelation(userId, patientId))
             throw BizException.of("E_PRO_4030");
 
         String statusFilter = status != null ? status : "BOUND";
-        List<TagAssetDO> tags = tagAssetMapper.listByFilter(statusFilter, patientId, 100, 0);
+        List<TagAssetEntity> tags = materialOrderService.listPatientTags(patientId, statusFilter, 100, 0);
         List<Map<String, Object>> tagVos = tags.stream().map(t -> {
             var m = new java.util.LinkedHashMap<String, Object>();
             m.put("tag_code", t.getTagCode());
@@ -504,7 +492,7 @@ public class PatientController {
 
     // ===== VO 构建 =====
 
-    private Map<String, Object> buildProfileVO(PatientProfileDO p) {
+    private Map<String, Object> buildProfileVO(PatientEntity p) {
         return Map.of(
                 "patient_id", String.valueOf(p.getId()),
                 "profile_no", p.getProfileNo(),
@@ -517,7 +505,7 @@ public class PatientController {
         );
     }
 
-    private Map<String, Object> buildInvitationVO(GuardianInvitationDO inv) {
+    private Map<String, Object> buildInvitationVO(GuardianInvitationEntity inv) {
         return Map.of(
                 "invite_id", inv.getInviteId(),
                 "patient_id", String.valueOf(inv.getPatientId()),
@@ -527,7 +515,7 @@ public class PatientController {
         );
     }
 
-    private Map<String, Object> buildTransferVO(SysUserPatientDO rel) {
+    private Map<String, Object> buildTransferVO(GuardianRelationEntity rel) {
         return Map.of(
                 "transfer_request_id", rel.getTransferRequestId() != null ? rel.getTransferRequestId() : "",
                 "transfer_state", rel.getTransferState() != null ? rel.getTransferState() : "NONE",

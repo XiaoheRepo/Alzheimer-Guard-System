@@ -2,21 +2,23 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace 'com.xiaohelab.guard.android'
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.xiaohelab.guard.android"
         minSdk 26
-        targetSdk 36
+        targetSdk 35
         versionCode 1
         versionName "1.0"
         buildConfigField "String", "API_BASE_URL", '"http://10.0.2.2:8080/"'
+        buildConfigField "String", "WS_BASE_URL", '"ws://10.0.2.2:8080/"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -53,12 +55,33 @@ dependencies {
     implementation libs.androidx.compose.material.icons.extended
     implementation libs.androidx.compose.material3
     implementation libs.kotlinx.coroutines.android
+    implementation libs.kotlinx.serialization.json
+    // Network
     implementation libs.retrofit.core
-    implementation libs.retrofit.moshi.converter
+    implementation libs.retrofit.kotlinx.serialization
     implementation libs.okhttp.core
     implementation libs.okhttp.logging.interceptor
-    implementation libs.moshi.core
-    implementation libs.moshi.kotlin
+    // Hilt
+    implementation libs.hilt.android
+    ksp libs.hilt.compiler
+    implementation libs.hilt.navigation.compose
+    // Room
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.room.compiler
+    // DataStore
+    implementation libs.datastore.preferences
+    // Security
+    implementation libs.security.crypto
+    // WorkManager
+    implementation libs.workmanager.ktx
+    implementation libs.hilt.work
+    ksp libs.hilt.work.compiler
+    // Logging
+    implementation libs.timber
+    // Image loading
+    implementation libs.coil.compose
+
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core
