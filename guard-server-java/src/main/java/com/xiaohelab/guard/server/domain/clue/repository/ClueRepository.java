@@ -45,4 +45,17 @@ public interface ClueRepository {
 
     /** 管理员 reject（标记 REJECTED） */
     int reject(Long clueId, Long rejectedBy, String rejectReason);
-}
+    /** 管理端可疑线索列表（suspect_flag=TRUE，带可选过滤） */
+    List<ClueRecordEntity> listSuspected(String reviewStatus, Long taskId, Long patientId,
+                                         int limit, int offset);
+
+    long countSuspectedFiltered(String reviewStatus, Long taskId, Long patientId);
+
+    /** 统计指标（支持时间范围过滤） */
+    long countAll(String timeFrom, String timeTo);
+
+    long countSuspected(String timeFrom, String timeTo);
+
+    long countOverridden(String timeFrom, String timeTo);
+
+    long countRejected(String timeFrom, String timeTo);}

@@ -90,4 +90,33 @@ public class ClueService {
         if (affected == 0) throw BizException.of("E_CLUE_4093");
         return clueRepository.findByIdOrThrow(clueId);
     }
+
+    // ===== 管理员可疑队列 =====
+
+    public List<ClueRecordEntity> listSuspected(String reviewStatus, Long taskId,
+                                                 Long patientId, int pageSize, int offset) {
+        return clueRepository.listSuspected(reviewStatus, taskId, patientId, pageSize, offset);
+    }
+
+    public long countSuspectedFiltered(String reviewStatus, Long taskId, Long patientId) {
+        return clueRepository.countSuspectedFiltered(reviewStatus, taskId, patientId);
+    }
+
+    // ===== 统计指标 =====
+
+    public long countAll(String timeFrom, String timeTo) {
+        return clueRepository.countAll(timeFrom, timeTo);
+    }
+
+    public long countSuspected(String timeFrom, String timeTo) {
+        return clueRepository.countSuspected(timeFrom, timeTo);
+    }
+
+    public long countOverridden(String timeFrom, String timeTo) {
+        return clueRepository.countOverridden(timeFrom, timeTo);
+    }
+
+    public long countRejected(String timeFrom, String timeTo) {
+        return clueRepository.countRejected(timeFrom, timeTo);
+    }
 }

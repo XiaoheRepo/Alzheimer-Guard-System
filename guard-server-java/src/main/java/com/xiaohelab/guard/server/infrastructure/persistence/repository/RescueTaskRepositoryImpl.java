@@ -73,4 +73,21 @@ public class RescueTaskRepositoryImpl implements RescueTaskRepository {
     public long countByStatus(String status, String timeFrom, String timeTo) {
         return rescueTaskMapper.countByStatus(status, timeFrom, timeTo);
     }
+
+    @Override
+    public List<RescueTaskEntity> listAll(String status, String source, int limit, int offset) {
+        return rescueTaskMapper.listAll(status, source, limit, offset).stream()
+                .map(RescueTaskEntity::fromDO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countAll(String status, String source) {
+        return rescueTaskMapper.countAll(status, source);
+    }
+
+    @Override
+    public int forceClose(Long id, String closeReason, String remark) {
+        return rescueTaskMapper.forceClose(id, closeReason, remark);
+    }
 }

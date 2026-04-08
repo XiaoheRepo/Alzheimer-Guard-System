@@ -56,4 +56,15 @@ public class QueryRescueTaskService {
     public long countByStatus(String status, String timeFrom, String timeTo) {
         return rescueTaskRepository.countByStatus(status, timeFrom, timeTo);
     }
+
+    /** 管理端全量任务列表 */
+    public List<RescueTaskEntity> listAll(String status, String source, int pageNo, int pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        return rescueTaskRepository.listAll(status, source, pageSize, offset);
+    }
+
+    /** 管理端全量任务计数 */
+    public long countAll(String status, String source) {
+        return rescueTaskRepository.countAll(status, source);
+    }
 }

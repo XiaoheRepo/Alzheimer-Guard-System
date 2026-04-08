@@ -9,7 +9,7 @@ import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.domain.ai.entity.AiSessionEntity;
 import com.xiaohelab.guard.server.domain.ai.entity.AiSessionMessageEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientMemoryNoteDO;
+import com.xiaohelab.guard.server.domain.ai.entity.PatientMemoryNoteEntity;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -305,7 +305,7 @@ public class AiController {
             tagsJson = sb.toString();
         }
 
-        PatientMemoryNoteDO note = patientMemoryNoteService.addNote(
+        PatientMemoryNoteEntity note = patientMemoryNoteService.addNote(
                 patientId, securityContext.currentUserId(), req.getKind(), req.getContent(), tagsJson);
 
         return ApiResponse.ok(Map.of(
@@ -338,7 +338,7 @@ public class AiController {
         if (kind != null && !VALID_KIND.contains(kind)) throw BizException.of("E_REQ_4005");
 
         int offset = (pageNo - 1) * pageSize;
-        List<PatientMemoryNoteDO> notes = patientMemoryNoteService.listNotes(patientId, kind, pageSize, offset);
+        List<PatientMemoryNoteEntity> notes = patientMemoryNoteService.listNotes(patientId, kind, pageSize, offset);
         long total = patientMemoryNoteService.countNotes(patientId, kind);
 
         List<Map<String, Object>> items = notes.stream()

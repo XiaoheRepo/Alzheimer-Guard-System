@@ -38,6 +38,12 @@ public class UserGovernanceService {
                 .orElseThrow(() -> BizException.of("E_USER_4041"));
     }
 
+    /** 按手机号查询用户（邀请前置查询） */
+    public SysUserEntity findByPhone(String phone) {
+        return sysUserRepository.findByPhone(phone)
+                .orElseThrow(() -> BizException.of("E_USER_4041"));
+    }
+
     /**
      * 更新账号状态（NORMAL / BANNED）。
      * 调用方已通过聚合根 ban()/unban() 校验状态合法性，此处仅落库。

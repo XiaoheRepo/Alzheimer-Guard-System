@@ -1,8 +1,8 @@
 package com.xiaohelab.guard.server.application.user;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
+import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
+import com.xiaohelab.guard.server.domain.governance.repository.SysUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final SysUserMapper sysUserMapper;
+    private final SysUserRepository sysUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -25,10 +25,8 @@ public class UserService {
      */
     @Transactional
     public void changePassword(Long userId, String oldPassword, String newPassword) {
-        SysUserDO user = sysUserMapper.findById(userId);
-        if (user == null) {
-            throw BizException.of("E_USER_4041");
-        }
+        SysUserEntity user = sysUserRepository.findById(userId)
+                .orElseThrow(() -> BizException.of("E_USER_4041"));
 
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
             throw BizException.of("E_AUTH_4001");
@@ -38,6 +36,6 @@ public class UserService {
             throw BizException.of("E_AUTH_4002", "新密码不能与旧密码相同");
         }
 
-        sysUserMapper.updatePassword(userId, passwordEncoder.encode(newPassword));
+        sysUserRepository.updatePassword(userId, passwordEncoder.encode(newPassword));
     }
 }

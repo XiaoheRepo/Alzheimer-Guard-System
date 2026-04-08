@@ -3,7 +3,7 @@ package com.xiaohelab.guard.server.interfaces.notification;
 import com.xiaohelab.guard.server.application.notification.NotificationService;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.NotificationInboxDO;
+import com.xiaohelab.guard.server.domain.notification.entity.NotificationEntity;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class NotificationController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        List<NotificationInboxDO> list = notificationService.listInbox(userId, pageNo, pageSize);
+        List<NotificationEntity> list = notificationService.listInbox(userId, pageNo, pageSize);
         long total = notificationService.count(userId);
 
         List<Map<String, Object>> items = list.stream().map(n -> Map.<String, Object>of(

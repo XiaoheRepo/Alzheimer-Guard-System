@@ -23,4 +23,7 @@ public interface SysUserRepository {
 
     /** 更新密码哈希（调用方需提前完成 BCrypt 哈希） */
     void updatePassword(Long id, String passwordHash);
+
+    /** 按手机号查询（邀请前置查询使用） */
+    Optional<SysUserEntity> findByPhone(String phone);
 }

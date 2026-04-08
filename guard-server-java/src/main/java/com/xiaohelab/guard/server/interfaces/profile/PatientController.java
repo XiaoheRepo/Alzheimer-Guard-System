@@ -2,19 +2,18 @@ package com.xiaohelab.guard.server.interfaces.profile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xiaohelab.guard.server.application.governance.UserGovernanceService;
 import com.xiaohelab.guard.server.application.guardian.GuardianInvitationService;
 import com.xiaohelab.guard.server.application.material.MaterialOrderService;
 import com.xiaohelab.guard.server.application.patient.PatientProfileService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
+import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
 import com.xiaohelab.guard.server.domain.guardian.entity.GuardianInvitationEntity;
 import com.xiaohelab.guard.server.domain.guardian.entity.GuardianRelationEntity;
 import com.xiaohelab.guard.server.domain.patient.entity.PatientEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -43,7 +42,7 @@ public class PatientController {
     private final PatientProfileService patientService;
     private final GuardianInvitationService invitationService;
     private final MaterialOrderService materialOrderService;
-    private final SysUserMapper sysUserMapper;
+    private final UserGovernanceService userGovernanceService;
     private final SecurityContext securityContext;
     private final ObjectMapper objectMapper;
 
@@ -481,8 +480,7 @@ public class PatientController {
             @RequestParam String phone,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        SysUserDO user = sysUserMapper.findByPhone(phone);
-        if (user == null) throw BizException.of("E_USER_4041");
+        SysUserEntity user = userGovernanceService.findByPhone(phone);
         return ApiResponse.ok(Map.of(
                 "user_id", String.valueOf(user.getId()),
                 "display_name", user.getDisplayName() != null ? user.getDisplayName() : "",

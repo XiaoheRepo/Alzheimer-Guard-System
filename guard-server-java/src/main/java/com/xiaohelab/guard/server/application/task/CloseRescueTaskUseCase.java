@@ -69,4 +69,20 @@ public class CloseRescueTaskUseCase {
 
         return task;
     }
+
+    /**
+     * 超级管理员强制关闭（不使用乐观锁，不写 Outbox）。
+     * SUPERADMIN 专属操作，调用方须完成权限校验。
+     *
+     * @return 受影响行数（0 表示已关闭或不存在）
+     */
+    @Transactional
+    public int forceCloseAdmin(Long taskId, String reason) {
+        RescueTaskEntity task = rescueTaskRepository.findById(taskId)
+                .orElseThrow(() -> BizException.of("E_TASK_4041"));
+        if (task.getStatus() != RescueTaskEntity.TaskStatus.ACTIVE) {
+            throw BizException.of("E_TASK_4093");
+        }
+        return rescueTaskRepository.forceClose(taskId, "SUPER_FORCE_CLOSE", reason);
+    }
 }

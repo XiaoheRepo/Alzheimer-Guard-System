@@ -102,4 +102,37 @@ public class ClueRepositoryImpl implements ClueRepository {
         d.setRejectReason(rejectReason);
         return mapper.reject(d);
     }
+
+    @Override
+    public List<ClueRecordEntity> listSuspected(String reviewStatus, Long taskId,
+                                                 Long patientId, int limit, int offset) {
+        return mapper.listSuspected(reviewStatus, taskId, patientId, limit, offset).stream()
+                .map(ClueRecordEntity::fromDO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countSuspectedFiltered(String reviewStatus, Long taskId, Long patientId) {
+        return mapper.countSuspectedFiltered(reviewStatus, taskId, patientId);
+    }
+
+    @Override
+    public long countAll(String timeFrom, String timeTo) {
+        return mapper.countAll(timeFrom, timeTo);
+    }
+
+    @Override
+    public long countSuspected(String timeFrom, String timeTo) {
+        return mapper.countSuspected(timeFrom, timeTo);
+    }
+
+    @Override
+    public long countOverridden(String timeFrom, String timeTo) {
+        return mapper.countOverridden(timeFrom, timeTo);
+    }
+
+    @Override
+    public long countRejected(String timeFrom, String timeTo) {
+        return mapper.countRejected(timeFrom, timeTo);
+    }
 }

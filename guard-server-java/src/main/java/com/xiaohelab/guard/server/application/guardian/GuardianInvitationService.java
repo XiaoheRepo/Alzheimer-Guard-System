@@ -2,12 +2,11 @@ package com.xiaohelab.guard.server.application.guardian;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.IdGenerator;
+import com.xiaohelab.guard.server.domain.governance.repository.SysUserRepository;
 import com.xiaohelab.guard.server.domain.guardian.entity.GuardianInvitationEntity;
 import com.xiaohelab.guard.server.domain.guardian.entity.GuardianRelationEntity;
 import com.xiaohelab.guard.server.domain.guardian.repository.GuardianInvitationRepository;
 import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +26,7 @@ public class GuardianInvitationService {
 
     private final GuardianInvitationRepository invitationRepository;
     private final GuardianRepository guardianRepository;
-    private final SysUserMapper sysUserMapper;
+    private final SysUserRepository sysUserRepository;
 
     /**
      * 发起邀请（仅主监护人可操作）。
@@ -41,8 +40,9 @@ public class GuardianInvitationService {
                                                       String reason) {
         requirePrimaryGuardian(patientId, inviterUserId);
 
-        SysUserDO invitee = sysUserMapper.findById(inviteeUserId);
-        if (invitee == null) throw BizException.of("E_USER_4041");
+        if (sysUserRepository.findById(inviteeUserId).isEmpty()) {
+            throw BizException.of("E_USER_4041");
+        }
 
         if (invitationRepository.findPendingByPatientAndInvitee(patientId, inviteeUserId).isPresent()) {
             throw BizException.of("E_INV_4091");

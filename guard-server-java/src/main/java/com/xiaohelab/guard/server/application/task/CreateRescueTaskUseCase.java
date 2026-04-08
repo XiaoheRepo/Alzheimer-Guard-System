@@ -3,10 +3,10 @@ package com.xiaohelab.guard.server.application.task;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.IdGenerator;
 import com.xiaohelab.guard.server.domain.event.DomainEvent;
+import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskRepository;
 import com.xiaohelab.guard.server.infrastructure.outbox.OutboxWriter;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class CreateRescueTaskUseCase {
 
     private final RescueTaskRepository rescueTaskRepository;
-    private final SysUserPatientMapper sysUserPatientMapper;
+    private final GuardianRepository guardianRepository;
     private final OutboxWriter outboxWriter;
     private final StringRedisTemplate redisTemplate;
 
@@ -51,7 +51,7 @@ public class CreateRescueTaskUseCase {
         }
 
         // 2. 归属权校验：当前用户必须对患者有 ACTIVE 关联
-        long relCount = sysUserPatientMapper.countActiveRelation(userId, patientId);
+        long relCount = guardianRepository.countActiveRelation(userId, patientId);
         if (relCount == 0) {
             throw BizException.of("E_TASK_4030");
         }

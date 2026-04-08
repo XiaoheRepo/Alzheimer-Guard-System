@@ -43,4 +43,16 @@ public interface RescueTaskRepository {
      * status 为 null 时统计全部。
      */
     long countByStatus(String status, String timeFrom, String timeTo);
+
+    /** 管理端分页列表全量任务（支持 status/source 过滤） */
+    List<RescueTaskEntity> listAll(String status, String source, int limit, int offset);
+
+    /** 管理端全量任务计数 */
+    long countAll(String status, String source);
+
+    /**
+     * 管理员强制关闭（不使用乐观锁）。
+     * 返回受影响行数；0 表示任务不存在或已关闭。
+     */
+    int forceClose(Long id, String closeReason, String remark);
 }

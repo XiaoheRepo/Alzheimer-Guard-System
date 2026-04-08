@@ -49,4 +49,10 @@ public class SysUserRepositoryImpl implements SysUserRepository {
     public void updatePassword(Long id, String passwordHash) {
         sysUserMapper.updatePassword(id, passwordHash);
     }
+
+    @Override
+    public Optional<SysUserEntity> findByPhone(String phone) {
+        var d = sysUserMapper.findByPhone(phone);
+        return d == null ? Optional.empty() : Optional.of(SysUserEntity.fromDO(d));
+    }
 }

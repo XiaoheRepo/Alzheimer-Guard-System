@@ -34,6 +34,8 @@ public class RescueTaskEntity {
     private String closeReason;
     private String remark;          // 备注（对应 DO 的 remark）
     private long eventVersion;      // 乐观锁版本（与 DO Long 类型一致）
+    private String aiAnalysisSummary;  // AI 分析摘要
+    private String posterUrl;          // 寻回海报图 URL
     private Instant createdAt;
     private Instant updatedAt;
     private Instant closedAt;
@@ -57,6 +59,8 @@ public class RescueTaskEntity {
         e.closeReason = d.getCloseReason();
         e.remark = d.getRemark();
         e.eventVersion = d.getEventVersion() == null ? 0L : d.getEventVersion();
+        e.aiAnalysisSummary = d.getAiAnalysisSummary();
+        e.posterUrl = d.getPosterUrl();
         e.createdAt = d.getCreatedAt();
         e.updatedAt = d.getUpdatedAt();
         e.closedAt = d.getClosedAt();

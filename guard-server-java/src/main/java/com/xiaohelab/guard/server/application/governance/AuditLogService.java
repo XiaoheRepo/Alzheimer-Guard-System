@@ -48,4 +48,13 @@ public class AuditLogService {
     public void writeLog(SysLogDO log) {
         sysLogMapper.insert(log);
     }
+
+    /** 按 objectId 查询审计记录（用于任务/线索审计轨迹） */
+    public List<SysLogDO> listByObjectId(String objectId, int limit, int offset) {
+        return sysLogMapper.listByObjectId(objectId, limit, offset);
+    }
+
+    public long countByObjectId(String objectId) {
+        return sysLogMapper.countByObjectId(objectId);
+    }
 }
