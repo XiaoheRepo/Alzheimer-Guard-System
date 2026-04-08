@@ -1,125 +1,87 @@
 /**
  * 认证状态管理
+ * 依据 web_admin_handbook.md §6.1-6.4：
+ *   - token/role/userId 存 sessionStorage，登出或失效时一次性清空
+ *   - 管理端仅允许 ADMIN / SUPERADMIN 角色登录
  */
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import type { User, UserRole, LoginParams } from '@/types'
-import { login as loginApi, logout as logoutApi, getUserInfo as getUserInfoApi } from '@/api/auth'
-import { setToken, setRefreshToken, removeToken, getToken } from '@/utils/auth'
+import { login as loginApi, logout as logoutApi } from '@/api/auth'
+import { getToken, setToken, getRole, setRole, setUserId, clearSession } from '@/utils/auth'
 
 export const useAuthStore = defineStore('auth', () => {
-  // 状态
+  // 从 sessionStorage 恢复会话（页面刷新场景）
   const token = ref<string | null>(getToken())
-  const userInfo = ref<User | null>(null)
-  const roles = ref<UserRole[]>([])
-  const permissions = ref<string[]>([])
+  const role = ref<string | null>(getRole())
+  const userId = ref<string | null>(null)
 
   // 计算属性
   const isLoggedIn = computed(() => !!token.value)
-  const isSuperAdmin = computed(() => roles.value.includes('super_admin' as UserRole))
-  const isAdmin = computed(
-    () =>
-      roles.value.includes('super_admin' as UserRole) || roles.value.includes('admin' as UserRole),
-  )
+  const isSuperAdmin = computed(() => role.value === 'SUPERADMIN')
+  const isAdmin = computed(() => role.value === 'ADMIN' || role.value === 'SUPERADMIN')
 
   /**
    * 登录
+   * 管理端仅允许 ADMIN / SUPERADMIN。后端返回其他角色时拒绝并清会话。
    */
-  const login = async (loginParams: LoginParams) => {
-    try {
-      const res = await loginApi(loginParams)
+  const login = async (params: { username: string; password: string }) => {
+    const data = await loginApi(params)
 
-      // 保存 Token
-      token.value = res.token
-      setToken(res.token)
-
-      if (res.refreshToken) {
-        setRefreshToken(res.refreshToken)
-      }
-
-      // 保存用户信息
-      userInfo.value = res.userInfo
-      roles.value = res.roles
-      permissions.value = res.permissions
-
-      message.success('登录成功')
-      return res
-    } catch (error) {
-      message.error('登录失败，请检查用户名和密码')
-      throw error
+    const userRole = data.user.role
+    if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
+      message.error('无访问权限，该账号不具备管理员角色')
+      throw new Error('E_GOV_4030')
     }
+
+    token.value = data.token
+    role.value = userRole
+    userId.value = data.user.user_id
+
+    setToken(data.token)
+    setRole(userRole)
+    setUserId(data.user.user_id)
+
+    message.success('登录成功')
+    return data
   }
 
   /**
    * 登出
+   * 调用注销接口后无论成功与否都清除本地会话（handbook §6.4）
    */
   const logout = async () => {
     try {
       await logoutApi()
-    } catch (error) {
-      console.error('登出接口调用失败:', error)
+    } catch {
+      // 忽略接口错误，确保本地会话一定清除
     } finally {
-      // 清除本地数据
       token.value = null
-      userInfo.value = null
-      roles.value = []
-      permissions.value = []
-      removeToken()
-
+      role.value = null
+      userId.value = null
+      clearSession()
       message.success('已退出登录')
     }
   }
 
   /**
-   * 获取用户信息
+   * 检查是否具有指定角色（含向上兼容：SUPERADMIN 拥有 ADMIN 权限）
    */
-  const getUserInfo = async () => {
-    try {
-      const res = await getUserInfoApi()
-      userInfo.value = res.userInfo
-      roles.value = res.roles
-      permissions.value = res.permissions
-      return res
-    } catch (error) {
-      // 获取用户信息失败，清除登录状态
-      removeToken()
-      throw error
-    }
-  }
-
-  /**
-   * 检查权限
-   */
-  const hasPermission = (permission: string): boolean => {
-    // 超级管理员拥有所有权限
-    if (isSuperAdmin.value) return true
-    return permissions.value.includes(permission)
-  }
-
-  /**
-   * 检查角色
-   */
-  const hasRole = (role: UserRole): boolean => {
-    return roles.value.includes(role)
+  const hasRole = (requiredRole: 'ADMIN' | 'SUPERADMIN'): boolean => {
+    if (requiredRole === 'ADMIN') return isAdmin.value
+    return isSuperAdmin.value
   }
 
   return {
-    // 状态
     token,
-    userInfo,
-    roles,
-    permissions,
-    // 计算属性
+    role,
+    userId,
     isLoggedIn,
     isSuperAdmin,
     isAdmin,
-    // 方法
     login,
     logout,
-    getUserInfo,
-    hasPermission,
     hasRole,
   }
 })

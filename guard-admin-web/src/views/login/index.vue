@@ -3,8 +3,6 @@ import { reactive, ref, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
-import type { LoginParams } from '@/types'
-
 defineOptions({
   name: 'LoginPage',
 })
@@ -13,10 +11,9 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // 表单数据
-const formState = reactive<LoginParams>({
+const formState = reactive<{ username: string; password: string }>({
   username: '',
   password: '',
-  remember: true,
 })
 
 // 加载状态
@@ -49,7 +46,7 @@ const handleLogin = async () => {
     await authStore.login(formState)
 
     // 登录成功，跳转到首页
-    router.push('/dashboard')
+    router.push('/admin/dashboard')
   } catch (error) {
     console.error('登录失败:', error)
   } finally {
@@ -106,13 +103,6 @@ const handleLogin = async () => {
             @pressEnter="handleLogin"
           >
           </a-input-password>
-        </a-form-item>
-
-        <a-form-item>
-          <div class="form-options">
-            <a-checkbox v-model:checked="formState.remember"> 记住我 </a-checkbox>
-            <a class="forgot-link">忘记密码？</a>
-          </div>
         </a-form-item>
 
         <a-form-item>
