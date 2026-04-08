@@ -379,7 +379,7 @@ public class PatientController {
             throw BizException.of("E_PRO_4030");
 
         materialOrderService.getTagByCode(tagCode); // existence check
-        List<SysLogDO> logs = materialOrderService.listTagHistory(tagCode, pageSize, (pageNo - 1) * pageSize);
+        var logs = materialOrderService.listTagHistory(tagCode, pageSize, (pageNo - 1) * pageSize);
         long total = materialOrderService.countTagHistory(tagCode);
         List<Map<String, Object>> items = logs.stream().map(l -> Map.<String, Object>of(
                 "history_id", String.valueOf(l.getId()),

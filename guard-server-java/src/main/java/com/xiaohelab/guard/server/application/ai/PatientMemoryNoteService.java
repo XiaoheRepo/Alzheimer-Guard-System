@@ -50,37 +50,3 @@ public class PatientMemoryNoteService {
     }
 }
 
-
-    /** 新增记忆条目并写入数据库，返回已持久化的 DO（含自动生成的 note_id 和时间戳）。 */
-    @Transactional
-    public PatientMemoryNoteDO addNote(Long patientId, Long createdBy,
-                                       String kind, String content, String tagsJson) {
-        PatientMemoryNoteDO note = new PatientMemoryNoteDO();
-        note.setNoteId(generateNoteId());
-        note.setPatientId(patientId);
-        note.setCreatedBy(createdBy);
-        note.setKind(kind);
-        note.setContent(content);
-        note.setTags(tagsJson);
-        patientMemoryNoteMapper.insert(note);
-        return note;
-    }
-
-    public List<PatientMemoryNoteDO> listNotes(Long patientId, String kind, int pageSize, int offset) {
-        return patientMemoryNoteMapper.listByPatientId(patientId, kind, pageSize, offset);
-    }
-
-    public long countNotes(Long patientId, String kind) {
-        return patientMemoryNoteMapper.countByPatientId(patientId, kind);
-    }
-
-    private String generateNoteId() {
-        String ts = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                .format(LocalDateTime.now(ZoneOffset.UTC));
-        byte[] b = new byte[3];
-        new java.util.Random().nextBytes(b);
-        StringBuilder sb = new StringBuilder();
-        for (byte v : b) sb.append(String.format("%02x", v));
-        return "mn_" + ts + "_" + sb;
-    }
-}

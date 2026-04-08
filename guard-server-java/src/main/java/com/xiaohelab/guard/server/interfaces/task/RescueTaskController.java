@@ -11,7 +11,6 @@ import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity.CloseType;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.NotificationInboxDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -302,7 +301,7 @@ public class RescueTaskController {
         queryRescueTaskService.findById(taskId, userId, userRole); // auth check
 
         int offset = (pageNo - 1) * pageSize;
-        List<NotificationInboxDO> list = notificationService.listAlertsByTask(taskId, level, pageSize, offset);
+        var list = notificationService.listAlertsByTask(taskId, level, pageSize, offset);
         long total = notificationService.countAlertsByTask(taskId, level);
 
         List<Map<String, Object>> items = list.stream()

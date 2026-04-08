@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.patient.entity;
 
-import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
 import lombok.Getter;
 
