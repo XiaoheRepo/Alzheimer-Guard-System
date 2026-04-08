@@ -57,7 +57,13 @@ const handleLogout = async () => {
 
 <template>
   <a-layout class="admin-layout">
-    <a-layout-sider v-model:collapsed="collapsed" :trigger="null" collapsible width="220">
+    <a-layout-sider
+      v-model:collapsed="collapsed"
+      :trigger="null"
+      collapsible
+      width="220"
+      :style="{ background: 'linear-gradient(180deg, #001d57 0%, #003eb3 100%)' }"
+    >
       <div class="logo">
         <span v-if="!collapsed" class="logo-text">码上回家·管理端</span>
         <span v-else class="logo-text">管</span>
@@ -104,6 +110,7 @@ const handleLogout = async () => {
 <style scoped lang="less">
 .admin-layout {
   min-height: 100vh;
+  background: #f0f5ff;
 }
 
 .logo {
@@ -111,8 +118,9 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .logo-text {
@@ -123,19 +131,20 @@ const handleLogout = async () => {
 }
 
 .header {
-  background: #fff;
+  background: linear-gradient(90deg, #1677ff 0%, #0958d9 100%);
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.35);
 
   .trigger {
     font-size: 18px;
     cursor: pointer;
     transition: color 0.3s;
+    color: rgba(255, 255, 255, 0.85);
     &:hover {
-      color: #1890ff;
+      color: #fff;
     }
   }
 
@@ -143,7 +152,7 @@ const handleLogout = async () => {
     margin-left: 16px;
     font-size: 16px;
     font-weight: 500;
-    color: #18242d;
+    color: #fff;
   }
 }
 
@@ -160,8 +169,10 @@ const handleLogout = async () => {
 .user-info {
   padding: 4px 8px;
   border-radius: 4px;
+  color: rgba(255, 255, 255, 0.9);
   &:hover {
-    background: #f5f5f5;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
   }
 }
 
@@ -171,5 +182,6 @@ const handleLogout = async () => {
   background: #fff;
   min-height: 280px;
   border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(22, 119, 255, 0.06);
 }
 </style>

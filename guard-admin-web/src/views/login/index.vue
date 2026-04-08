@@ -128,7 +128,7 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1677ff 0%, #0958d9 60%, #003eb3 100%);
   overflow: hidden;
 }
 
@@ -229,9 +229,9 @@ const handleLogin = async () => {
     align-items: center;
 
     .forgot-link {
-      color: #667eea;
+      color: #1677ff;
       &:hover {
-        color: #764ba2;
+        color: #0958d9;
       }
     }
   }
@@ -244,11 +244,11 @@ const handleLogin = async () => {
     height: 48px;
     font-size: 16px;
     font-weight: 500;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
     border: none;
 
     &:hover {
-      background: linear-gradient(135deg, #5568d3 0%, #6b3f8f 100%);
+      background: linear-gradient(135deg, #4096ff 0%, #1677ff 100%);
     }
   }
 }
