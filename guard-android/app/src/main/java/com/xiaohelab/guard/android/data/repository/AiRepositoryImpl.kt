@@ -1,7 +1,9 @@
 package com.xiaohelab.guard.android.data.repository
 
 import com.xiaohelab.guard.android.core.common.ApiResult
-import com.xiaohelab.guard.android.core.network.NetworkModule.safeApiCall
+import com.xiaohelab.guard.android.core.network.safeApiCall
+import com.xiaohelab.guard.android.core.common.map
+import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.data.mapper.toDomain
 import com.xiaohelab.guard.android.data.remote.api.AiApiService
 import com.xiaohelab.guard.android.data.remote.dto.CreateMemoryNoteRequestDto

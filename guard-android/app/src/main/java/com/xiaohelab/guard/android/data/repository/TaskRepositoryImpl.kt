@@ -3,7 +3,9 @@ package com.xiaohelab.guard.android.data.repository
 import com.xiaohelab.guard.android.core.common.ApiResult
 import com.xiaohelab.guard.android.core.database.dao.TaskSnapshotDao
 import com.xiaohelab.guard.android.core.database.entity.TaskSnapshotEntity
-import com.xiaohelab.guard.android.core.network.NetworkModule.safeApiCall
+import com.xiaohelab.guard.android.core.network.safeApiCall
+import com.xiaohelab.guard.android.core.common.map
+import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.data.mapper.toDomain
 import com.xiaohelab.guard.android.data.remote.api.TaskApiService
 import com.xiaohelab.guard.android.data.remote.dto.CloseTaskRequestDto
@@ -14,7 +16,7 @@ import com.xiaohelab.guard.android.domain.model.TaskEvent
 import com.xiaohelab.guard.android.domain.model.TrajectoryPoint
 import com.xiaohelab.guard.android.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.map as flowMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,7 +27,7 @@ class TaskRepositoryImpl @Inject constructor(
 ) : TaskRepository {
 
     override fun observeTasks(): Flow<List<Task>> =
-        snapshotDao.observeAll().map { list ->
+        snapshotDao.observeAll().flowMap { list ->
             list.map { entity ->
                 Task(
                     id = entity.taskId,

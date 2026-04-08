@@ -32,7 +32,9 @@ export interface UpdatedConfigItem {
 
 /** 3.8.11 读取全局配置快照（ADMIN/SUPERADMIN，security/ai_policy 仅 SUPERADMIN） */
 export const getConfig = (scope?: ConfigScope): Promise<ConfigSnapshot> =>
-  request.get('/admin/config', { params: scope ? { scope } : undefined }) as unknown as Promise<ConfigSnapshot>
+  request.get('/admin/config', {
+    params: scope ? { scope } : undefined,
+  }) as unknown as Promise<ConfigSnapshot>
 
 /** 3.8.8 超级管理员修改配置（仅 SUPERADMIN） */
 export const updateConfig = (body: UpdateConfigBody): Promise<UpdatedConfigItem> =>

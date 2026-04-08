@@ -1,11 +1,9 @@
 package com.xiaohelab.guard.server.application.task;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
+import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskRepository;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.RescueTaskDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.RescueTaskMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +18,7 @@ import java.util.List;
 public class QueryRescueTaskService {
 
     private final RescueTaskRepository rescueTaskRepository;
-    private final RescueTaskMapper rescueTaskMapper;
-    private final SysUserPatientMapper sysUserPatientMapper;
+    private final GuardianRepository guardianRepository;
 
     /** 查询任务详情（含归属权校验） */
     public RescueTaskEntity findById(Long taskId, Long userId, String userRole) {
@@ -30,8 +27,7 @@ public class QueryRescueTaskService {
 
         boolean isAdmin = "ADMIN".equals(userRole) || "SUPER_ADMIN".equals(userRole);
         if (!isAdmin) {
-            long relCount = sysUserPatientMapper.countActiveRelation(userId, task.getPatientId());
-            if (relCount == 0) {
+            if (guardianRepository.countActiveRelation(userId, task.getPatientId()) == 0) {
                 throw BizException.of("E_TASK_4030");
             }
         }
@@ -39,21 +35,25 @@ public class QueryRescueTaskService {
     }
 
     /** 分页查询患者历史任务 */
-    public List<RescueTaskDO> listByPatient(Long patientId, Long userId, String userRole,
-                                             int page, int size) {
+    public List<RescueTaskEntity> listByPatient(Long patientId, Long userId, String userRole,
+                                                 int page, int size) {
         boolean isAdmin = "ADMIN".equals(userRole) || "SUPER_ADMIN".equals(userRole);
         if (!isAdmin) {
-            long relCount = sysUserPatientMapper.countActiveRelation(userId, patientId);
-            if (relCount == 0) {
+            if (guardianRepository.countActiveRelation(userId, patientId) == 0) {
                 throw BizException.of("E_TASK_4030");
             }
         }
         int offset = (page - 1) * size;
-        return rescueTaskMapper.listByPatientId(patientId, size, offset);
+        return rescueTaskRepository.listByPatientId(patientId, size, offset);
     }
 
     /** 统计患者任务总数 */
     public long countByPatient(Long patientId) {
-        return rescueTaskMapper.countByPatientId(patientId);
+        return rescueTaskRepository.countByPatientId(patientId);
+    }
+
+    /** 按状态统计任务数（供统计指标接口使用） */
+    public long countByStatus(String status, String timeFrom, String timeTo) {
+        return rescueTaskRepository.countByStatus(status, timeFrom, timeTo);
     }
 }

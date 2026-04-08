@@ -20,7 +20,12 @@
         </a-card>
 
         <!-- 操作区（仅 ACTIVE 状态可操作） -->
-        <a-card title="操作" :bordered="false" style="margin-top: 12px" v-if="detail.status === 'ACTIVE'">
+        <a-card
+          title="操作"
+          :bordered="false"
+          style="margin-top: 12px"
+          v-if="detail.status === 'ACTIVE'"
+        >
           <a-space>
             <!-- 重推通知 -->
             <a-popconfirm
@@ -74,7 +79,13 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { getTaskDetail, retryNotify, forceCloseTask, type TaskStatus, type TaskItem } from '@/api/tasks'
+import {
+  getTaskDetail,
+  retryNotify,
+  forceCloseTask,
+  type TaskStatus,
+  type TaskItem,
+} from '@/api/tasks'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()

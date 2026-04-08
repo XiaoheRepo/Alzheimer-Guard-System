@@ -53,5 +53,29 @@ export const getDeadEvents = (params?: DeadEventListParams): Promise<PageCursor<
 export const replayDeadEvent = (eventId: string, body: ReplayBody): Promise<ReplayResult> =>
   request.post(
     `/admin/super/outbox/dead/${eventId}/replay`,
-    body
+    body,
   ) as unknown as Promise<ReplayResult>
+
+/** 3.8.6 导出数据与审计报表（仅 SUPERADMIN） */
+export const exportData = (body: {
+  export_type: 'AUDIT_REPORT' | 'OPS_METRICS'
+  window_start: string
+  window_end: string
+  reason: string
+}): Promise<{ export_ref_id: string; file_url: string | null; logged_at: string }> =>
+  request.post('/admin/super/export-data', body) as unknown as Promise<{
+    export_ref_id: string
+    file_url: string | null
+    logged_at: string
+  }>
+
+/** 3.8.7 清理过期审计日志（仅 SUPERADMIN） */
+export const purgeAuditLogs = (body: {
+  before_time: string
+  reason: string
+}): Promise<{ purged_count: number; before_time: string; purged_at: string }> =>
+  request.post('/admin/super/logs/purge', body) as unknown as Promise<{
+    purged_count: number
+    before_time: string
+    purged_at: string
+  }>

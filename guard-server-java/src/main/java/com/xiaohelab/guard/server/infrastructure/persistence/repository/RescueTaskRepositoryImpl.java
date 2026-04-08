@@ -7,7 +7,9 @@ import com.xiaohelab.guard.server.infrastructure.persistence.mapper.RescueTaskMa
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * RescueTaskRepository 基础设施层实现。
@@ -53,5 +55,22 @@ public class RescueTaskRepositoryImpl implements RescueTaskRepository {
     @Override
     public int closeConditionally(RescueTaskEntity entity) {
         return rescueTaskMapper.closeConditionally(entity.toDO());
+    }
+
+    @Override
+    public List<RescueTaskEntity> listByPatientId(Long patientId, int limit, int offset) {
+        return rescueTaskMapper.listByPatientId(patientId, limit, offset).stream()
+                .map(RescueTaskEntity::fromDO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public long countByPatientId(Long patientId) {
+        return rescueTaskMapper.countByPatientId(patientId);
+    }
+
+    @Override
+    public long countByStatus(String status, String timeFrom, String timeTo) {
+        return rescueTaskMapper.countByStatus(status, timeFrom, timeTo);
     }
 }

@@ -3,11 +3,11 @@ package com.xiaohelab.guard.server.application.task;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.IdGenerator;
 import com.xiaohelab.guard.server.domain.event.DomainEvent;
+import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity.CloseType;
 import com.xiaohelab.guard.server.domain.task.RescueTaskRepository;
 import com.xiaohelab.guard.server.infrastructure.outbox.OutboxWriter;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +24,7 @@ import java.util.List;
 public class CloseRescueTaskUseCase {
 
     private final RescueTaskRepository rescueTaskRepository;
-    private final SysUserPatientMapper sysUserPatientMapper;
+    private final GuardianRepository guardianRepository;
     private final OutboxWriter outboxWriter;
 
     /**
@@ -47,8 +47,7 @@ public class CloseRescueTaskUseCase {
         // 2. 归属权校验（ADMIN 可跳过）
         boolean isAdmin = "ADMIN".equals(userRole) || "SUPER_ADMIN".equals(userRole);
         if (!isAdmin) {
-            long relCount = sysUserPatientMapper.countActiveRelation(userId, task.getPatientId());
-            if (relCount == 0) {
+            if (guardianRepository.countActiveRelation(userId, task.getPatientId()) == 0) {
                 throw BizException.of("E_TASK_4030");
             }
         }

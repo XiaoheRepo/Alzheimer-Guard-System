@@ -8,11 +8,7 @@
  */
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-  getDashboardMetrics,
-  getClueStatistics,
-  getSecurityMetrics,
-} from '@/api/dashboard'
+import { getDashboardMetrics, getClueStatistics, getSecurityMetrics } from '@/api/dashboard'
 import type {
   DashboardMetrics,
   ClueStatistics,
@@ -58,20 +54,26 @@ const loadAll = async () => {
   clueStatsLoading.value = false
   secMetricsLoading.value = false
 
-  if (r1.status === 'fulfilled') { metrics.value = r1.value; metricsError.value = false }
-  else metricsError.value = true
+  if (r1.status === 'fulfilled') {
+    metrics.value = r1.value
+    metricsError.value = false
+  } else metricsError.value = true
 
-  if (r2.status === 'fulfilled') { clueStats.value = r2.value; clueStatsError.value = false }
-  else clueStatsError.value = true
+  if (r2.status === 'fulfilled') {
+    clueStats.value = r2.value
+    clueStatsError.value = false
+  } else clueStatsError.value = true
 
-  if (r3.status === 'fulfilled') { secMetrics.value = r3.value; secMetricsError.value = false }
-  else secMetricsError.value = true
+  if (r3.status === 'fulfilled') {
+    secMetrics.value = r3.value
+    secMetricsError.value = false
+  } else secMetricsError.value = true
 }
 
 watch(window_, loadAll, { immediate: true })
 
-const pct = (v?: number) => v != null ? `${(v * 100).toFixed(1)}%` : '-'
-const num = (v?: number) => v != null ? v.toLocaleString() : '-'
+const pct = (v?: number) => (v != null ? `${(v * 100).toFixed(1)}%` : '-')
+const num = (v?: number) => (v != null ? v.toLocaleString() : '-')
 </script>
 
 <template>
@@ -96,13 +98,19 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
           @click="router.push('/admin/audit')"
         >
           <template v-if="metricsError">
-            <a-result status="error" title="加载失败" sub-title="点击刷新" style="padding:12px" @click.stop="loadAll" />
+            <a-result
+              status="error"
+              title="加载失败"
+              sub-title="点击刷新"
+              style="padding: 12px"
+              @click.stop="loadAll"
+            />
           </template>
           <template v-else>
             <a-statistic
               title="登录成功率"
               :value="metrics ? pct(metrics.login_success_rate) : '-'"
-              :value-style="{ color: '#2e7d32', fontSize:'28px' }"
+              :value-style="{ color: '#2e7d32', fontSize: '28px' }"
             />
           </template>
         </a-card>
@@ -115,13 +123,13 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
           @click="router.push('/admin/audit')"
         >
           <template v-if="metricsError">
-            <a-result status="error" title="加载失败" style="padding:12px" />
+            <a-result status="error" title="加载失败" style="padding: 12px" />
           </template>
           <template v-else>
             <a-statistic
               title="高危操作次数"
               :value="metrics ? num(metrics.risk_operation_count) : '-'"
-              :value-style="{ color: '#b26a00', fontSize:'28px' }"
+              :value-style="{ color: '#b26a00', fontSize: '28px' }"
             />
           </template>
         </a-card>
@@ -129,13 +137,13 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card :loading="metricsLoading" class="kpi-card">
           <template v-if="metricsError">
-            <a-result status="error" title="加载失败" style="padding:12px" />
+            <a-result status="error" title="加载失败" style="padding: 12px" />
           </template>
           <template v-else>
             <a-statistic
               title="接口 TP95（ms）"
               :value="metrics ? num(metrics.tp95_ms) : '-'"
-              :value-style="{ color: '#0b6b8a', fontSize:'28px' }"
+              :value-style="{ color: '#0b6b8a', fontSize: '28px' }"
             />
           </template>
         </a-card>
@@ -143,13 +151,16 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
       <a-col :xs="24" :sm="12" :lg="6">
         <a-card :loading="metricsLoading" class="kpi-card">
           <template v-if="metricsError">
-            <a-result status="error" title="加载失败" style="padding:12px" />
+            <a-result status="error" title="加载失败" style="padding: 12px" />
           </template>
           <template v-else>
             <a-statistic
               title="接口错误率"
               :value="metrics ? pct(metrics.error_rate) : '-'"
-              :value-style="{ color: (metrics?.error_rate ?? 0) > 0.05 ? '#b42318' : '#2e7d32', fontSize:'28px' }"
+              :value-style="{
+                color: (metrics?.error_rate ?? 0) > 0.05 ? '#b42318' : '#2e7d32',
+                fontSize: '28px',
+              }"
             />
           </template>
         </a-card>
@@ -175,21 +186,30 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
                 <a-statistic title="总线索数" :value="clueStats.total_clues" />
               </a-col>
               <a-col :span="8">
-                <a-statistic title="疑似线索" :value="clueStats.suspected_count"
-                  :value-style="{ color: '#b26a00' }" />
+                <a-statistic
+                  title="疑似线索"
+                  :value="clueStats.suspected_count"
+                  :value-style="{ color: '#b26a00' }"
+                />
               </a-col>
               <a-col :span="8">
                 <a-statistic title="平均复核（分钟）" :value="clueStats.avg_review_minutes" />
               </a-col>
             </a-row>
-            <a-row :gutter="16" style="margin-top:16px">
+            <a-row :gutter="16" style="margin-top: 16px">
               <a-col :span="12">
-                <a-statistic title="已确认覆盖" :value="clueStats.overridden_count"
-                  :value-style="{ color: '#2e7d32' }" />
+                <a-statistic
+                  title="已确认覆盖"
+                  :value="clueStats.overridden_count"
+                  :value-style="{ color: '#2e7d32' }"
+                />
               </a-col>
               <a-col :span="12">
-                <a-statistic title="已拒绝" :value="clueStats.rejected_count"
-                  :value-style="{ color: '#b42318' }" />
+                <a-statistic
+                  title="已拒绝"
+                  :value="clueStats.rejected_count"
+                  :value-style="{ color: '#b42318' }"
+                />
               </a-col>
             </a-row>
           </template>
@@ -210,18 +230,29 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
           <template v-else-if="secMetrics">
             <a-row :gutter="16">
               <a-col :span="12">
-                <a-statistic title="失败登录次数" :value="secMetrics.failed_login_count"
-                  :value-style="{ color: secMetrics.failed_login_count > 10 ? '#b42318' : '#18242d' }" />
+                <a-statistic
+                  title="失败登录次数"
+                  :value="secMetrics.failed_login_count"
+                  :value-style="{
+                    color: secMetrics.failed_login_count > 10 ? '#b42318' : '#18242d',
+                  }"
+                />
               </a-col>
               <a-col :span="12">
-                <a-statistic title="封禁用户数" :value="secMetrics.banned_user_count"
-                  :value-style="{ color: '#b42318' }" />
+                <a-statistic
+                  title="封禁用户数"
+                  :value="secMetrics.banned_user_count"
+                  :value-style="{ color: '#b42318' }"
+                />
               </a-col>
             </a-row>
-            <a-row :gutter="16" style="margin-top:16px">
+            <a-row :gutter="16" style="margin-top: 16px">
               <a-col :span="12">
-                <a-statistic title="高危操作次数" :value="secMetrics.risk_operation_count"
-                  :value-style="{ color: '#b26a00' }" />
+                <a-statistic
+                  title="高危操作次数"
+                  :value="secMetrics.risk_operation_count"
+                  :value-style="{ color: '#b26a00' }"
+                />
               </a-col>
               <a-col :span="12">
                 <a-statistic title="CAPTCHA 触发" :value="secMetrics.captcha_trigger_count" />
@@ -255,4 +286,3 @@ const num = (v?: number) => v != null ? v.toLocaleString() : '-'
   cursor: pointer;
 }
 </style>
-

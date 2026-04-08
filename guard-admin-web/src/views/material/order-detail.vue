@@ -17,10 +17,18 @@
                 {{ orderStatusLabels[detail.status] ?? detail.status }}
               </a-tag>
             </a-descriptions-item>
-            <a-descriptions-item label="物流单号">{{ detail.tracking_number ?? '-' }}</a-descriptions-item>
-            <a-descriptions-item label="收货地址" :span="2">{{ detail.delivery_address ?? '-' }}</a-descriptions-item>
-            <a-descriptions-item label="取消原因" :span="2">{{ detail.cancel_reason ?? '-' }}</a-descriptions-item>
-            <a-descriptions-item label="异常描述" :span="2">{{ detail.exception_desc ?? '-' }}</a-descriptions-item>
+            <a-descriptions-item label="物流单号">{{
+              detail.tracking_number ?? '-'
+            }}</a-descriptions-item>
+            <a-descriptions-item label="收货地址" :span="2">{{
+              detail.delivery_address ?? '-'
+            }}</a-descriptions-item>
+            <a-descriptions-item label="取消原因" :span="2">{{
+              detail.cancel_reason ?? '-'
+            }}</a-descriptions-item>
+            <a-descriptions-item label="异常描述" :span="2">{{
+              detail.exception_desc ?? '-'
+            }}</a-descriptions-item>
             <a-descriptions-item label="创建时间">{{ detail.created_at }}</a-descriptions-item>
             <a-descriptions-item label="更新时间">{{ detail.updated_at }}</a-descriptions-item>
           </a-descriptions>
@@ -33,34 +41,35 @@
               v-if="detail.status === 'PENDING'"
               type="primary"
               @click="openModal('approve')"
-            >审核通过</a-button>
+              >审核通过</a-button
+            >
             <a-button
               v-if="detail.status === 'PROCESSING'"
               type="primary"
               @click="openModal('ship')"
-            >发货</a-button>
-            <a-button
-              v-if="detail.status === 'CANCEL_PENDING'"
-              @click="openModal('cancel_approve')"
-            >同意取消</a-button>
+              >发货</a-button
+            >
+            <a-button v-if="detail.status === 'CANCEL_PENDING'" @click="openModal('cancel_approve')"
+              >同意取消</a-button
+            >
             <a-button
               v-if="detail.status === 'CANCEL_PENDING'"
               danger
               @click="openModal('cancel_reject')"
-            >拒绝取消</a-button>
+              >拒绝取消</a-button
+            >
             <a-button
               v-if="detail.status === 'SHIPPED'"
               danger
               @click="openModal('logistics_exception')"
-            >报告物流异常</a-button>
-            <a-button
-              v-if="detail.status === 'EXCEPTION'"
-              @click="openModal('reship')"
-            >补发</a-button>
-            <a-button
-              v-if="detail.status === 'EXCEPTION'"
-              @click="openModal('close_exception')"
-            >关闭异常</a-button>
+              >报告物流异常</a-button
+            >
+            <a-button v-if="detail.status === 'EXCEPTION'" @click="openModal('reship')"
+              >补发</a-button
+            >
+            <a-button v-if="detail.status === 'EXCEPTION'" @click="openModal('close_exception')"
+              >关闭异常</a-button
+            >
           </a-space>
         </a-card>
 
@@ -89,20 +98,15 @@
       @ok="submitAction"
     >
       <a-form layout="vertical">
-        <a-form-item v-if="currentAction === 'ship' || currentAction === 'reship'" label="物流单号" required>
-          <a-input v-model:value="trackingNumber" placeholder="请输入快递单号" />
-        </a-form-item>
         <a-form-item
-          v-if="needsReason"
-          :label="reasonLabel"
+          v-if="currentAction === 'ship' || currentAction === 'reship'"
+          label="物流单号"
           required
         >
-          <a-textarea
-            v-model:value="actionReason"
-            :rows="3"
-            :maxlength="256"
-            show-count
-          />
+          <a-input v-model:value="trackingNumber" placeholder="请输入快递单号" />
+        </a-form-item>
+        <a-form-item v-if="needsReason" :label="reasonLabel" required>
+          <a-textarea v-model:value="actionReason" :rows="3" :maxlength="256" show-count />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -137,7 +141,14 @@ const timeline = ref<OrderTimelineItem[]>([])
 const loading = ref(false)
 
 const modalVisible = ref(false)
-type ActionType = 'approve' | 'ship' | 'cancel_approve' | 'cancel_reject' | 'logistics_exception' | 'reship' | 'close_exception'
+type ActionType =
+  | 'approve'
+  | 'ship'
+  | 'cancel_approve'
+  | 'cancel_reject'
+  | 'logistics_exception'
+  | 'reship'
+  | 'close_exception'
 const currentAction = ref<ActionType>('approve')
 const actionReason = ref('')
 const trackingNumber = ref('')
@@ -153,7 +164,7 @@ const modalTitles: Record<ActionType, string> = {
   close_exception: '关闭物流异常',
 }
 const needsReason = computed(() =>
-  ['cancel_approve', 'cancel_reject', 'logistics_exception'].includes(currentAction.value)
+  ['cancel_approve', 'cancel_reject', 'logistics_exception'].includes(currentAction.value),
 )
 const reasonLabel = computed(() => {
   const map: Record<string, string> = {

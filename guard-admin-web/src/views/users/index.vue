@@ -8,14 +8,24 @@
           placeholder="搜索用户名/ID"
           allow-clear
           style="width: 180px"
-          @press-enter="() => { params.page_no = 1; load() }"
+          @press-enter="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
         />
         <a-select
           v-model:value="params.role"
           placeholder="角色"
           allow-clear
           style="width: 140px"
-          @change="() => { params.page_no = 1; load() }"
+          @change="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
         >
           <a-select-option value="ADMIN">管理员</a-select-option>
           <a-select-option value="SUPERADMIN">超级管理员</a-select-option>
@@ -27,12 +37,26 @@
           placeholder="状态"
           allow-clear
           style="width: 120px"
-          @change="() => { params.page_no = 1; load() }"
+          @change="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
         >
           <a-select-option value="NORMAL">正常</a-select-option>
           <a-select-option value="BANNED">封禁</a-select-option>
         </a-select>
-        <a-button type="primary" @click="() => { params.page_no = 1; load() }">查询</a-button>
+        <a-button
+          type="primary"
+          @click="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
+          >查询</a-button
+        >
         <a-button @click="resetFilters">重置</a-button>
       </a-space>
 
@@ -71,7 +95,8 @@
                 type="link"
                 size="small"
                 @click="openResetPwdModal(record)"
-              >重置密码</a-button>
+                >重置密码</a-button
+              >
             </a-space>
           </template>
         </template>
@@ -89,12 +114,7 @@
       <p>用户：{{ currentUser?.username }}（{{ currentUser?.user_id }}）</p>
       <a-form layout="vertical">
         <a-form-item label="原因（5-256 字）" required>
-          <a-textarea
-            v-model:value="statusReason"
-            :rows="3"
-            :maxlength="256"
-            show-count
-          />
+          <a-textarea v-model:value="statusReason" :rows="3" :maxlength="256" show-count />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -103,7 +123,11 @@
     <a-modal
       v-model:open="resetPwdModalVisible"
       title="重置用户密码"
-      :ok-button-props="{ loading: resetPwdSubmitting, disabled: resetPwdReason.length < 5, danger: true }"
+      :ok-button-props="{
+        loading: resetPwdSubmitting,
+        disabled: resetPwdReason.length < 5,
+        danger: true,
+      }"
       ok-text="确认重置"
       @ok="submitResetPwd"
     >
@@ -116,12 +140,7 @@
       />
       <a-form layout="vertical">
         <a-form-item label="操作原因（5-256 字）" required>
-          <a-textarea
-            v-model:value="resetPwdReason"
-            :rows="3"
-            :maxlength="256"
-            show-count
-          />
+          <a-textarea v-model:value="resetPwdReason" :rows="3" :maxlength="256" show-count />
         </a-form-item>
       </a-form>
     </a-modal>

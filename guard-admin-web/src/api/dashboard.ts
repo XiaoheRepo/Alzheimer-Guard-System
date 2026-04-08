@@ -38,7 +38,9 @@ export interface SecurityMetrics {
 
 /** GET /api/v1/admin/dashboard/metrics */
 export const getDashboardMetrics = (window: DashboardWindow = '24h'): Promise<DashboardMetrics> =>
-  request.get('/admin/dashboard/metrics', { params: { window } }) as unknown as Promise<DashboardMetrics>
+  request.get('/admin/dashboard/metrics', {
+    params: { window },
+  }) as unknown as Promise<DashboardMetrics>
 
 /** GET /api/v1/admin/clues/statistics */
 export const getClueStatistics = (params?: {

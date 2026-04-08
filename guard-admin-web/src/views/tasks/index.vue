@@ -8,7 +8,12 @@
           placeholder="任务状态"
           allow-clear
           style="width: 140px"
-          @change="() => { params.page_no = 1; load() }"
+          @change="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
         >
           <a-select-option value="ACTIVE">处理中</a-select-option>
           <a-select-option value="RESOLVED">已处置</a-select-option>
@@ -19,13 +24,27 @@
           placeholder="上报来源"
           allow-clear
           style="width: 140px"
-          @change="() => { params.page_no = 1; load() }"
+          @change="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
         >
           <a-select-option value="APP">App</a-select-option>
           <a-select-option value="MINI_PROGRAM">小程序</a-select-option>
           <a-select-option value="ADMIN_PORTAL">管理端</a-select-option>
         </a-select>
-        <a-button type="primary" @click="() => { params.page_no = 1; load() }">查询</a-button>
+        <a-button
+          type="primary"
+          @click="
+            () => {
+              params.page_no = 1
+              load()
+            }
+          "
+          >查询</a-button
+        >
         <a-button @click="resetFilters">重置</a-button>
       </a-space>
     </a-card>
@@ -53,9 +72,7 @@
             </a-tag>
           </template>
           <template v-else-if="column.key === 'action'">
-            <a-button type="link" size="small" @click="viewDetail(record.task_id)">
-              详情
-            </a-button>
+            <a-button type="link" size="small" @click="viewDetail(record.task_id)"> 详情 </a-button>
           </template>
         </template>
       </a-table>

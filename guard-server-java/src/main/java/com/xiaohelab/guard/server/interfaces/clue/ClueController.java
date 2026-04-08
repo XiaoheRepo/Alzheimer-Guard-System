@@ -1,13 +1,13 @@
 package com.xiaohelab.guard.server.interfaces.clue;
 
+import com.xiaohelab.guard.server.application.clue.ClueService;
 import com.xiaohelab.guard.server.application.clue.ReportClueUseCase;
+import com.xiaohelab.guard.server.application.guardian.GuardianInvitationService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.ClueRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
+import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 线索接口（匿名上报 + 登录用户查询）。
@@ -29,9 +30,8 @@ import java.util.Map;
 public class ClueController {
 
     private final ReportClueUseCase reportClueUseCase;
-    private final ClueRecordMapper clueRecordMapper;
-    private final SysLogMapper sysLogMapper;
-    private final SysUserPatientMapper sysUserPatientMapper;
+    private final ClueService clueService;
+    private final GuardianInvitationService guardianInvitationService;
     private final SecurityContext securityContext;
 
     /**
@@ -45,7 +45,7 @@ public class ClueController {
             @Valid @RequestBody ReportClueRequest req) {
 
         // 匿名上报：提交者 ID 为 null
-        ClueRecordDO clue = reportClueUseCase.execute(
+        ClueRecordEntity clue = reportClueUseCase.execute(
                 requestId, req.getTaskId(), null,
                 buildAnonymousSnapshot(req),
                 req.getLocationLat(), req.getLocationLng(),
@@ -67,7 +67,7 @@ public class ClueController {
             @Valid @RequestBody ReportClueRequest req) {
 
         Long userId = securityContext.currentUserId();
-        ClueRecordDO clue = reportClueUseCase.execute(
+        ClueRecordEntity clue = reportClueUseCase.execute(
                 requestId, req.getTaskId(), userId,
                 null,   // 登录用户快照由服务端从数据库查
                 req.getLocationLat(), req.getLocationLng(),
@@ -91,17 +91,16 @@ public class ClueController {
         String userRole = securityContext.currentRole();
 
         // 查询任务归属验证（通过 patient_id 校验）
-        ClueRecordDO sample = clueRecordMapper.listByTaskId(taskId, 1, 0).stream()
-                .findFirst().orElse(null);
-        if (sample != null) {
+        Optional<ClueRecordEntity> sample = clueService.firstByTask(taskId);
+        if (sample.isPresent()) {
             boolean isAdmin = "ADMIN".equals(userRole) || "SUPER_ADMIN".equals(userRole);
-            if (!isAdmin && sysUserPatientMapper.countActiveRelation(userId, sample.getPatientId()) == 0) {
+            if (!isAdmin && !guardianInvitationService.hasActiveRelation(userId, sample.get().getPatientId())) {
                 throw BizException.of("E_TASK_4030");
             }
         }
 
-        List<ClueRecordDO> list = clueRecordMapper.listByTaskId(taskId, pageSize, (pageNo - 1) * pageSize);
-        long total = clueRecordMapper.countByTaskId(taskId);
+        List<ClueRecordEntity> list = clueService.listByTask(taskId, pageSize, (pageNo - 1) * pageSize);
+        long total = clueService.countByTask(taskId);
 
         List<Map<String, Object>> items = list.stream().map(c -> Map.<String, Object>of(
                 "clue_id", String.valueOf(c.getId()),
@@ -119,23 +118,21 @@ public class ClueController {
                 .build(), traceId);
     }
 
-    // ===== 工具方法 =====
-
     /** 3.2.8 GET /api/v1/clues/{clueId} — 线索完整详情 */
     @GetMapping("/api/v1/clues/{clueId}")
     public ApiResponse<Map<String, Object>> getClueDetail(
             @PathVariable Long clueId,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        ClueRecordDO clue = clueRecordMapper.findByIdFull(clueId);
-        if (clue == null) throw BizException.of("E_CLUE_4043");
+        ClueRecordEntity clue = clueService.getById(clueId); // throws E_CLUE_4043 if absent
 
         String userRole = securityContext.currentRole();
         boolean isAdmin = "ADMIN".equals(userRole) || "SUPERADMIN".equals(userRole)
                 || "SUPER_ADMIN".equals(userRole);
         if (!isAdmin && clue.getPatientId() != null) {
-            long rel = sysUserPatientMapper.countActiveRelation(securityContext.currentUserId(), clue.getPatientId());
-            if (rel == 0) throw BizException.of("E_GOV_4030");
+            if (!guardianInvitationService.hasActiveRelation(securityContext.currentUserId(), clue.getPatientId())) {
+                throw BizException.of("E_GOV_4030");
+            }
         }
 
         var data = new java.util.LinkedHashMap<String, Object>();
@@ -167,15 +164,15 @@ public class ClueController {
             @RequestParam(required = false) String cursor,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        ClueRecordDO clue = clueRecordMapper.findById(clueId);
-        if (clue == null) throw BizException.of("E_CLUE_4043");
+        ClueRecordEntity clue = clueService.getById(clueId); // throws E_CLUE_4043 if absent
 
         String userRole = securityContext.currentRole();
         boolean isAdmin = "ADMIN".equals(userRole) || "SUPERADMIN".equals(userRole)
                 || "SUPER_ADMIN".equals(userRole);
         if (!isAdmin && clue.getPatientId() != null) {
-            long rel = sysUserPatientMapper.countActiveRelation(securityContext.currentUserId(), clue.getPatientId());
-            if (rel == 0) throw BizException.of("E_PRO_4030");
+            if (!guardianInvitationService.hasActiveRelation(securityContext.currentUserId(), clue.getPatientId())) {
+                throw BizException.of("E_PRO_4030");
+            }
         }
 
         int offset = 0;
@@ -185,9 +182,8 @@ public class ClueController {
             } catch (Exception ignored) {}
         }
 
-        List<com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO> logs =
-                sysLogMapper.listByObjectId(String.valueOf(clueId), pageSize, offset);
-        long total = sysLogMapper.countByObjectId(String.valueOf(clueId));
+        List<SysLogDO> logs = clueService.listTimeline(clueId, pageSize, offset);
+        long total = clueService.countTimeline(clueId);
         boolean hasNext = (long)(offset + pageSize) < total;
         String nextCursor = hasNext
                 ? java.util.Base64.getEncoder().encodeToString(String.valueOf(offset + pageSize).getBytes())

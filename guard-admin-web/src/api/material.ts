@@ -94,7 +94,7 @@ export interface TagListParams {
 
 /** 3.6.3 管理端工单列表 */
 export const getAdminOrderList = (
-  params?: OrderListParams
+  params?: OrderListParams,
 ): Promise<PageOffset<MaterialOrderItem>> =>
   request.get('/admin/material/orders', { params }) as unknown as Promise<
     PageOffset<MaterialOrderItem>
@@ -107,7 +107,7 @@ export const getAdminOrderDetail = (orderId: string): Promise<MaterialOrderDetai
 /** 3.4.21 工单状态流转时间线 */
 export const getOrderTimeline = (
   orderId: string,
-  params?: { cursor?: string; page_size?: number }
+  params?: { cursor?: string; page_size?: number },
 ): Promise<PageCursor<OrderTimelineItem>> =>
   request.get(`/admin/material/orders/${orderId}/timeline`, {
     params,
@@ -116,7 +116,7 @@ export const getOrderTimeline = (
 /** 3.4.7 审核通过 */
 export const approveOrder = (
   orderId: string,
-  body?: { approve_note?: string }
+  body?: { approve_note?: string },
 ): Promise<{ order_id: string; status: OrderStatus; tag_code: string; approved_at: string }> =>
   request.put(`/admin/material/orders/${orderId}/approve`, body) as unknown as Promise<{
     order_id: string
@@ -128,7 +128,7 @@ export const approveOrder = (
 /** 3.4.8 同意取消申请 */
 export const cancelApproveOrder = (
   orderId: string,
-  body: { reason: string }
+  body: { reason: string },
 ): Promise<{ order_id: string; status: OrderStatus; cancelled_at: string }> =>
   request.put(`/admin/material/orders/${orderId}/cancel/approve`, body) as unknown as Promise<{
     order_id: string
@@ -139,7 +139,7 @@ export const cancelApproveOrder = (
 /** 3.4.9 拒绝取消申请 */
 export const cancelRejectOrder = (
   orderId: string,
-  body: { reason: string }
+  body: { reason: string },
 ): Promise<{ order_id: string; status: OrderStatus }> =>
   request.put(`/admin/material/orders/${orderId}/cancel/reject`, body) as unknown as Promise<{
     order_id: string
@@ -149,8 +149,13 @@ export const cancelRejectOrder = (
 /** 3.4.10 发货 */
 export const shipOrder = (
   orderId: string,
-  body: { tracking_number: string; ship_note?: string }
-): Promise<{ order_id: string; status: OrderStatus; tracking_number: string; shipped_at: string }> =>
+  body: { tracking_number: string; ship_note?: string },
+): Promise<{
+  order_id: string
+  status: OrderStatus
+  tracking_number: string
+  shipped_at: string
+}> =>
   request.put(`/admin/material/orders/${orderId}/ship`, body) as unknown as Promise<{
     order_id: string
     status: OrderStatus
@@ -161,7 +166,7 @@ export const shipOrder = (
 /** 3.4.11 报告物流异常 */
 export const reportLogisticsException = (
   orderId: string,
-  body: { exception_desc: string }
+  body: { exception_desc: string },
 ): Promise<{ order_id: string; status: OrderStatus; exception_desc: string }> =>
   request.put(`/admin/material/orders/${orderId}/logistics-exception`, body) as unknown as Promise<{
     order_id: string
@@ -172,8 +177,13 @@ export const reportLogisticsException = (
 /** 3.4.12 补发 */
 export const reshipOrder = (
   orderId: string,
-  body: { tracking_number: string; reship_note?: string }
-): Promise<{ order_id: string; status: OrderStatus; tracking_number: string; reshipped_at: string }> =>
+  body: { tracking_number: string; reship_note?: string },
+): Promise<{
+  order_id: string
+  status: OrderStatus
+  tracking_number: string
+  reshipped_at: string
+}> =>
   request.put(`/admin/material/orders/${orderId}/reship`, body) as unknown as Promise<{
     order_id: string
     status: OrderStatus
@@ -184,7 +194,7 @@ export const reshipOrder = (
 /** 3.4.13 关闭物流异常 */
 export const closeException = (
   orderId: string,
-  body: { close_note?: string }
+  body: { close_note?: string },
 ): Promise<{ order_id: string; status: OrderStatus; closed_at: string }> =>
   request.put(`/admin/material/orders/${orderId}/close-exception`, body) as unknown as Promise<{
     order_id: string
@@ -203,7 +213,7 @@ export const getTagDetail = (tagCode: string): Promise<TagDetail> =>
 /** 3.4.6 作废标签 */
 export const voidTag = (
   tagCode: string,
-  body: { void_reason: string }
+  body: { void_reason: string },
 ): Promise<{ tag_code: string; status: TagStatus; void_reason: string; void_at: string }> =>
   request.post(`/admin/tags/${tagCode}/void`, body) as unknown as Promise<{
     tag_code: string
@@ -215,7 +225,7 @@ export const voidTag = (
 /** 3.4.16 重置标签 */
 export const resetTag = (
   tagCode: string,
-  body: { reset_reason: string }
+  body: { reset_reason: string },
 ): Promise<{ tag_code: string; status: TagStatus; reset_at: string }> =>
   request.post(`/admin/tags/${tagCode}/reset`, body) as unknown as Promise<{
     tag_code: string
@@ -226,7 +236,7 @@ export const resetTag = (
 /** 3.4.17 恢复标签 */
 export const recoverTag = (
   tagCode: string,
-  body: { recover_reason: string }
+  body: { recover_reason: string },
 ): Promise<{ tag_code: string; status: TagStatus; recovered_at: string }> =>
   request.post(`/admin/tags/${tagCode}/recover`, body) as unknown as Promise<{
     tag_code: string
@@ -242,3 +252,26 @@ export const importTags = (file: File): Promise<{ imported_count: number; batch_
     headers: { 'Content-Type': 'multipart/form-data' },
   }) as unknown as Promise<{ imported_count: number; batch_no: string }>
 }
+
+/** 3.4.26 手工分配标签 */
+export const allocateTag = (
+  tagCode: string,
+  body: { order_id: string; reason?: string },
+): Promise<{ tag_code: string; order_id: string; status: TagStatus; allocated_at: string }> =>
+  request.post(`/admin/tags/${tagCode}/allocate`, body) as unknown as Promise<{
+    tag_code: string
+    order_id: string
+    status: TagStatus
+    allocated_at: string
+  }>
+
+/** 3.4.27 释放已分配标签 */
+export const releaseTag = (
+  tagCode: string,
+  body: { reason: string },
+): Promise<{ tag_code: string; status: TagStatus; released_at: string }> =>
+  request.post(`/admin/tags/${tagCode}/release`, body) as unknown as Promise<{
+    tag_code: string
+    status: TagStatus
+    released_at: string
+  }>

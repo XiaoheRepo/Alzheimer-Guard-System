@@ -303,6 +303,35 @@ public class MaterialOrderService {
         return sysLogMapper.countByModuleAndObjectId("TAG_ASSET", tagCode);
     }
 
+    // ===== 管理员标签查询 =====
+
+    public List<TagAssetEntity> adminListTagsByFilter(String status, Long patientId, int pageSize, int offset) {
+        return tagAssetRepository.listByFilter(status, patientId, pageSize, offset);
+    }
+
+    public long adminCountTagsByFilter(String status, Long patientId) {
+        return tagAssetRepository.countByFilter(status, patientId);
+    }
+
+    /**
+     * 管理员手工分配标签到工单（UNBOUND → ALLOCATED）。
+     * 返回受影响行数，0 表示状态冲突。
+     */
+    @Transactional
+    public int adminAllocateTag(String tagCode, Long orderId) {
+        TagAssetEntity tag = requireTag(tagCode);
+        return tagAssetRepository.allocate(tag.getId(), orderId);
+    }
+
+    /**
+     * 管理员释放已分配标签（ALLOCATED → UNBOUND）。
+     * 返回受影响行数，0 表示状态冲突。
+     */
+    @Transactional
+    public int adminReleaseTag(String tagCode) {
+        return tagAssetRepository.releaseByTagCode(tagCode);
+    }
+
     // ===== 内部工具 =====
 
     private TagApplyRecordEntity requireOrder(Long orderId) {

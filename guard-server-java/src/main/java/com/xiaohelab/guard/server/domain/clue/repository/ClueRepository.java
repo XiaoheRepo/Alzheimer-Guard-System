@@ -18,5 +18,31 @@ public interface ClueRepository {
 
     long countByTaskId(Long taskId);
 
+    /** 查询任务中待复核（suspect_flag=TRUE 且 PENDING）的线索 */
+    List<ClueRecordEntity> listPendingByTaskId(Long taskId);
+
+    /** 管理员复核队列 */
+    List<ClueRecordEntity> listReviewQueue(int limit, int offset);
+
+    long countReviewQueue();
+
+    /** 完整字段查询（含 override/reject 审核字段） */
+    Optional<ClueRecordEntity> findByIdFull(Long id);
+
+    /**
+     * 查找或抛出 BizException（E_CLUE_4043），携带完整字段。
+     * 供控制层便捷使用。
+     */
+    ClueRecordEntity findByIdOrThrow(Long id);
+
     void insert(ClueRecordEntity entity);
+
+    /** 分配线索给复核员 */
+    int assign(Long clueId, Long assigneeUserId);
+
+    /** 管理员 override（强制标记 OVERRIDDEN） */
+    int override(Long clueId, Long overrideBy, String overrideReason);
+
+    /** 管理员 reject（标记 REJECTED） */
+    int reject(Long clueId, Long rejectedBy, String rejectReason);
 }

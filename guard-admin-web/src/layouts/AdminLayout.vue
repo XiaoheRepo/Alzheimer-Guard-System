@@ -26,20 +26,26 @@ const selectedKeys = computed(() => [route.name as string])
 
 const menuItems = computed(() => {
   const all = [
-    { key: 'Dashboard',   label: '运营看板',       icon: DashboardOutlined,          path: '/admin/dashboard' },
-    { key: 'Tasks',       label: '任务治理',       icon: UnorderedListOutlined,      path: '/admin/tasks' },
-    { key: 'ClueReview',  label: '线索复核',       icon: AuditOutlined,              path: '/admin/clues/review' },
-    { key: 'Material',    label: '标签与物资',     icon: TagsOutlined,               path: '/admin/material' },
-    { key: 'Users',       label: '用户治理',       icon: TeamOutlined,               path: '/admin/users' },
-    { key: 'Audit',       label: '审计与安全',     icon: SafetyCertificateOutlined,  path: '/admin/audit' },
-    { key: 'SysConfig',   label: '系统配置',       icon: SettingOutlined,            path: '/admin/config' },
-    { key: 'DeadLetter',  label: 'DEAD 干预',      icon: AlertOutlined,              path: '/admin/dead-letter', superOnly: true },
+    { key: 'Dashboard', label: '运营看板', icon: DashboardOutlined, path: '/admin/dashboard' },
+    { key: 'Tasks', label: '任务治理', icon: UnorderedListOutlined, path: '/admin/tasks' },
+    { key: 'ClueReview', label: '线索复核', icon: AuditOutlined, path: '/admin/clues/review' },
+    { key: 'Material', label: '标签与物资', icon: TagsOutlined, path: '/admin/material' },
+    { key: 'Users', label: '用户治理', icon: TeamOutlined, path: '/admin/users' },
+    { key: 'Audit', label: '审计与安全', icon: SafetyCertificateOutlined, path: '/admin/audit' },
+    { key: 'SysConfig', label: '系统配置', icon: SettingOutlined, path: '/admin/config' },
+    {
+      key: 'DeadLetter',
+      label: 'DEAD 干预',
+      icon: AlertOutlined,
+      path: '/admin/dead-letter',
+      superOnly: true,
+    },
   ]
-  return all.filter(item => !item.superOnly || authStore.isSuperAdmin)
+  return all.filter((item) => !item.superOnly || authStore.isSuperAdmin)
 })
 
 const handleMenuClick = ({ key }: { key: string }) => {
-  const item = menuItems.value.find(m => m.key === key)
+  const item = menuItems.value.find((m) => m.key === key)
   if (item) router.push(item.path)
 }
 
@@ -56,12 +62,7 @@ const handleLogout = async () => {
         <span v-if="!collapsed" class="logo-text">码上回家·管理端</span>
         <span v-else class="logo-text">管</span>
       </div>
-      <a-menu
-        theme="dark"
-        mode="inline"
-        :selected-keys="selectedKeys"
-        @click="handleMenuClick"
-      >
+      <a-menu theme="dark" mode="inline" :selected-keys="selectedKeys" @click="handleMenuClick">
         <a-menu-item v-for="item in menuItems" :key="item.key">
           <component :is="item.icon" />
           <span>{{ item.label }}</span>
@@ -78,7 +79,7 @@ const handleLogout = async () => {
         </div>
         <div class="header-right">
           <a-dropdown placement="bottomRight">
-            <a-space class="user-info" style="cursor:pointer">
+            <a-space class="user-info" style="cursor: pointer">
               <user-outlined />
               <span>{{ authStore.role }}</span>
             </a-space>
@@ -133,7 +134,9 @@ const handleLogout = async () => {
     font-size: 18px;
     cursor: pointer;
     transition: color 0.3s;
-    &:hover { color: #1890ff; }
+    &:hover {
+      color: #1890ff;
+    }
   }
 
   .page-title {
@@ -157,7 +160,9 @@ const handleLogout = async () => {
 .user-info {
   padding: 4px 8px;
   border-radius: 4px;
-  &:hover { background: #f5f5f5; }
+  &:hover {
+    background: #f5f5f5;
+  }
 }
 
 .content {
@@ -168,4 +173,3 @@ const handleLogout = async () => {
   border-radius: 8px;
 }
 </style>
-

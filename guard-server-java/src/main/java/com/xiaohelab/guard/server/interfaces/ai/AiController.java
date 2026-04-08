@@ -1,15 +1,15 @@
 package com.xiaohelab.guard.server.interfaces.ai;
 
 import com.xiaohelab.guard.server.application.ai.AiSessionService;
+import com.xiaohelab.guard.server.application.ai.PatientMemoryNoteService;
+import com.xiaohelab.guard.server.application.guardian.GuardianInvitationService;
+import com.xiaohelab.guard.server.application.patient.PatientProfileService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.AiSessionDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.AiSessionMessageDO;
+import com.xiaohelab.guard.server.domain.ai.entity.AiSessionEntity;
+import com.xiaohelab.guard.server.domain.ai.entity.AiSessionMessageEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientMemoryNoteDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientMemoryNoteMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientProfileMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.time.DateTimeException;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -45,9 +44,9 @@ public class AiController {
     private static final Set<String> VALID_KIND = Set.of("HABIT", "PLACE", "PREFERENCE", "SAFETY_CUE");
 
     private final AiSessionService aiSessionService;
-    private final SysUserPatientMapper sysUserPatientMapper;
-    private final PatientProfileMapper patientProfileMapper;
-    private final PatientMemoryNoteMapper patientMemoryNoteMapper;
+    private final PatientProfileService patientService;
+    private final GuardianInvitationService guardianInvitationService;
+    private final PatientMemoryNoteService patientMemoryNoteService;
     private final SecurityContext securityContext;
 
     // =========================================================================
@@ -64,7 +63,7 @@ public class AiController {
         Long patientId = parseLong(req.getPatientId(), "patient_id");
         Long taskId = req.getTaskId() == null ? null : parseLong(req.getTaskId(), "task_id");
 
-        AiSessionDO session = aiSessionService.createSession(
+        AiSessionEntity session = aiSessionService.createSession(
                 securityContext.currentUserId(), patientId, taskId);
 
         return ApiResponse.ok(Map.of("session_id", session.getSessionId()), traceId);
@@ -83,7 +82,7 @@ public class AiController {
 
         Long userId = securityContext.currentUserId();
         Long patientId = patientIdStr == null ? null : parseLong(patientIdStr, "patient_id");
-        List<AiSessionDO> list = aiSessionService.listSessions(userId, patientId, pageNo, pageSize);
+        List<AiSessionEntity> list = aiSessionService.listSessions(userId, patientId, pageNo, pageSize);
         long total = aiSessionService.countSessions(userId, patientId);
 
         return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
@@ -102,7 +101,7 @@ public class AiController {
             @PathVariable String sessionId,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        AiSessionDO session = aiSessionService.getSession(sessionId, securityContext.currentUserId());
+        AiSessionEntity session = aiSessionService.getSession(sessionId, securityContext.currentUserId());
         long roundCount = aiSessionService.countMessages(sessionId) / 2;
         return ApiResponse.ok(sessionDetailVO(session, roundCount), traceId);
     }
@@ -148,7 +147,7 @@ public class AiController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         Long userId = securityContext.currentUserId();
-        List<AiSessionMessageDO> msgs = aiSessionService.getMessages(sessionId, userId, pageNo, pageSize);
+        List<AiSessionMessageEntity> msgs = aiSessionService.getMessages(sessionId, userId, pageNo, pageSize);
         long total = aiSessionService.countMessages(sessionId);
 
         List<Map<String, Object>> items = msgs.stream()
@@ -190,7 +189,7 @@ public class AiController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
             @RequestBody(required = false) ArchiveRequest req) {
 
-        AiSessionDO session = aiSessionService.archiveSession(sessionId, securityContext.currentUserId());
+        AiSessionEntity session = aiSessionService.archiveSession(sessionId, securityContext.currentUserId());
         return ApiResponse.ok(Map.of(
                 "session_id", session.getSessionId(),
                 "status", session.getStatus(),
@@ -214,7 +213,7 @@ public class AiController {
         Long patientId = patientIdStr == null ? null : parseLong(patientIdStr, "patient_id");
         Long filterUserId = userIdStr == null ? null : parseLong(userIdStr, "user_id");
 
-        List<AiSessionDO> list = aiSessionService.listAllSessions(filterUserId, patientId, pageNo, pageSize);
+        List<AiSessionEntity> list = aiSessionService.listAllSessions(filterUserId, patientId, pageNo, pageSize);
         long total = aiSessionService.countAllSessions(filterUserId, patientId);
 
         return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
@@ -234,7 +233,7 @@ public class AiController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        AiSessionDO session = aiSessionService.adminGetSession(sessionId);
+        AiSessionEntity session = aiSessionService.adminGetSession(sessionId);
         long roundCount = aiSessionService.countMessages(sessionId) / 2;
         return ApiResponse.ok(sessionDetailVO(session, roundCount), traceId);
     }
@@ -252,7 +251,7 @@ public class AiController {
 
         requireAdmin();
         long total = aiSessionService.countMessages(sessionId);
-        List<AiSessionMessageDO> msgs = aiSessionService
+        List<AiSessionMessageEntity> msgs = aiSessionService
                 .adminGetMessages(sessionId, pageNo, pageSize);
 
         List<Map<String, Object>> items = msgs.stream()
@@ -284,11 +283,12 @@ public class AiController {
             @Valid @RequestBody MemoryNoteRequest req) {
 
         // 验证患者存在
-        if (patientProfileMapper.findById(patientId) == null) throw BizException.of("E_PRO_4041");
+        patientService.getPatientById(patientId);
         // 验证监护权限（admin 可跳过）
         if (!securityContext.isAdmin()) {
-            long rel = sysUserPatientMapper.countActiveRelation(securityContext.currentUserId(), patientId);
-            if (rel == 0) throw BizException.of("E_PRO_4030");
+            if (!guardianInvitationService.hasActiveRelation(securityContext.currentUserId(), patientId)) {
+                throw BizException.of("E_PRO_4030");
+            }
         }
         // 校验 kind
         if (!VALID_KIND.contains(req.getKind())) throw BizException.of("E_AI_4003");
@@ -305,14 +305,8 @@ public class AiController {
             tagsJson = sb.toString();
         }
 
-        PatientMemoryNoteDO note = new PatientMemoryNoteDO();
-        note.setNoteId(generateNoteId());
-        note.setPatientId(patientId);
-        note.setCreatedBy(securityContext.currentUserId());
-        note.setKind(req.getKind());
-        note.setContent(req.getContent());
-        note.setTags(tagsJson);
-        patientMemoryNoteMapper.insert(note);
+        PatientMemoryNoteDO note = patientMemoryNoteService.addNote(
+                patientId, securityContext.currentUserId(), req.getKind(), req.getContent(), tagsJson);
 
         return ApiResponse.ok(Map.of(
                 "note_id", note.getNoteId(),
@@ -335,16 +329,17 @@ public class AiController {
             @RequestParam(required = false) String kind,
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
-        if (patientProfileMapper.findById(patientId) == null) throw BizException.of("E_PRO_4041");
+        patientService.getPatientById(patientId);
         if (!securityContext.isAdmin()) {
-            long rel = sysUserPatientMapper.countActiveRelation(securityContext.currentUserId(), patientId);
-            if (rel == 0) throw BizException.of("E_PRO_4030");
+            if (!guardianInvitationService.hasActiveRelation(securityContext.currentUserId(), patientId)) {
+                throw BizException.of("E_PRO_4030");
+            }
         }
         if (kind != null && !VALID_KIND.contains(kind)) throw BizException.of("E_REQ_4005");
 
         int offset = (pageNo - 1) * pageSize;
-        List<PatientMemoryNoteDO> notes = patientMemoryNoteMapper.listByPatientId(patientId, kind, pageSize, offset);
-        long total = patientMemoryNoteMapper.countByPatientId(patientId, kind);
+        List<PatientMemoryNoteDO> notes = patientMemoryNoteService.listNotes(patientId, kind, pageSize, offset);
+        long total = patientMemoryNoteService.countNotes(patientId, kind);
 
         List<Map<String, Object>> items = notes.stream()
                 .map(n -> Map.<String, Object>of(
@@ -377,7 +372,7 @@ public class AiController {
         }
     }
 
-    private Map<String, Object> sessionSummaryVO(AiSessionDO s, boolean includeTaskId) {
+    private Map<String, Object> sessionSummaryVO(AiSessionEntity s, boolean includeTaskId) {
         java.util.LinkedHashMap<String, Object> vo = new java.util.LinkedHashMap<>();
         vo.put("session_id", s.getSessionId());
         if (!includeTaskId) vo.put("user_id", String.valueOf(s.getUserId()));
@@ -391,7 +386,7 @@ public class AiController {
         return vo;
     }
 
-    private Map<String, Object> sessionDetailVO(AiSessionDO s, long roundCount) {
+    private Map<String, Object> sessionDetailVO(AiSessionEntity s, long roundCount) {
         java.util.LinkedHashMap<String, Object> vo = new java.util.LinkedHashMap<>();
         vo.put("session_id", s.getSessionId());
         vo.put("user_id", String.valueOf(s.getUserId()));
@@ -410,23 +405,12 @@ public class AiController {
         if (tagsJson == null || tagsJson.isBlank() || "[]".equals(tagsJson.trim())) {
             return List.of();
         }
-        // simple JSON array of strings parsing without pulling in full ObjectMapper dependency
         String stripped = tagsJson.trim().replaceAll("^\\[|]$", "").trim();
         if (stripped.isEmpty()) return List.of();
         return Arrays.stream(stripped.split(","))
                 .map(t -> t.trim().replaceAll("^\"|\"$", ""))
                 .filter(t -> !t.isEmpty())
                 .toList();
-    }
-
-    private String generateNoteId() {
-        String ts = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                .format(LocalDateTime.now(ZoneOffset.UTC));
-        byte[] b = new byte[3];
-        new java.util.Random().nextBytes(b);
-        StringBuilder sb = new StringBuilder();
-        for (byte v : b) sb.append(String.format("%02x", v));
-        return "mn_" + ts + "_" + sb;
     }
 
     // =========================================================================

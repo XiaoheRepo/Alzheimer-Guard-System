@@ -65,4 +65,13 @@ public class NotificationService {
     public long count(Long userId) {
         return notificationInboxMapper.countByUserId(userId);
     }
+
+    /** 分页查询任务相关告警（供 RescueTaskController 使用） */
+    public List<NotificationInboxDO> listAlertsByTask(Long taskId, String level, int pageSize, int offset) {
+        return notificationInboxMapper.listByRelatedTaskId(taskId, level, pageSize, offset);
+    }
+
+    public long countAlertsByTask(Long taskId, String level) {
+        return notificationInboxMapper.countByRelatedTaskId(taskId, level);
+    }
 }

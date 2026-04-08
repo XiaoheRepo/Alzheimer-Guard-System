@@ -1,5 +1,40 @@
 <template>
   <div class="page-container">
+    <!-- 安全指标卡片 -->
+    <a-row :gutter="16" style="margin-bottom: 16px">
+      <a-col :span="6">
+        <a-card :loading="metricsLoading" :bordered="false">
+          <a-statistic
+            title="登录失败次数（近 24h）"
+            :value="secMetrics?.failed_login_count ?? '—'"
+            value-style="color: #cf1322"
+          />
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :loading="metricsLoading" :bordered="false">
+          <a-statistic
+            title="高风险操作次数（近 24h）"
+            :value="secMetrics?.risk_operation_count ?? '—'"
+            value-style="color: #faad14"
+          />
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :loading="metricsLoading" :bordered="false">
+          <a-statistic title="封禁用户数（近 24h）" :value="secMetrics?.banned_user_count ?? '—'" />
+        </a-card>
+      </a-col>
+      <a-col :span="6">
+        <a-card :loading="metricsLoading" :bordered="false">
+          <a-statistic
+            title="验证码触发次数（近 24h）"
+            :value="secMetrics?.captcha_trigger_count ?? '—'"
+          />
+        </a-card>
+      </a-col>
+    </a-row>
+
     <a-card :bordered="false">
       <!-- 筛选栏 -->
       <a-space wrap style="margin-bottom: 12px">
@@ -46,7 +81,15 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'result'">
-            <a-tag :color="record.result === 'SUCCESS' ? 'success' : record.result === 'FAIL' ? 'error' : 'default'">
+            <a-tag
+              :color="
+                record.result === 'SUCCESS'
+                  ? 'success'
+                  : record.result === 'FAIL'
+                    ? 'error'
+                    : 'default'
+              "
+            >
               {{ record.result }}
             </a-tag>
           </template>
@@ -55,11 +98,7 @@
 
       <!-- 加载更多 (cursor pagination) -->
       <div style="text-align: center; margin-top: 16px">
-        <a-button
-          v-if="hasNext"
-          :loading="loading"
-          @click="loadMore"
-        >加载更多</a-button>
+        <a-button v-if="hasNext" :loading="loading" @click="loadMore">加载更多</a-button>
         <span v-else-if="items.length > 0" style="color: #999">已加载全部</span>
       </div>
     </a-card>
@@ -70,6 +109,21 @@
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { getAuditLogs, type AuditLogItem, type AuditLogParams } from '@/api/audit'
+import { getSecurityMetrics, type SecurityMetrics } from '@/api/dashboard'
+
+const secMetrics = ref<SecurityMetrics | null>(null)
+const metricsLoading = ref(false)
+
+async function loadSecurityMetrics() {
+  metricsLoading.value = true
+  try {
+    secMetrics.value = await getSecurityMetrics()
+  } catch {
+    // partial degradation — metrics card shows '—'
+  } finally {
+    metricsLoading.value = false
+  }
+}
 
 const params = reactive<AuditLogParams>({
   page_size: 30,
@@ -124,7 +178,10 @@ function resetFilters() {
   firstLoad()
 }
 
-onMounted(firstLoad)
+onMounted(() => {
+  loadSecurityMetrics()
+  firstLoad()
+})
 </script>
 
 <style scoped>

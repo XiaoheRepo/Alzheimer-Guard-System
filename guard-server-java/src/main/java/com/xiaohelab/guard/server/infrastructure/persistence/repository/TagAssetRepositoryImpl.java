@@ -93,4 +93,9 @@ public class TagAssetRepositoryImpl implements TagAssetRepository {
     public int recover(Long id) {
         return mapper.recover(id);
     }
+
+    @Override
+    public int releaseByTagCode(String tagCode) {
+        return mapper.releaseByTagCode(tagCode);
+    }
 }

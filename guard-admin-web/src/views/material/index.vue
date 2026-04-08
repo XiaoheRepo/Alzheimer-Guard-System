@@ -11,7 +11,12 @@
               placeholder="工单状态"
               allow-clear
               style="width: 160px"
-              @change="() => { orderParams.page_no = 1; loadOrders() }"
+              @change="
+                () => {
+                  orderParams.page_no = 1
+                  loadOrders()
+                }
+              "
             >
               <a-select-option value="PENDING">待审核</a-select-option>
               <a-select-option value="PROCESSING">处理中</a-select-option>
@@ -21,7 +26,16 @@
               <a-select-option value="COMPLETED">已完成</a-select-option>
               <a-select-option value="CANCELLED">已取消</a-select-option>
             </a-select>
-            <a-button type="primary" @click="() => { orderParams.page_no = 1; loadOrders() }">查询</a-button>
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  orderParams.page_no = 1
+                  loadOrders()
+                }
+              "
+              >查询</a-button
+            >
             <a-button @click="resetOrderFilters">重置</a-button>
           </a-space>
           <a-table
@@ -45,7 +59,9 @@
                 </a-tag>
               </template>
               <template v-else-if="column.key === 'action'">
-                <a-button type="link" size="small" @click="viewOrder(record.order_id)">详情</a-button>
+                <a-button type="link" size="small" @click="viewOrder(record.order_id)"
+                  >详情</a-button
+                >
               </template>
             </template>
           </a-table>
@@ -61,7 +77,12 @@
               placeholder="标签状态"
               allow-clear
               style="width: 140px"
-              @change="() => { tagParams.page_no = 1; loadTags() }"
+              @change="
+                () => {
+                  tagParams.page_no = 1
+                  loadTags()
+                }
+              "
             >
               <a-select-option value="UNBOUND">未绑定</a-select-option>
               <a-select-option value="ALLOCATED">已分配</a-select-option>
@@ -69,7 +90,16 @@
               <a-select-option value="LOST">已丢失</a-select-option>
               <a-select-option value="VOID">已作废</a-select-option>
             </a-select>
-            <a-button type="primary" @click="() => { tagParams.page_no = 1; loadTags() }">查询</a-button>
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  tagParams.page_no = 1
+                  loadTags()
+                }
+              "
+              >查询</a-button
+            >
           </a-space>
           <a-table
             :columns="tagColumns"
@@ -94,12 +124,27 @@
               <template v-else-if="column.key === 'action'">
                 <a-space>
                   <a-button
+                    v-if="record.status === 'UNBOUND'"
+                    type="link"
+                    size="small"
+                    @click="openAllocateTag(record.tag_code)"
+                    >分配</a-button
+                  >
+                  <a-button
+                    v-if="record.status === 'ALLOCATED'"
+                    type="link"
+                    size="small"
+                    @click="openReleaseTag(record.tag_code)"
+                    >释放</a-button
+                  >
+                  <a-button
                     type="link"
                     size="small"
                     danger
                     :disabled="!['ALLOCATED', 'BOUND'].includes(record.status)"
                     @click="openVoidTag(record.tag_code)"
-                  >作废</a-button>
+                    >作废</a-button
+                  >
                 </a-space>
               </template>
             </template>
@@ -129,6 +174,53 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 分配标签弹窗 -->
+    <a-modal
+      v-model:open="allocateModalVisible"
+      title="分配标签"
+      :ok-button-props="{ loading: allocateSubmitting, disabled: !allocateOrderId }"
+      ok-text="确认分配"
+      @ok="submitAllocateTag"
+    >
+      <p>标签：{{ allocateTagCode }}</p>
+      <a-form layout="vertical">
+        <a-form-item label="目标工单 ID" required>
+          <a-input v-model:value="allocateOrderId" placeholder="请输入工单 ID" />
+        </a-form-item>
+        <a-form-item label="备注（可选）">
+          <a-textarea
+            v-model:value="allocateReason"
+            :rows="2"
+            :maxlength="256"
+            show-count
+            placeholder="可选备注"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 释放标签弹窗 -->
+    <a-modal
+      v-model:open="releaseModalVisible"
+      title="释放标签"
+      :ok-button-props="{ loading: releaseSubmitting, disabled: releaseReason.length < 5 }"
+      ok-text="确认释放"
+      @ok="submitReleaseTag"
+    >
+      <p>标签：{{ releaseTagCode }}</p>
+      <a-form layout="vertical">
+        <a-form-item label="释放原因（必填，5-256 字）" required>
+          <a-textarea
+            v-model:value="releaseReason"
+            :rows="3"
+            :maxlength="256"
+            show-count
+            placeholder="请填写释放原因"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -140,6 +232,8 @@ import {
   getAdminOrderList,
   getTagList,
   voidTag,
+  allocateTag,
+  releaseTag,
   type OrderStatus,
   type TagStatus,
   type MaterialOrderItem,
@@ -295,6 +389,63 @@ async function submitVoidTag() {
     // error handled by interceptor
   } finally {
     voidSubmitting.value = false
+  }
+}
+
+// ── 分配标签 ──────────────────────────────────────────────────────
+const allocateModalVisible = ref(false)
+const allocateTagCode = ref('')
+const allocateOrderId = ref('')
+const allocateReason = ref('')
+const allocateSubmitting = ref(false)
+
+function openAllocateTag(tagCode: string) {
+  allocateTagCode.value = tagCode
+  allocateOrderId.value = ''
+  allocateReason.value = ''
+  allocateModalVisible.value = true
+}
+
+async function submitAllocateTag() {
+  allocateSubmitting.value = true
+  try {
+    await allocateTag(allocateTagCode.value, {
+      order_id: allocateOrderId.value,
+      ...(allocateReason.value ? { reason: allocateReason.value } : {}),
+    })
+    message.success('标签已分配')
+    allocateModalVisible.value = false
+    await loadTags()
+  } catch {
+    // error handled by interceptor
+  } finally {
+    allocateSubmitting.value = false
+  }
+}
+
+// ── 释放标签 ──────────────────────────────────────────────────────
+const releaseModalVisible = ref(false)
+const releaseTagCode = ref('')
+const releaseReason = ref('')
+const releaseSubmitting = ref(false)
+
+function openReleaseTag(tagCode: string) {
+  releaseTagCode.value = tagCode
+  releaseReason.value = ''
+  releaseModalVisible.value = true
+}
+
+async function submitReleaseTag() {
+  releaseSubmitting.value = true
+  try {
+    await releaseTag(releaseTagCode.value, { reason: releaseReason.value })
+    message.success('标签已释放')
+    releaseModalVisible.value = false
+    await loadTags()
+  } catch {
+    // error handled by interceptor
+  } finally {
+    releaseSubmitting.value = false
   }
 }
 

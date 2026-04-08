@@ -27,7 +27,13 @@
           <template v-else-if="column.key === 'risk_score'">
             <a-progress
               :percent="record.risk_score"
-              :stroke-color="record.risk_score >= 70 ? '#ff4d4f' : record.risk_score >= 40 ? '#faad14' : '#52c41a'"
+              :stroke-color="
+                record.risk_score >= 70
+                  ? '#ff4d4f'
+                  : record.risk_score >= 40
+                    ? '#faad14'
+                    : '#52c41a'
+              "
               size="small"
             />
           </template>
@@ -38,14 +44,19 @@
                 size="small"
                 :disabled="record.status !== 'PENDING'"
                 @click="openAction(record, 'override')"
-              >确认</a-button>
+                >确认</a-button
+              >
               <a-button
                 type="link"
                 size="small"
                 danger
                 :disabled="record.status !== 'PENDING'"
                 @click="openAction(record, 'reject')"
-              >驳回</a-button>
+                >驳回</a-button
+              >
+              <a-tooltip title="当前版本仅保留治理审计入口，证据请求功能未开放">
+                <a-button type="link" size="small" disabled>请求证据</a-button>
+              </a-tooltip>
             </a-space>
           </template>
         </template>

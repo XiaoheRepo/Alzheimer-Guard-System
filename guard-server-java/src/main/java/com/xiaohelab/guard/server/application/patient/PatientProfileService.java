@@ -114,6 +114,26 @@ public class PatientProfileService {
                 .orElseThrow(() -> BizException.of("E_PAT_4041"));
     }
 
+    /**
+     * 按短码获取患者（供公开入口使用）。
+     */
+    public PatientEntity getPatientByShortCode(String shortCode) {
+        return patientRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> BizException.of("E_PAT_4041"));
+    }
+
+    /**
+     * 验证短码 + PIN 码（供手动入口使用）。
+     * PIN 正确则返回患者实体；否则抛出 E_AUTH_4001。
+     */
+    public PatientEntity verifyShortCodePin(String shortCode, String pinCode) {
+        PatientEntity patient = getPatientByShortCode(shortCode);
+        if (!BCrypt.checkpw(pinCode, patient.getPinCodeHash())) {
+            throw BizException.of("E_AUTH_4001");
+        }
+        return patient;
+    }
+
     // ===== 内部工具 =====
 
     private PatientEntity requirePatient(Long patientId) {

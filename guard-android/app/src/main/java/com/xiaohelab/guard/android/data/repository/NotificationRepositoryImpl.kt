@@ -3,13 +3,15 @@ package com.xiaohelab.guard.android.data.repository
 import com.xiaohelab.guard.android.core.common.ApiResult
 import com.xiaohelab.guard.android.core.database.dao.NotificationDao
 import com.xiaohelab.guard.android.core.database.entity.NotificationEntity
-import com.xiaohelab.guard.android.core.network.NetworkModule.safeApiCall
+import com.xiaohelab.guard.android.core.network.safeApiCall
+import com.xiaohelab.guard.android.core.common.map
+import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.data.mapper.toDomain
 import com.xiaohelab.guard.android.data.remote.api.NotificationApiService
 import com.xiaohelab.guard.android.domain.model.Notification
 import com.xiaohelab.guard.android.domain.repository.NotificationRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.map as flowMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +22,7 @@ class NotificationRepositoryImpl @Inject constructor(
 ) : NotificationRepository {
 
     override fun observeNotifications(): Flow<List<Notification>> =
-        dao.observeAll().map { list ->
+        dao.observeAll().flowMap { list ->
             list.map { e ->
                 Notification(
                     id = e.notificationId,
@@ -42,7 +44,7 @@ class NotificationRepositoryImpl @Inject constructor(
         limit: Int
     ): ApiResult<Pair<List<Notification>, String?>> {
         val result = safeApiCall { api.getNotifications(cursor, limit) }
-        return if (result is ApiResult.Success) {
+        if (result is ApiResult.Success) {
             val page = result.data
             val entities = page.items.map { dto ->
                 NotificationEntity(
@@ -57,14 +59,13 @@ class NotificationRepositoryImpl @Inject constructor(
                 )
             }
             dao.upsertAll(entities)
-            ApiResult.Success(Pair(page.items.map { it.toDomain() }, page.nextCursor))
-        } else {
-            ApiResult.Failure(
-                code = (result as ApiResult.Failure).code,
-                message = result.message,
-                traceId = result.traceId
-            )
+            return ApiResult.Success(Pair(page.items.map { it.toDomain() }, page.next_cursor))
         }
+        return ApiResult.Failure(
+            code = (result as ApiResult.Failure).code,
+            message = result.message,
+            traceId = result.traceId
+        )
     }
 
     override suspend fun markRead(id: String): ApiResult<Unit> {

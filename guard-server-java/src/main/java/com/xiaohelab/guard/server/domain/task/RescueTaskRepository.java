@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.domain.task;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,4 +31,16 @@ public interface RescueTaskRepository {
      * 返回受影响行数；0 表示并发冲突或状态已变更。
      */
     int closeConditionally(RescueTaskEntity entity);
+
+    /** 分页查询患者历史任务 */
+    List<RescueTaskEntity> listByPatientId(Long patientId, int limit, int offset);
+
+    /** 统计患者任务总数 */
+    long countByPatientId(Long patientId);
+
+    /**
+     * 按状态统计任务数（含可选时间窗口过滤）。
+     * status 为 null 时统计全部。
+     */
+    long countByStatus(String status, String timeFrom, String timeTo);
 }
