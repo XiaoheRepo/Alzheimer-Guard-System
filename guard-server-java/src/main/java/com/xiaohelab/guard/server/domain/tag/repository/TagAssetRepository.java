@@ -44,4 +44,7 @@ public interface TagAssetRepository {
 
     /** ALLOCATED → UNBOUND（管理员释放已分配标签） */
     int releaseByTagCode(String tagCode);
+
+    /** LOST → BOUND（管理员恢复丢失标签） */
+    int recover(Long id);
 }

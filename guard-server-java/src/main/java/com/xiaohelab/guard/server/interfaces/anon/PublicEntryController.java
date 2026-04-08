@@ -1,11 +1,11 @@
 package com.xiaohelab.guard.server.interfaces.anon;
 
+import com.xiaohelab.guard.server.application.material.MaterialOrderService;
+import com.xiaohelab.guard.server.application.patient.PatientProfileService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientProfileMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.TagAssetMapper;
+import com.xiaohelab.guard.server.domain.patient.entity.PatientEntity;
+import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -13,7 +13,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,8 +29,8 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class PublicEntryController {
 
-    private final TagAssetMapper tagAssetMapper;
-    private final PatientProfileMapper patientProfileMapper;
+    private final MaterialOrderService materialOrderService;
+    private final PatientProfileService patientService;
     private final StringRedisTemplate redisTemplate;
 
     /** 前端应用基础地址，从配置注入，本地默认 http://localhost:3000 */
@@ -50,14 +49,22 @@ public class PublicEntryController {
 
     @GetMapping("/r/{tagCode}")
     public void scanEntry(@PathVariable String tagCode, HttpServletResponse response) throws IOException {
-        TagAssetDO tag = tagAssetMapper.findByTagCode(tagCode);
-        if (tag == null || tag.getPatientId() == null) {
+        TagAssetEntity tag;
+        try {
+            tag = materialOrderService.getTagByCode(tagCode);
+        } catch (BizException e) {
+            response.sendRedirect(frontendBaseUrl + "/404");
+            return;
+        }
+        if (tag.getPatientId() == null) {
             response.sendRedirect(frontendBaseUrl + "/404");
             return;
         }
 
-        PatientProfileDO patient = patientProfileMapper.findById(tag.getPatientId());
-        if (patient == null) {
+        PatientEntity patient;
+        try {
+            patient = patientService.getPatientById(tag.getPatientId());
+        } catch (BizException e) {
             response.sendRedirect(frontendBaseUrl + "/404");
             return;
         }
@@ -117,16 +124,8 @@ public class PublicEntryController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
             @Valid @RequestBody ManualEntryRequest req) {
 
-        PatientProfileDO patient = patientProfileMapper.findByShortCode(req.getShortCode());
-        if (patient == null) {
-            throw BizException.of("E_PAT_4041");
-        }
-
-        // 验证 PIN 码
-        boolean pinOk = BCrypt.checkpw(req.getPinCode(), patient.getPinCodeHash());
-        if (!pinOk) {
-            throw BizException.of("E_AUTH_4001");
-        }
+        // verifyShortCodePin throws E_PAT_4041 or E_AUTH_4001 on failure
+        PatientEntity patient = patientService.verifyShortCodePin(req.getShortCode(), req.getPinCode());
 
         // 颁发 entry_token，存入 Redis，TTL = guard.entry-token.ttl-seconds
         String entryToken = UUID.randomUUID().toString().replace("-", "");
