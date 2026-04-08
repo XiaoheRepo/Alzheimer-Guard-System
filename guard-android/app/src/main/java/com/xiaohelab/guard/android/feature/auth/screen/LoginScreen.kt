@@ -55,7 +55,11 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "守护者",
+            text = "码上回家",
+            style = MaterialTheme.typography.headlineLarge
+        )
+        Text(
+            text = "家属端",
             style = MaterialTheme.typography.headlineLarge
         )
         Text(
