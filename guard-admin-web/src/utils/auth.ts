@@ -1,40 +1,44 @@
 /**
- * Token 和本地存储管理
+ * 会话存储管理
+ * 依据 web_admin_handbook.md §6.1-6.4：token/role/userId 均存 sessionStorage（会话级），
+ * 登出或鉴权失效时必须一次性清空，禁止写入明文密码或敏感信息。
  */
 
-import { TOKEN_KEY, REFRESH_TOKEN_KEY, USER_INFO_KEY } from '@/constants'
-import type { User } from '@/types'
+import { TOKEN_KEY, ROLE_KEY, USER_ID_KEY } from '@/constants'
 
-// ============ Token 管理 ============
+// ============ Token（sessionStorage，会话级）============
 export const getToken = (): string | null => {
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY)
 }
 
 export const setToken = (token: string): void => {
-  localStorage.setItem(TOKEN_KEY, token)
+  sessionStorage.setItem(TOKEN_KEY, token)
 }
 
-export const removeToken = (): void => {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(REFRESH_TOKEN_KEY)
-  localStorage.removeItem(USER_INFO_KEY)
+// ============ Role ============
+export const getRole = (): string | null => {
+  return sessionStorage.getItem(ROLE_KEY)
 }
 
-// ============ Refresh Token 管理 ============
-export const getRefreshToken = (): string | null => {
-  return localStorage.getItem(REFRESH_TOKEN_KEY)
+export const setRole = (role: string): void => {
+  sessionStorage.setItem(ROLE_KEY, role)
 }
 
-export const setRefreshToken = (token: string): void => {
-  localStorage.setItem(REFRESH_TOKEN_KEY, token)
+// ============ User ID ============
+export const getUserId = (): string | null => {
+  return sessionStorage.getItem(USER_ID_KEY)
 }
 
-// ============ 用户信息管理 ============
-export const getUserInfoFromStorage = (): User | null => {
-  const userInfo = localStorage.getItem(USER_INFO_KEY)
-  return userInfo ? JSON.parse(userInfo) : null
+export const setUserId = (userId: string): void => {
+  sessionStorage.setItem(USER_ID_KEY, userId)
 }
 
-export const setUserInfoToStorage = (userInfo: User): void => {
-  localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo))
+// ============ 清除会话（登出或 E_GOV_4011 时调用）============
+export const clearSession = (): void => {
+  sessionStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(ROLE_KEY)
+  sessionStorage.removeItem(USER_ID_KEY)
 }
+
+/** @deprecated 请使用 clearSession() */
+export const removeToken = clearSession

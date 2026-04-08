@@ -6,7 +6,7 @@ import { UserRole, UserStatus, OrderStatus } from '@/types'
 
 // ============ 角色配置 ============
 export const ROLE_LABELS: Record<UserRole, string> = {
-  [UserRole.SUPER_ADMIN]: '超级管理员',
+  [UserRole.SUPERADMIN]: '超级管理员',
   [UserRole.ADMIN]: '管理员',
   [UserRole.COMMUNITY]: '社区管理员',
   [UserRole.FACTORY]: '工厂管理员',
@@ -17,7 +17,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 }
 
 export const ROLE_COLORS: Record<UserRole, string> = {
-  [UserRole.SUPER_ADMIN]: 'red',
+  [UserRole.SUPERADMIN]: 'red',
   [UserRole.ADMIN]: 'volcano',
   [UserRole.COMMUNITY]: 'blue',
   [UserRole.FACTORY]: 'orange',
@@ -95,10 +95,11 @@ export const PERMISSIONS = {
 // ============ 路由白名单 ============
 export const WHITE_LIST = ['/login', '/404', '/403']
 
-// ============ Token 相关 ============
-export const TOKEN_KEY = 'guard_admin_token'
-export const REFRESH_TOKEN_KEY = 'guard_admin_refresh_token'
-export const USER_INFO_KEY = 'guard_admin_user_info'
+// ============ 会话存储键（sessionStorage）============
+// 与 doc/web_admin_handbook.md 第 6.2 节对齐
+export const TOKEN_KEY = 'admin.session.access_token'
+export const ROLE_KEY = 'admin.session.role'
+export const USER_ID_KEY = 'admin.session.user_id'
 
 // ============ 分页配置 ============
 export const PAGE_SIZE = 10

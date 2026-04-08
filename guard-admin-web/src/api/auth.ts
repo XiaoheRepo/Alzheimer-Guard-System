@@ -1,36 +1,18 @@
 /**
  * 认证相关 API
+ * 接口定义依据 doc/API_from_SRS_SADD_LLD.md §3.7
+ * 响应由 request.ts 拦截器解包，调用方直接获得 data 对象
  */
 
 import request from './request'
-import type { LoginParams, LoginResult, ApiResponse } from '@/types'
+import type { LoginApiResponse } from '@/types'
 
-/**
- * 用户登录
- */
-export const login = (data: LoginParams) => {
-  return request.post<ApiResponse<LoginResult>>('/auth/login', data).then((res) => res.data.data)
+/** POST /api/v1/auth/login — 账号密码登录，返回 JWT 令牌 */
+export const login = (data: { username: string; password: string }): Promise<LoginApiResponse> => {
+  return request.post('/auth/login', data) as unknown as Promise<LoginApiResponse>
 }
 
-/**
- * 用户登出
- */
-export const logout = () => {
+/** POST /api/v1/auth/logout — 注销登录，服务端将 jti 写入黑名单 */
+export const logout = (): Promise<unknown> => {
   return request.post('/auth/logout')
-}
-
-/**
- * 获取当前用户信息
- */
-export const getUserInfo = () => {
-  return request.get<ApiResponse<LoginResult>>('/auth/user-info').then((res) => res.data.data)
-}
-
-/**
- * 刷新 Token
- */
-export const refreshToken = (refreshToken: string) => {
-  return request
-    .post<ApiResponse<{ token: string }>>('/auth/refresh-token', { refreshToken })
-    .then((res) => res.data.data)
 }

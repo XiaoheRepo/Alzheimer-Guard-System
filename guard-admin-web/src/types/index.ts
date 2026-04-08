@@ -4,11 +4,30 @@
 
 // ============ API 响应结构 ============
 export interface ApiResponse<T = unknown> {
-  code: number
+  code: string
   message: string
+  trace_id: string
   data: T
 }
 
+// 偏移分页（任务/用户/日志等列表）
+export interface PageOffset<T> {
+  items: T[]
+  page_no: number
+  page_size: number
+  total: number
+  has_next: boolean
+}
+
+// 游标分页（审计日志/DEAD 队列）
+export interface PageCursor<T> {
+  items: T[]
+  page_size: number
+  next_cursor: string | null
+  has_next: boolean
+}
+
+/** @deprecated 使用 PageOffset<T> 替代 */
 export interface PageResult<T> {
   list: T[]
   total: number
@@ -18,14 +37,14 @@ export interface PageResult<T> {
 
 // ============ 用户相关 ============
 export enum UserRole {
-  SUPER_ADMIN = 'super_admin',
-  ADMIN = 'admin',
-  COMMUNITY = 'community',
-  FACTORY = 'factory',
-  DOCTOR = 'doctor',
-  NURSE = 'nurse',
-  FAMILY = 'family',
-  VOLUNTEER = 'volunteer',
+  SUPERADMIN = 'SUPERADMIN',
+  ADMIN = 'ADMIN',
+  COMMUNITY = 'COMMUNITY',
+  FACTORY = 'FACTORY',
+  DOCTOR = 'DOCTOR',
+  NURSE = 'NURSE',
+  FAMILY = 'FAMILY',
+  VOLUNTEER = 'VOLUNTEER',
 }
 
 export enum UserStatus {
@@ -50,15 +69,16 @@ export interface User {
 export interface LoginParams {
   username: string
   password: string
-  remember?: boolean
 }
 
-export interface LoginResult {
+/** 与 POST /api/v1/auth/login 响应 data 对齐 */
+export interface LoginApiResponse {
   token: string
-  refreshToken?: string
-  userInfo: User
-  roles: UserRole[]
-  permissions: string[]
+  expires_in: number
+  user: {
+    user_id: string
+    role: string
+  }
 }
 
 // ============ 社区相关 ============
