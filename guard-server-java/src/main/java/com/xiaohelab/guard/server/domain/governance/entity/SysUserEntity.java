@@ -1,7 +1,6 @@
 package com.xiaohelab.guard.server.domain.governance.entity;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -32,19 +31,24 @@ public class SysUserEntity {
 
     private SysUserEntity() {}
 
-    public static SysUserEntity fromDO(SysUserDO d) {
+    /** 从持久化数据重建聚合根（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static SysUserEntity reconstitute(Long id, String username, String passwordHash,
+                                             String displayName, String phone,
+                                             String role, String status,
+                                             Instant lastLoginAt, String lastLoginIp,
+                                             Instant createdAt, Instant updatedAt) {
         SysUserEntity e = new SysUserEntity();
-        e.id = d.getId();
-        e.username = d.getUsername();
-        e.passwordHash = d.getPasswordHash();
-        e.displayName = d.getDisplayName();
-        e.phone = d.getPhone();
-        e.role = d.getRole() != null ? UserRole.valueOf(d.getRole()) : UserRole.FAMILY;
-        e.status = d.getStatus() != null ? UserStatus.valueOf(d.getStatus()) : UserStatus.NORMAL;
-        e.lastLoginAt = d.getLastLoginAt();
-        e.lastLoginIp = d.getLastLoginIp();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.username = username;
+        e.passwordHash = passwordHash;
+        e.displayName = displayName;
+        e.phone = phone;
+        e.role = role != null ? UserRole.valueOf(role) : UserRole.FAMILY;
+        e.status = status != null ? UserStatus.valueOf(status) : UserStatus.NORMAL;
+        e.lastLoginAt = lastLoginAt;
+        e.lastLoginIp = lastLoginIp;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 

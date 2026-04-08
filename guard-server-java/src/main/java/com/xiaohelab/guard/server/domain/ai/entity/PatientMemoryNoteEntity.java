@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.ai.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientMemoryNoteDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -27,34 +26,23 @@ public class PatientMemoryNoteEntity {
 
     private PatientMemoryNoteEntity() {}
 
-    public static PatientMemoryNoteEntity fromDO(PatientMemoryNoteDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static PatientMemoryNoteEntity reconstitute(
+            Long id, String noteId, Long patientId, Long createdBy,
+            String kind, String content, String tags, String sourceEventId,
+            Instant createdAt, Instant updatedAt) {
         PatientMemoryNoteEntity e = new PatientMemoryNoteEntity();
-        e.id = d.getId();
-        e.noteId = d.getNoteId();
-        e.patientId = d.getPatientId();
-        e.createdBy = d.getCreatedBy();
-        e.kind = d.getKind();
-        e.content = d.getContent();
-        e.tags = d.getTags();
-        e.sourceEventId = d.getSourceEventId();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.noteId = noteId;
+        e.patientId = patientId;
+        e.createdBy = createdBy;
+        e.kind = kind;
+        e.content = content;
+        e.tags = tags;
+        e.sourceEventId = sourceEventId;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
-    }
-
-    public PatientMemoryNoteDO toDO() {
-        PatientMemoryNoteDO d = new PatientMemoryNoteDO();
-        d.setId(this.id);
-        d.setNoteId(this.noteId);
-        d.setPatientId(this.patientId);
-        d.setCreatedBy(this.createdBy);
-        d.setKind(this.kind);
-        d.setContent(this.content);
-        d.setTags(this.tags);
-        d.setSourceEventId(this.sourceEventId);
-        d.setCreatedAt(this.createdAt);
-        d.setUpdatedAt(this.updatedAt);
-        return d;
     }
 
     /** 工厂方法（插入前创建，noteId 由调用方生成） */

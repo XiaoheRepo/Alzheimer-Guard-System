@@ -8,7 +8,7 @@ import com.xiaohelab.guard.server.domain.material.repository.MaterialOrderReposi
 import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.domain.tag.repository.TagAssetRepository;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
+import com.xiaohelab.guard.server.domain.governance.entity.SysLogEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -295,7 +295,7 @@ public class MaterialOrderService {
     }
 
     /** 查询标签历史审计日志（供 PatientController 使用）。 */
-    public List<SysLogDO> listTagHistory(String tagCode, int limit, int offset) {
+    public List<SysLogEntity> listTagHistory(String tagCode, int limit, int offset) {
         return auditLogService.listByModuleAndObjectId("TAG_ASSET", tagCode, limit, offset);
     }
 

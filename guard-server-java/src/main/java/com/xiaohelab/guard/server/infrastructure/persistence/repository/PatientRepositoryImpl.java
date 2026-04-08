@@ -3,6 +3,7 @@ package com.xiaohelab.guard.server.infrastructure.persistence.repository;
 import com.xiaohelab.guard.server.domain.patient.entity.PatientEntity;
 import com.xiaohelab.guard.server.domain.patient.repository.PatientRepository;
 import com.xiaohelab.guard.server.domain.profile.repository.ProfileRepository;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientProfileMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -24,44 +25,43 @@ public class PatientRepositoryImpl implements PatientRepository, ProfileReposito
     @Override
     public Optional<PatientEntity> findById(Long id) {
         var d = patientProfileMapper.findById(id);
-        return Optional.ofNullable(d).map(PatientEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<PatientEntity> findByShortCode(String shortCode) {
         var d = patientProfileMapper.findByShortCode(shortCode);
-        return Optional.ofNullable(d).map(PatientEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<PatientEntity> findByProfileNo(String profileNo) {
         var d = patientProfileMapper.findByProfileNo(profileNo);
-        return Optional.ofNullable(d).map(PatientEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public List<PatientEntity> findByUserId(Long userId) {
         return patientProfileMapper.findByUserId(userId)
-                .stream().map(PatientEntity::fromDO).toList();
+                .stream().map(this::toEntity).toList();
     }
 
     @Override
     public PatientEntity insert(PatientEntity entity) {
-        var d = entity.toDO();
+        var d = toDO(entity);
         patientProfileMapper.insert(d);
-        // MyBatis useGeneratedKeys 回填 id 到 d
-        return PatientEntity.fromDO(patientProfileMapper.findById(d.getId()));
+        return toEntity(patientProfileMapper.findById(d.getId()));
     }
 
     @Override
     public PatientEntity update(PatientEntity entity) {
-        patientProfileMapper.update(entity.toDO());
+        patientProfileMapper.update(toDO(entity));
         return findById(entity.getId()).orElse(entity);
     }
 
     @Override
     public PatientEntity updateFence(PatientEntity entity) {
-        patientProfileMapper.updateFence(entity.toDO());
+        patientProfileMapper.updateFence(toDO(entity));
         return findById(entity.getId()).orElse(entity);
     }
 
@@ -73,5 +73,39 @@ public class PatientRepositoryImpl implements PatientRepository, ProfileReposito
     @Override
     public long nextShortCodeSeq() {
         return patientProfileMapper.nextShortCodeSeq();
+    }
+
+    /** DO → Entity 转换 */
+    private PatientEntity toEntity(PatientProfileDO d) {
+        return PatientEntity.reconstitute(
+                d.getId(), d.getProfileNo(), d.getName(), d.getGender(), d.getBirthday(),
+                d.getShortCode(), d.getPinCodeHash(), d.getPinCodeSalt(),
+                d.getPhotoUrl(), d.getMedicalHistory(),
+                d.getFenceEnabled(), d.getFenceCenterLat(), d.getFenceCenterLng(), d.getFenceRadiusM(),
+                d.getLostStatus(), d.getLostStatusEventTime(), d.getProfileVersion(),
+                d.getCreatedAt(), d.getUpdatedAt());
+    }
+
+    /** Entity → DO 转换 */
+    private PatientProfileDO toDO(PatientEntity e) {
+        PatientProfileDO d = new PatientProfileDO();
+        d.setId(e.getId());
+        d.setProfileNo(e.getProfileNo());
+        d.setName(e.getName());
+        d.setGender(e.getGender());
+        d.setBirthday(e.getBirthday());
+        d.setShortCode(e.getShortCode());
+        d.setPinCodeHash(e.getPinCodeHash());
+        d.setPinCodeSalt(e.getPinCodeSalt());
+        d.setPhotoUrl(e.getPhotoUrl());
+        d.setMedicalHistory(e.getMedicalHistory());
+        d.setFenceEnabled(e.getFenceEnabled());
+        d.setFenceCenterLat(e.getFenceCenterLat());
+        d.setFenceCenterLng(e.getFenceCenterLng());
+        d.setFenceRadiusM(e.getFenceRadiusM());
+        d.setLostStatus(e.getLostStatus());
+        d.setLostStatusEventTime(e.getLostStatusEventTime());
+        d.setProfileVersion(e.getProfileVersion());
+        return d;
     }
 }

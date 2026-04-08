@@ -1,7 +1,7 @@
 package com.xiaohelab.guard.server.application.governance;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysOutboxLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysOutboxLogMapper;
+import com.xiaohelab.guard.server.domain.governance.entity.OutboxEventEntity;
+import com.xiaohelab.guard.server.domain.governance.repository.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,14 +15,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OutboxGovernanceService {
 
-    private final SysOutboxLogMapper outboxLogMapper;
+    private final OutboxEventRepository outboxEventRepository;
 
-    public List<SysOutboxLogDO> listDead(int limit, int offset) {
-        return outboxLogMapper.listDead(limit, offset);
+    public List<OutboxEventEntity> listDead(int limit, int offset) {
+        return outboxEventRepository.listDead(limit, offset);
     }
 
     public long countDead() {
-        return outboxLogMapper.countDead();
+        return outboxEventRepository.countDead();
     }
 
     /**
@@ -31,6 +31,6 @@ public class OutboxGovernanceService {
      * @return 影响行数；0 表示事件不存在或已非 DEAD 状态
      */
     public int replayDead(String eventId, Long operatorId, String replayReason, String replayToken) {
-        return outboxLogMapper.replayDead(eventId, operatorId, replayReason, replayToken);
+        return outboxEventRepository.replayDead(eventId, operatorId, replayReason, replayToken);
     }
 }

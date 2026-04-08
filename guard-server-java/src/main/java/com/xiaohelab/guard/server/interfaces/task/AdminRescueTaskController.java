@@ -7,8 +7,8 @@ import com.xiaohelab.guard.server.application.task.QueryRescueTaskService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
+import com.xiaohelab.guard.server.domain.governance.entity.SysLogEntity;
 import com.xiaohelab.guard.server.domain.task.entity.RescueTaskEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -119,7 +119,7 @@ public class AdminRescueTaskController {
             } catch (Exception ignored) { /* invalid cursor treated as start */ }
         }
 
-        List<SysLogDO> logs = auditLogService.listByObjectId(String.valueOf(taskId), pageSize, offset);
+        List<SysLogEntity> logs = auditLogService.listByObjectId(String.valueOf(taskId), pageSize, offset);
         long total = auditLogService.countByObjectId(String.valueOf(taskId));
         boolean hasNext = (long)(offset + pageSize) < total;
         String nextCursor = hasNext
@@ -173,20 +173,13 @@ public class AdminRescueTaskController {
                     taskId, task.getPatientId(), traceId);
         }
 
-        SysLogDO log = new SysLogDO();
-        log.setModule("TASK");
-        log.setAction("NOTIFY_RETRY");
-        log.setObjectId(String.valueOf(taskId));
-        log.setResult("SUCCESS");
-        log.setRiskLevel("LOW");
-        log.setOperatorUserId(securityContext.currentUserId());
-        log.setOperatorUsername(securityContext.currentUsername());
-        log.setActionSource("USER");
-        log.setExecutionMode("MANUAL");
-        log.setDetail("{\"reason\":\"" + req.getReason().replace("\"", "\\\"") + "\",\"retry_job_id\":\"" + retryJobId + "\"}");
-        log.setRequestId(requestId);
-        log.setTraceId(traceId);
-        log.setExecutedAt(now);
+        SysLogEntity log = SysLogEntity.create(
+                "TASK", "NOTIFY_RETRY", null,
+                String.valueOf(taskId), null, "SUCCESS",
+                "LOW", securityContext.currentUserId(),
+                securityContext.currentUsername(),
+                "{\"reason\":\"" + req.getReason().replace("\"", "\\\"") + "\",\"retry_job_id\":\"" + retryJobId + "\"}",
+                "USER", "MANUAL", requestId, traceId);
         auditLogService.writeLog(log);
 
         return ApiResponse.ok(Map.of(
@@ -215,21 +208,14 @@ public class AdminRescueTaskController {
         RescueTaskEntity updated = queryRescueTaskService.findById(
                 taskId, securityContext.currentUserId(), securityContext.currentRole());
 
-        SysLogDO log = new SysLogDO();
-        log.setModule("TASK");
-        log.setAction("FORCE_CLOSE");
-        log.setObjectId(String.valueOf(taskId));
-        log.setResult("SUCCESS");
-        log.setRiskLevel("HIGH");
-        log.setOperatorUserId(securityContext.currentUserId());
-        log.setOperatorUsername(securityContext.currentUsername());
-        log.setActionSource("USER");
-        log.setExecutionMode("MANUAL");
-        log.setDetail("{\"reason\":\"" + req.getReason().replace("\"", "\\\"") + "\"}");
-        log.setRequestId(requestId);
-        log.setTraceId(traceId);
-        log.setExecutedAt(Instant.now());
-        auditLogService.writeLog(log);
+        SysLogEntity forceCloseLog = SysLogEntity.create(
+                "TASK", "FORCE_CLOSE", null,
+                String.valueOf(taskId), null, "SUCCESS",
+                "HIGH", securityContext.currentUserId(),
+                securityContext.currentUsername(),
+                "{\"reason\":\"" + req.getReason().replace("\"", "\\\"") + "\"}",
+                "USER", "MANUAL", requestId, traceId);
+        auditLogService.writeLog(forceCloseLog);
 
         var data = new LinkedHashMap<String, Object>();
         data.put("task_id", String.valueOf(taskId));

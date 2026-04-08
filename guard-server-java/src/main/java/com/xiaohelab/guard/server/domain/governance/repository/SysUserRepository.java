@@ -6,12 +6,24 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 用户仓储接口（治理域）——管理侧操作。
- * 认证侧查询（findByUsername 等）维持在 security 包直接使用 SysUserMapper，不在此接口中重复。
+ * 用户仓储接口（治理域）。
  */
 public interface SysUserRepository {
 
     Optional<SysUserEntity> findById(Long id);
+
+    /** 按用户名查询（登录认证使用） */
+    Optional<SysUserEntity> findByUsername(String username);
+
+    /** 检查用户名是否已存在 */
+    int countByUsername(String username);
+
+    /** 新增用户（注册） */
+    SysUserEntity insert(String username, String passwordHash, String phone,
+                         String displayName, String role, String status);
+
+    /** 更新最近登录信息 */
+    void updateLoginInfo(Long id, String ip);
 
     List<SysUserEntity> listByFilter(String role, String status, String keyword,
                                      int limit, int offset);

@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.notification.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.NotificationInboxDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -31,40 +30,27 @@ public class NotificationEntity {
 
     private NotificationEntity() {}
 
-    public static NotificationEntity fromDO(NotificationInboxDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static NotificationEntity reconstitute(
+            Long notificationId, Long userId, String type, String title, String content,
+            String level, Long relatedTaskId, Long relatedPatientId,
+            String readStatus, Instant readAt, String traceId,
+            Instant createdAt, Instant updatedAt) {
         NotificationEntity e = new NotificationEntity();
-        e.notificationId = d.getNotificationId();
-        e.userId = d.getUserId();
-        e.type = d.getType();
-        e.title = d.getTitle();
-        e.content = d.getContent();
-        e.level = d.getLevel();
-        e.relatedTaskId = d.getRelatedTaskId();
-        e.relatedPatientId = d.getRelatedPatientId();
-        e.readStatus = d.getReadStatus();
-        e.readAt = d.getReadAt();
-        e.traceId = d.getTraceId();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.notificationId = notificationId;
+        e.userId = userId;
+        e.type = type;
+        e.title = title;
+        e.content = content;
+        e.level = level;
+        e.relatedTaskId = relatedTaskId;
+        e.relatedPatientId = relatedPatientId;
+        e.readStatus = readStatus;
+        e.readAt = readAt;
+        e.traceId = traceId;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
-    }
-
-    public NotificationInboxDO toDO() {
-        NotificationInboxDO d = new NotificationInboxDO();
-        d.setNotificationId(this.notificationId);
-        d.setUserId(this.userId);
-        d.setType(this.type);
-        d.setTitle(this.title);
-        d.setContent(this.content);
-        d.setLevel(this.level);
-        d.setRelatedTaskId(this.relatedTaskId);
-        d.setRelatedPatientId(this.relatedPatientId);
-        d.setReadStatus(this.readStatus);
-        d.setReadAt(this.readAt);
-        d.setTraceId(this.traceId);
-        d.setCreatedAt(this.createdAt);
-        d.setUpdatedAt(this.updatedAt);
-        return d;
     }
 
     /** 工厂方法：创建新的待写入通知（readStatus 默认 UNREAD） */

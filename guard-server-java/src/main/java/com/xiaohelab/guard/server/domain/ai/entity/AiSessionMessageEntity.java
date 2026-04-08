@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.ai.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.AiSessionMessageDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -23,15 +22,18 @@ public class AiSessionMessageEntity {
 
     private AiSessionMessageEntity() {}
 
-    public static AiSessionMessageEntity fromDO(AiSessionMessageDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static AiSessionMessageEntity reconstitute(
+            Long id, String sessionId, Integer sequenceNo,
+            String role, String content, String tokenUsage, Instant createdAt) {
         AiSessionMessageEntity e = new AiSessionMessageEntity();
-        e.id = d.getId();
-        e.sessionId = d.getSessionId();
-        e.sequenceNo = d.getSequenceNo();
-        e.role = d.getRole();
-        e.content = d.getContent();
-        e.tokenUsage = d.getTokenUsage();
-        e.createdAt = d.getCreatedAt();
+        e.id = id;
+        e.sessionId = sessionId;
+        e.sequenceNo = sequenceNo;
+        e.role = role;
+        e.content = content;
+        e.tokenUsage = tokenUsage;
+        e.createdAt = createdAt;
         return e;
     }
 
@@ -44,16 +46,5 @@ public class AiSessionMessageEntity {
         e.content = content;
         e.tokenUsage = tokenUsage != null ? tokenUsage : "{}";
         return e;
-    }
-
-    public AiSessionMessageDO toDO() {
-        AiSessionMessageDO d = new AiSessionMessageDO();
-        d.setId(this.id);
-        d.setSessionId(this.sessionId);
-        d.setSequenceNo(this.sequenceNo);
-        d.setRole(this.role);
-        d.setContent(this.content);
-        d.setTokenUsage(this.tokenUsage);
-        return d;
     }
 }

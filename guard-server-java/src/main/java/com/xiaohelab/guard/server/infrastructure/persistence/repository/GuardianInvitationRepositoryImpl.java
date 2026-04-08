@@ -2,6 +2,7 @@ package com.xiaohelab.guard.server.infrastructure.persistence.repository;
 
 import com.xiaohelab.guard.server.domain.guardian.entity.GuardianInvitationEntity;
 import com.xiaohelab.guard.server.domain.guardian.repository.GuardianInvitationRepository;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.GuardianInvitationDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.GuardianInvitationMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -21,25 +22,25 @@ public class GuardianInvitationRepositoryImpl implements GuardianInvitationRepos
     @Override
     public Optional<GuardianInvitationEntity> findById(Long id) {
         var d = guardianInvitationMapper.findById(id);
-        return Optional.ofNullable(d).map(GuardianInvitationEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<GuardianInvitationEntity> findByInviteId(String inviteId) {
         var d = guardianInvitationMapper.findByInviteId(inviteId);
-        return Optional.ofNullable(d).map(GuardianInvitationEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<GuardianInvitationEntity> findPendingByPatientAndInvitee(Long patientId, Long inviteeUserId) {
         var d = guardianInvitationMapper.findPendingByPatientAndInvitee(patientId, inviteeUserId);
-        return Optional.ofNullable(d).map(GuardianInvitationEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public List<GuardianInvitationEntity> listByPatient(Long patientId, int limit, int offset) {
         return guardianInvitationMapper.listByPatient(patientId, limit, offset)
-                .stream().map(GuardianInvitationEntity::fromDO).toList();
+                .stream().map(this::toEntity).toList();
     }
 
     @Override
@@ -50,19 +51,18 @@ public class GuardianInvitationRepositoryImpl implements GuardianInvitationRepos
     @Override
     public List<GuardianInvitationEntity> listPendingByInvitee(Long inviteeUserId, int limit, int offset) {
         return guardianInvitationMapper.listPendingByInvitee(inviteeUserId, limit, offset)
-                .stream().map(GuardianInvitationEntity::fromDO).toList();
+                .stream().map(this::toEntity).toList();
     }
 
     @Override
     public void insert(GuardianInvitationEntity entity) {
-        var d = entity.toDO();
+        var d = toDO(entity);
         guardianInvitationMapper.insert(d);
-        // MyBatis useGeneratedKeys 回填 id — entity 此后不缓存 id（无需回写，调用方若需要 id 重新查询）
     }
 
     @Override
     public int respond(GuardianInvitationEntity entity) {
-        return guardianInvitationMapper.respond(entity.toDO());
+        return guardianInvitationMapper.respond(toDO(entity));
     }
 
     @Override
@@ -73,5 +73,33 @@ public class GuardianInvitationRepositoryImpl implements GuardianInvitationRepos
     @Override
     public int expirePending() {
         return guardianInvitationMapper.expirePending();
+    }
+
+    /** DO → Entity 转换 */
+    private GuardianInvitationEntity toEntity(GuardianInvitationDO d) {
+        return GuardianInvitationEntity.reconstitute(
+                d.getId(), d.getInviteId(), d.getPatientId(), d.getInviterUserId(), d.getInviteeUserId(),
+                d.getRelationRole(), d.getStatus(), d.getReason(), d.getRejectReason(),
+                d.getExpireAt(), d.getAcceptedAt(), d.getRejectedAt(), d.getRevokedAt(),
+                d.getCreatedAt(), d.getUpdatedAt());
+    }
+
+    /** Entity → DO 转换 */
+    private GuardianInvitationDO toDO(GuardianInvitationEntity e) {
+        GuardianInvitationDO d = new GuardianInvitationDO();
+        d.setId(e.getId());
+        d.setInviteId(e.getInviteId());
+        d.setPatientId(e.getPatientId());
+        d.setInviterUserId(e.getInviterUserId());
+        d.setInviteeUserId(e.getInviteeUserId());
+        d.setRelationRole(e.getRelationRole());
+        d.setStatus(e.getStatus());
+        d.setReason(e.getReason());
+        d.setRejectReason(e.getRejectReason());
+        d.setExpireAt(e.getExpireAt());
+        d.setAcceptedAt(e.getAcceptedAt());
+        d.setRejectedAt(e.getRejectedAt());
+        d.setRevokedAt(e.getRevokedAt());
+        return d;
     }
 }

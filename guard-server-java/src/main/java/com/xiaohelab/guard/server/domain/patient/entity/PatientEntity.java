@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.patient.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.PatientProfileDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -38,30 +37,34 @@ public class PatientEntity {
 
     private PatientEntity() {}
 
-    /**
-     * 重建聚合根（Repository 使用）。
-     */
-    public static PatientEntity fromDO(PatientProfileDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static PatientEntity reconstitute(
+            Long id, String profileNo, String name, String gender, LocalDate birthday,
+            String shortCode, String pinCodeHash, String pinCodeSalt,
+            String photoUrl, String medicalHistory,
+            Boolean fenceEnabled, Double fenceCenterLat, Double fenceCenterLng, Integer fenceRadiusM,
+            String lostStatus, Instant lostStatusEventTime, Long profileVersion,
+            Instant createdAt, Instant updatedAt) {
         PatientEntity e = new PatientEntity();
-        e.id = d.getId();
-        e.profileNo = d.getProfileNo();
-        e.name = d.getName();
-        e.gender = d.getGender();
-        e.birthday = d.getBirthday();
-        e.shortCode = d.getShortCode();
-        e.pinCodeHash = d.getPinCodeHash();
-        e.pinCodeSalt = d.getPinCodeSalt();
-        e.photoUrl = d.getPhotoUrl();
-        e.medicalHistory = d.getMedicalHistory();
-        e.fenceEnabled = d.getFenceEnabled();
-        e.fenceCenterLat = d.getFenceCenterLat();
-        e.fenceCenterLng = d.getFenceCenterLng();
-        e.fenceRadiusM = d.getFenceRadiusM();
-        e.lostStatus = d.getLostStatus();
-        e.lostStatusEventTime = d.getLostStatusEventTime();
-        e.profileVersion = d.getProfileVersion();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.profileNo = profileNo;
+        e.name = name;
+        e.gender = gender;
+        e.birthday = birthday;
+        e.shortCode = shortCode;
+        e.pinCodeHash = pinCodeHash;
+        e.pinCodeSalt = pinCodeSalt;
+        e.photoUrl = photoUrl;
+        e.medicalHistory = medicalHistory;
+        e.fenceEnabled = fenceEnabled;
+        e.fenceCenterLat = fenceCenterLat;
+        e.fenceCenterLng = fenceCenterLng;
+        e.fenceRadiusM = fenceRadiusM;
+        e.lostStatus = lostStatus;
+        e.lostStatusEventTime = lostStatusEventTime;
+        e.profileVersion = profileVersion;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -122,30 +125,5 @@ public class PatientEntity {
         this.lostStatus = newStatus;
         this.lostStatusEventTime = eventTime;
         return true;
-    }
-
-    /**
-     * 转为 DO（持久化用）。
-     */
-    public PatientProfileDO toDO() {
-        PatientProfileDO d = new PatientProfileDO();
-        d.setId(this.id);
-        d.setProfileNo(this.profileNo);
-        d.setName(this.name);
-        d.setGender(this.gender);
-        d.setBirthday(this.birthday);
-        d.setShortCode(this.shortCode);
-        d.setPinCodeHash(this.pinCodeHash);
-        d.setPinCodeSalt(this.pinCodeSalt);
-        d.setPhotoUrl(this.photoUrl);
-        d.setMedicalHistory(this.medicalHistory);
-        d.setFenceEnabled(this.fenceEnabled);
-        d.setFenceCenterLat(this.fenceCenterLat);
-        d.setFenceCenterLng(this.fenceCenterLng);
-        d.setFenceRadiusM(this.fenceRadiusM);
-        d.setLostStatus(this.lostStatus);
-        d.setLostStatusEventTime(this.lostStatusEventTime);
-        d.setProfileVersion(this.profileVersion);
-        return d;
     }
 }

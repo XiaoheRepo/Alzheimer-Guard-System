@@ -1,8 +1,8 @@
 package com.xiaohelab.guard.server.application.auth;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
+import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
+import com.xiaohelab.guard.server.domain.governance.repository.SysUserRepository;
 import com.xiaohelab.guard.server.security.service.JwtTokenProvider;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoginUseCase {
 
-    private final SysUserMapper sysUserMapper;
+    private final SysUserRepository sysUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -31,10 +31,8 @@ public class LoginUseCase {
      */
     public LoginResult execute(String username, String password) {
         // 1. 查询用户
-        SysUserDO user = sysUserMapper.findByUsername(username);
-        if (user == null) {
-            throw BizException.of("E_AUTH_4011");
-        }
+        SysUserEntity user = sysUserRepository.findByUsername(username)
+                .orElseThrow(() -> BizException.of("E_AUTH_4011"));
 
         // 2. 检查账号状态
         if ("BANNED".equals(user.getStatus())) {
@@ -46,12 +44,12 @@ public class LoginUseCase {
             throw BizException.of("E_AUTH_4011");
         }
 
-        // 4. 更新最后登录时间与 IP（异步也可，此处同步写入）
-        sysUserMapper.updateLoginInfo(user.getId(), "");
+        // 4. 更新最后登录时间与 IP
+        sysUserRepository.updateLoginInfo(user.getId(), "");
 
-        // 5. 生成 JWT（userId 为 Long，与 JwtTokenProvider.generate 签名一致）
+        // 5. 生成 JWT
         String token = jwtTokenProvider.generate(
-                user.getId(), user.getUsername(), user.getRole());
+                user.getId(), user.getUsername(), user.getRole().name());
 
         return new LoginResult(token, user);
     }
@@ -64,11 +62,11 @@ public class LoginUseCase {
         private final String username;
         private final String role;
 
-        public LoginResult(String token, SysUserDO user) {
+        public LoginResult(String token, SysUserEntity user) {
             this.accessToken = token;
             this.userId = user.getId();
             this.username = user.getUsername();
-            this.role = user.getRole();
+            this.role = user.getRole().name();
         }
     }
 }

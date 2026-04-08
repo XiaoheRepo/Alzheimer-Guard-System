@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.tag.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagAssetDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -33,22 +32,27 @@ public class TagAssetEntity {
 
     private TagAssetEntity() {}
 
-    public static TagAssetEntity fromDO(TagAssetDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static TagAssetEntity reconstitute(
+            Long id, String tagCode, String tagType, String status,
+            Long patientId, Long applyRecordId, String importBatchNo, String voidReason,
+            Instant lostAt, Instant voidAt, Instant resetAt, Instant recoveredAt,
+            Instant createdAt, Instant updatedAt) {
         TagAssetEntity e = new TagAssetEntity();
-        e.id = d.getId();
-        e.tagCode = d.getTagCode();
-        e.tagType = d.getTagType();
-        e.status = d.getStatus();
-        e.patientId = d.getPatientId();
-        e.applyRecordId = d.getApplyRecordId();
-        e.importBatchNo = d.getImportBatchNo();
-        e.voidReason = d.getVoidReason();
-        e.lostAt = d.getLostAt();
-        e.voidAt = d.getVoidAt();
-        e.resetAt = d.getResetAt();
-        e.recoveredAt = d.getRecoveredAt();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.tagCode = tagCode;
+        e.tagType = tagType;
+        e.status = status;
+        e.patientId = patientId;
+        e.applyRecordId = applyRecordId;
+        e.importBatchNo = importBatchNo;
+        e.voidReason = voidReason;
+        e.lostAt = lostAt;
+        e.voidAt = voidAt;
+        e.resetAt = resetAt;
+        e.recoveredAt = recoveredAt;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -59,22 +63,5 @@ public class TagAssetEntity {
         e.status = "UNBOUND";
         e.importBatchNo = importBatchNo;
         return e;
-    }
-
-    public TagAssetDO toDO() {
-        TagAssetDO d = new TagAssetDO();
-        d.setId(this.id);
-        d.setTagCode(this.tagCode);
-        d.setTagType(this.tagType);
-        d.setStatus(this.status);
-        d.setPatientId(this.patientId);
-        d.setApplyRecordId(this.applyRecordId);
-        d.setImportBatchNo(this.importBatchNo);
-        d.setVoidReason(this.voidReason);
-        d.setLostAt(this.lostAt);
-        d.setVoidAt(this.voidAt);
-        d.setResetAt(this.resetAt);
-        d.setRecoveredAt(this.recoveredAt);
-        return d;
     }
 }

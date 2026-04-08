@@ -2,6 +2,7 @@ package com.xiaohelab.guard.server.infrastructure.persistence.repository;
 
 import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
 import com.xiaohelab.guard.server.domain.governance.repository.SysUserRepository;
+import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -23,7 +24,37 @@ public class SysUserRepositoryImpl implements SysUserRepository {
     @Override
     public Optional<SysUserEntity> findById(Long id) {
         var d = sysUserMapper.findById(id);
-        return d == null ? Optional.empty() : Optional.of(SysUserEntity.fromDO(d));
+        return d == null ? Optional.empty() : Optional.of(toEntity(d));
+    }
+
+    @Override
+    public Optional<SysUserEntity> findByUsername(String username) {
+        var d = sysUserMapper.findByUsername(username);
+        return d == null ? Optional.empty() : Optional.of(toEntity(d));
+    }
+
+    @Override
+    public int countByUsername(String username) {
+        return sysUserMapper.countByUsername(username);
+    }
+
+    @Override
+    public SysUserEntity insert(String username, String passwordHash, String phone,
+                                String displayName, String role, String status) {
+        SysUserDO user = new SysUserDO();
+        user.setUsername(username);
+        user.setPasswordHash(passwordHash);
+        user.setPhone(phone);
+        user.setDisplayName(displayName);
+        user.setRole(role);
+        user.setStatus(status);
+        sysUserMapper.insert(user);
+        return toEntity(user);
+    }
+
+    @Override
+    public void updateLoginInfo(Long id, String ip) {
+        sysUserMapper.updateLoginInfo(id, ip);
     }
 
     @Override
@@ -31,7 +62,7 @@ public class SysUserRepositoryImpl implements SysUserRepository {
                                             int limit, int offset) {
         return sysUserMapper.listByFilter(role, status, keyword, limit, offset)
                 .stream()
-                .map(SysUserEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
@@ -53,6 +84,15 @@ public class SysUserRepositoryImpl implements SysUserRepository {
     @Override
     public Optional<SysUserEntity> findByPhone(String phone) {
         var d = sysUserMapper.findByPhone(phone);
-        return d == null ? Optional.empty() : Optional.of(SysUserEntity.fromDO(d));
+        return d == null ? Optional.empty() : Optional.of(toEntity(d));
+    }
+
+    /** DO → Entity 转换（基础设施层职责） */
+    private SysUserEntity toEntity(SysUserDO d) {
+        return SysUserEntity.reconstitute(
+                d.getId(), d.getUsername(), d.getPasswordHash(),
+                d.getDisplayName(), d.getPhone(), d.getRole(), d.getStatus(),
+                d.getLastLoginAt(), d.getLastLoginIp(),
+                d.getCreatedAt(), d.getUpdatedAt());
     }
 }

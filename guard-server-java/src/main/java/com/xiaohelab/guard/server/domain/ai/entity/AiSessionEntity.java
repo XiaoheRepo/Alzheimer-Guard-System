@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.ai.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.AiSessionDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -34,24 +33,30 @@ public class AiSessionEntity {
 
     private AiSessionEntity() {}
 
-    public static AiSessionEntity fromDO(AiSessionDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static AiSessionEntity reconstitute(
+            Long id, String sessionId, Long userId, Long patientId, Long taskId,
+            String messages, Integer requestTokens, Integer responseTokens,
+            String tokenUsage, Integer tokenUsed, String modelName,
+            String status, Instant archivedAt, Long version,
+            Instant createdAt, Instant updatedAt) {
         AiSessionEntity e = new AiSessionEntity();
-        e.id = d.getId();
-        e.sessionId = d.getSessionId();
-        e.userId = d.getUserId();
-        e.patientId = d.getPatientId();
-        e.taskId = d.getTaskId();
-        e.messages = d.getMessages();
-        e.requestTokens = d.getRequestTokens();
-        e.responseTokens = d.getResponseTokens();
-        e.tokenUsage = d.getTokenUsage();
-        e.tokenUsed = d.getTokenUsed();
-        e.modelName = d.getModelName();
-        e.status = d.getStatus();
-        e.archivedAt = d.getArchivedAt();
-        e.version = d.getVersion();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.sessionId = sessionId;
+        e.userId = userId;
+        e.patientId = patientId;
+        e.taskId = taskId;
+        e.messages = messages;
+        e.requestTokens = requestTokens;
+        e.responseTokens = responseTokens;
+        e.tokenUsage = tokenUsage;
+        e.tokenUsed = tokenUsed;
+        e.modelName = modelName;
+        e.status = status;
+        e.archivedAt = archivedAt;
+        e.version = version;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -71,25 +76,6 @@ public class AiSessionEntity {
         e.status = "ACTIVE";
         e.version = 1L;
         return e;
-    }
-
-    public AiSessionDO toDO() {
-        AiSessionDO d = new AiSessionDO();
-        d.setId(this.id);
-        d.setSessionId(this.sessionId);
-        d.setUserId(this.userId);
-        d.setPatientId(this.patientId);
-        d.setTaskId(this.taskId);
-        d.setMessages(this.messages);
-        d.setRequestTokens(this.requestTokens);
-        d.setResponseTokens(this.responseTokens);
-        d.setTokenUsage(this.tokenUsage);
-        d.setTokenUsed(this.tokenUsed);
-        d.setModelName(this.modelName);
-        d.setStatus(this.status);
-        d.setArchivedAt(this.archivedAt);
-        d.setVersion(this.version);
-        return d;
     }
 
     /** 归档会话（ACTIVE → ARCHIVED，不可逆）。 */

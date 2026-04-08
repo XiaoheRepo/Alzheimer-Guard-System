@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.clue.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -46,34 +45,42 @@ public class ClueRecordEntity {
 
     private ClueRecordEntity() {}
 
-    public static ClueRecordEntity fromDO(ClueRecordDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static ClueRecordEntity reconstitute(
+            Long id, String clueNo, Long patientId, Long taskId, String tagCode,
+            String sourceType, BigDecimal riskScore, Double locationLat, Double locationLng,
+            String coordSystem, String description, String photoUrl,
+            Boolean isValid, Boolean suspectFlag, String suspectReason, String reviewStatus,
+            Long assigneeUserId, Instant assignedAt, Instant reviewedAt,
+            Boolean override, Long overrideBy, String overrideReason,
+            String rejectReason, Long rejectedBy, Instant createdAt, Instant updatedAt) {
         ClueRecordEntity e = new ClueRecordEntity();
-        e.id = d.getId();
-        e.clueNo = d.getClueNo();
-        e.patientId = d.getPatientId();
-        e.taskId = d.getTaskId();
-        e.tagCode = d.getTagCode();
-        e.sourceType = d.getSourceType();
-        e.riskScore = d.getRiskScore();
-        e.locationLat = d.getLocationLat();
-        e.locationLng = d.getLocationLng();
-        e.coordSystem = d.getCoordSystem();
-        e.description = d.getDescription();
-        e.photoUrl = d.getPhotoUrl();
-        e.isValid = d.getIsValid();
-        e.suspectFlag = d.getSuspectFlag();
-        e.suspectReason = d.getSuspectReason();
-        e.reviewStatus = d.getReviewStatus();
-        e.assigneeUserId = d.getAssigneeUserId();
-        e.assignedAt = d.getAssignedAt();
-        e.reviewedAt = d.getReviewedAt();
-        e.override = d.getOverride();
-        e.overrideBy = d.getOverrideBy();
-        e.overrideReason = d.getOverrideReason();
-        e.rejectReason = d.getRejectReason();
-        e.rejectedBy = d.getRejectedBy();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.clueNo = clueNo;
+        e.patientId = patientId;
+        e.taskId = taskId;
+        e.tagCode = tagCode;
+        e.sourceType = sourceType;
+        e.riskScore = riskScore;
+        e.locationLat = locationLat;
+        e.locationLng = locationLng;
+        e.coordSystem = coordSystem;
+        e.description = description;
+        e.photoUrl = photoUrl;
+        e.isValid = isValid;
+        e.suspectFlag = suspectFlag;
+        e.suspectReason = suspectReason;
+        e.reviewStatus = reviewStatus;
+        e.assigneeUserId = assigneeUserId;
+        e.assignedAt = assignedAt;
+        e.reviewedAt = reviewedAt;
+        e.override = override;
+        e.overrideBy = overrideBy;
+        e.overrideReason = overrideReason;
+        e.rejectReason = rejectReason;
+        e.rejectedBy = rejectedBy;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -94,34 +101,5 @@ public class ClueRecordEntity {
         e.riskScore = BigDecimal.ZERO;
         e.reviewStatus = "PENDING";
         return e;
-    }
-
-    public ClueRecordDO toDO() {
-        ClueRecordDO d = new ClueRecordDO();
-        d.setId(this.id);
-        d.setClueNo(this.clueNo);
-        d.setPatientId(this.patientId);
-        d.setTaskId(this.taskId);
-        d.setTagCode(this.tagCode);
-        d.setSourceType(this.sourceType);
-        d.setRiskScore(this.riskScore);
-        d.setLocationLat(this.locationLat);
-        d.setLocationLng(this.locationLng);
-        d.setCoordSystem(this.coordSystem);
-        d.setDescription(this.description);
-        d.setPhotoUrl(this.photoUrl);
-        d.setIsValid(this.isValid);
-        d.setSuspectFlag(this.suspectFlag);
-        d.setSuspectReason(this.suspectReason);
-        d.setReviewStatus(this.reviewStatus);
-        d.setAssigneeUserId(this.assigneeUserId);
-        d.setAssignedAt(this.assignedAt);
-        d.setReviewedAt(this.reviewedAt);
-        d.setOverride(this.override);
-        d.setOverrideBy(this.overrideBy);
-        d.setOverrideReason(this.overrideReason);
-        d.setRejectReason(this.rejectReason);
-        d.setRejectedBy(this.rejectedBy);
-        return d;
     }
 }

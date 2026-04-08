@@ -20,25 +20,25 @@ public class TagAssetRepositoryImpl implements TagAssetRepository {
     @Override
     public Optional<TagAssetEntity> findById(Long id) {
         TagAssetDO d = mapper.findById(id);
-        return Optional.ofNullable(d).map(TagAssetEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<TagAssetEntity> findByTagCode(String tagCode) {
         TagAssetDO d = mapper.findByTagCode(tagCode);
-        return Optional.ofNullable(d).map(TagAssetEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<TagAssetEntity> findBoundByPatientId(Long patientId) {
         TagAssetDO d = mapper.findBoundByPatientId(patientId);
-        return Optional.ofNullable(d).map(TagAssetEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public List<TagAssetEntity> listUnbound(int limit, int offset) {
         return mapper.listUnbound(limit, offset).stream()
-                .map(TagAssetEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
@@ -50,7 +50,7 @@ public class TagAssetRepositoryImpl implements TagAssetRepository {
     @Override
     public List<TagAssetEntity> listByFilter(String status, Long patientId, int limit, int offset) {
         return mapper.listByFilter(status, patientId, limit, offset).stream()
-                .map(TagAssetEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
@@ -61,7 +61,7 @@ public class TagAssetRepositoryImpl implements TagAssetRepository {
 
     @Override
     public void insert(TagAssetEntity entity) {
-        mapper.insert(entity.toDO());
+        mapper.insert(toDO(entity));
     }
 
     @Override
@@ -97,5 +97,32 @@ public class TagAssetRepositoryImpl implements TagAssetRepository {
     @Override
     public int releaseByTagCode(String tagCode) {
         return mapper.releaseByTagCode(tagCode);
+    }
+
+    /** DO → Entity 转换 */
+    private TagAssetEntity toEntity(TagAssetDO d) {
+        return TagAssetEntity.reconstitute(
+                d.getId(), d.getTagCode(), d.getTagType(), d.getStatus(),
+                d.getPatientId(), d.getApplyRecordId(), d.getImportBatchNo(), d.getVoidReason(),
+                d.getLostAt(), d.getVoidAt(), d.getResetAt(), d.getRecoveredAt(),
+                d.getCreatedAt(), d.getUpdatedAt());
+    }
+
+    /** Entity → DO 转换 */
+    private TagAssetDO toDO(TagAssetEntity e) {
+        TagAssetDO d = new TagAssetDO();
+        d.setId(e.getId());
+        d.setTagCode(e.getTagCode());
+        d.setTagType(e.getTagType());
+        d.setStatus(e.getStatus());
+        d.setPatientId(e.getPatientId());
+        d.setApplyRecordId(e.getApplyRecordId());
+        d.setImportBatchNo(e.getImportBatchNo());
+        d.setVoidReason(e.getVoidReason());
+        d.setLostAt(e.getLostAt());
+        d.setVoidAt(e.getVoidAt());
+        d.setResetAt(e.getResetAt());
+        d.setRecoveredAt(e.getRecoveredAt());
+        return d;
     }
 }

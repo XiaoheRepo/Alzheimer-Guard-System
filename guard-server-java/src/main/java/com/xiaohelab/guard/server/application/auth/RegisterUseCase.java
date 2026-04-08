@@ -2,8 +2,7 @@ package com.xiaohelab.guard.server.application.auth;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
+import com.xiaohelab.guard.server.domain.governance.repository.SysUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RegisterUseCase {
 
-    private final SysUserMapper sysUserMapper;
+    private final SysUserRepository sysUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -31,19 +30,16 @@ public class RegisterUseCase {
     @Transactional
     public SysUserEntity execute(String username, String password, String phone, String realName) {
         // 检查用户名是否已存在
-        if (sysUserMapper.countByUsername(username) > 0) {
+        if (sysUserRepository.countByUsername(username) > 0) {
             throw BizException.of("E_USR_4090");
         }
 
-        SysUserDO user = new SysUserDO();
-        user.setUsername(username);
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setPhone(phone);
-        user.setDisplayName(realName);  // displayName 对应界面显示名
-        user.setRole("FAMILY");         // 默认角色：家属/监护人（枚举值 FAMILY）
-        user.setStatus("NORMAL");
-
-        sysUserMapper.insert(user);
-        return SysUserEntity.fromDO(user);
+        return sysUserRepository.insert(
+                username,
+                passwordEncoder.encode(password),
+                phone,
+                realName,
+                "FAMILY",
+                "NORMAL");
     }
 }

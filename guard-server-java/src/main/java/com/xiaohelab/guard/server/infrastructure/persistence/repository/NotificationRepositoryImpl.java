@@ -23,7 +23,7 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     @Override
     public List<NotificationEntity> listByUserId(Long userId, int limit, int offset) {
         return mapper.listByUserId(userId, limit, offset).stream()
-                .map(NotificationEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
@@ -44,10 +44,9 @@ public class NotificationRepositoryImpl implements NotificationRepository {
 
     @Override
     public NotificationEntity insert(NotificationEntity entity) {
-        NotificationInboxDO d = entity.toDO();
+        NotificationInboxDO d = toDO(entity);
         mapper.insert(d);
-        // MyBatis useGeneratedKeys 将 notificationId 回填到 d
-        return NotificationEntity.fromDO(d);
+        return toEntity(d);
     }
 
     @Override
@@ -64,12 +63,40 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     public List<NotificationEntity> listByRelatedTaskId(Long taskId, String level,
                                                          int limit, int offset) {
         return mapper.listByRelatedTaskId(taskId, level, limit, offset).stream()
-                .map(NotificationEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
     @Override
     public long countByRelatedTaskId(Long taskId, String level) {
         return mapper.countByRelatedTaskId(taskId, level);
+    }
+
+    /** DO → Entity 转换 */
+    private NotificationEntity toEntity(NotificationInboxDO d) {
+        return NotificationEntity.reconstitute(
+                d.getNotificationId(), d.getUserId(), d.getType(), d.getTitle(), d.getContent(),
+                d.getLevel(), d.getRelatedTaskId(), d.getRelatedPatientId(),
+                d.getReadStatus(), d.getReadAt(), d.getTraceId(),
+                d.getCreatedAt(), d.getUpdatedAt());
+    }
+
+    /** Entity → DO 转换 */
+    private NotificationInboxDO toDO(NotificationEntity e) {
+        NotificationInboxDO d = new NotificationInboxDO();
+        d.setNotificationId(e.getNotificationId());
+        d.setUserId(e.getUserId());
+        d.setType(e.getType());
+        d.setTitle(e.getTitle());
+        d.setContent(e.getContent());
+        d.setLevel(e.getLevel());
+        d.setRelatedTaskId(e.getRelatedTaskId());
+        d.setRelatedPatientId(e.getRelatedPatientId());
+        d.setReadStatus(e.getReadStatus());
+        d.setReadAt(e.getReadAt());
+        d.setTraceId(e.getTraceId());
+        d.setCreatedAt(e.getCreatedAt());
+        d.setUpdatedAt(e.getUpdatedAt());
+        return d;
     }
 }

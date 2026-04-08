@@ -1,6 +1,5 @@
 package com.xiaohelab.guard.server.domain.tag.entity;
 
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -38,28 +37,34 @@ public class TagApplyRecordEntity {
 
     private TagApplyRecordEntity() {}
 
-    public static TagApplyRecordEntity fromDO(TagApplyRecordDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static TagApplyRecordEntity reconstitute(
+            Long id, String orderNo, Long patientId, Long applicantUserId,
+            Integer quantity, String applyNote, String tagCode, String status,
+            String deliveryAddress, String trackingNumber, String courierName, String resourceLink,
+            String cancelReason, Instant approvedAt, String rejectReason, Instant rejectedAt,
+            String exceptionDesc, Instant closedAt, Instant createdAt, Instant updatedAt) {
         TagApplyRecordEntity e = new TagApplyRecordEntity();
-        e.id = d.getId();
-        e.orderNo = d.getOrderNo();
-        e.patientId = d.getPatientId();
-        e.applicantUserId = d.getApplicantUserId();
-        e.quantity = d.getQuantity();
-        e.applyNote = d.getApplyNote();
-        e.tagCode = d.getTagCode();
-        e.status = d.getStatus();
-        e.deliveryAddress = d.getDeliveryAddress();
-        e.trackingNumber = d.getTrackingNumber();
-        e.courierName = d.getCourierName();
-        e.resourceLink = d.getResourceLink();
-        e.cancelReason = d.getCancelReason();
-        e.approvedAt = d.getApprovedAt();
-        e.rejectReason = d.getRejectReason();
-        e.rejectedAt = d.getRejectedAt();
-        e.exceptionDesc = d.getExceptionDesc();
-        e.closedAt = d.getClosedAt();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.orderNo = orderNo;
+        e.patientId = patientId;
+        e.applicantUserId = applicantUserId;
+        e.quantity = quantity;
+        e.applyNote = applyNote;
+        e.tagCode = tagCode;
+        e.status = status;
+        e.deliveryAddress = deliveryAddress;
+        e.trackingNumber = trackingNumber;
+        e.courierName = courierName;
+        e.resourceLink = resourceLink;
+        e.cancelReason = cancelReason;
+        e.approvedAt = approvedAt;
+        e.rejectReason = rejectReason;
+        e.rejectedAt = rejectedAt;
+        e.exceptionDesc = exceptionDesc;
+        e.closedAt = closedAt;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -74,29 +79,6 @@ public class TagApplyRecordEntity {
         e.status = "PENDING";
         e.deliveryAddress = deliveryAddress;
         return e;
-    }
-
-    public TagApplyRecordDO toDO() {
-        TagApplyRecordDO d = new TagApplyRecordDO();
-        d.setId(this.id);
-        d.setOrderNo(this.orderNo);
-        d.setPatientId(this.patientId);
-        d.setApplicantUserId(this.applicantUserId);
-        d.setQuantity(this.quantity);
-        d.setApplyNote(this.applyNote);
-        d.setTagCode(this.tagCode);
-        d.setStatus(this.status);
-        d.setDeliveryAddress(this.deliveryAddress);
-        d.setTrackingNumber(this.trackingNumber);
-        d.setCourierName(this.courierName);
-        d.setResourceLink(this.resourceLink);
-        d.setCancelReason(this.cancelReason);
-        d.setApprovedAt(this.approvedAt);
-        d.setRejectReason(this.rejectReason);
-        d.setRejectedAt(this.rejectedAt);
-        d.setExceptionDesc(this.exceptionDesc);
-        d.setClosedAt(this.closedAt);
-        return d;
     }
 
     // ===== 状态机业务方法 =====

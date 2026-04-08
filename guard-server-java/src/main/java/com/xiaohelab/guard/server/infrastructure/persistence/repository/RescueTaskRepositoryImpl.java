@@ -24,43 +24,41 @@ public class RescueTaskRepositoryImpl implements RescueTaskRepository {
     @Override
     public Optional<RescueTaskEntity> findById(Long id) {
         RescueTaskDO d = rescueTaskMapper.findById(id);
-        return Optional.ofNullable(d).map(RescueTaskEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<RescueTaskEntity> findByTaskNo(String taskNo) {
         RescueTaskDO d = rescueTaskMapper.findByTaskNo(taskNo);
-        return Optional.ofNullable(d).map(RescueTaskEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public Optional<RescueTaskEntity> findActiveByPatientId(Long patientId) {
         RescueTaskDO d = rescueTaskMapper.findActiveByPatientId(patientId);
-        return Optional.ofNullable(d).map(RescueTaskEntity::fromDO);
+        return Optional.ofNullable(d).map(this::toEntity);
     }
 
     @Override
     public RescueTaskEntity save(RescueTaskEntity entity) {
-        RescueTaskDO d = entity.toDO();
+        RescueTaskDO d = toDO(entity);
         if (d.getId() == null) {
             rescueTaskMapper.insert(d);
-            // MyBatis useGeneratedKeys 将 id 回填到 d.id
-            return RescueTaskEntity.fromDO(rescueTaskMapper.findById(d.getId()));
+            return toEntity(rescueTaskMapper.findById(d.getId()));
         } else {
-            // update 仅用于非条件性更新场景（目前没有），通常用 closeConditionally
             throw new UnsupportedOperationException("使用 closeConditionally 执行条件更新");
         }
     }
 
     @Override
     public int closeConditionally(RescueTaskEntity entity) {
-        return rescueTaskMapper.closeConditionally(entity.toDO());
+        return rescueTaskMapper.closeConditionally(toDO(entity));
     }
 
     @Override
     public List<RescueTaskEntity> listByPatientId(Long patientId, int limit, int offset) {
         return rescueTaskMapper.listByPatientId(patientId, limit, offset).stream()
-                .map(RescueTaskEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
@@ -77,7 +75,7 @@ public class RescueTaskRepositoryImpl implements RescueTaskRepository {
     @Override
     public List<RescueTaskEntity> listAll(String status, String source, int limit, int offset) {
         return rescueTaskMapper.listAll(status, source, limit, offset).stream()
-                .map(RescueTaskEntity::fromDO)
+                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 
@@ -89,5 +87,30 @@ public class RescueTaskRepositoryImpl implements RescueTaskRepository {
     @Override
     public int forceClose(Long id, String closeReason, String remark) {
         return rescueTaskMapper.forceClose(id, closeReason, remark);
+    }
+
+    /** DO → Entity 转换 */
+    private RescueTaskEntity toEntity(RescueTaskDO d) {
+        return RescueTaskEntity.reconstitute(
+                d.getId(), d.getTaskNo(), d.getPatientId(), d.getCreatedBy(),
+                d.getSource(), d.getStatus(), d.getCloseReason(), d.getRemark(),
+                d.getEventVersion(), d.getAiAnalysisSummary(), d.getPosterUrl(),
+                d.getCreatedAt(), d.getUpdatedAt(), d.getClosedAt());
+    }
+
+    /** Entity → DO 转换 */
+    private RescueTaskDO toDO(RescueTaskEntity e) {
+        RescueTaskDO d = new RescueTaskDO();
+        d.setId(e.getId());
+        d.setTaskNo(e.getTaskNo());
+        d.setPatientId(e.getPatientId());
+        d.setCreatedBy(e.getCreatedBy());
+        d.setSource(e.getSource());
+        d.setStatus(e.getStatusName());
+        d.setCloseReason(e.getCloseReason());
+        d.setRemark(e.getRemark());
+        d.setEventVersion(e.getEventVersion());
+        d.setClosedAt(e.getClosedAt());
+        return d;
     }
 }

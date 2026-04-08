@@ -1,7 +1,6 @@
 package com.xiaohelab.guard.server.domain.guardian.entity;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserPatientDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -41,28 +40,36 @@ public class GuardianRelationEntity {
 
     private GuardianRelationEntity() {}
 
-    public static GuardianRelationEntity fromDO(SysUserPatientDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static GuardianRelationEntity reconstitute(
+            Long id, Long userId, Long patientId, String relationRole, String relationStatus,
+            String transferState, String transferRequestId, Long transferTargetUserId,
+            Long transferRequestedBy, Instant transferRequestedAt, String transferReason,
+            Long transferCancelledBy, Instant transferCancelledAt, String transferCancelReason,
+            Instant transferExpireAt, Instant transferConfirmedAt,
+            Instant transferRejectedAt, String transferRejectReason,
+            Instant createdAt, Instant updatedAt) {
         GuardianRelationEntity e = new GuardianRelationEntity();
-        e.id = d.getId();
-        e.userId = d.getUserId();
-        e.patientId = d.getPatientId();
-        e.relationRole = d.getRelationRole();
-        e.relationStatus = d.getRelationStatus();
-        e.transferState = d.getTransferState();
-        e.transferRequestId = d.getTransferRequestId();
-        e.transferTargetUserId = d.getTransferTargetUserId();
-        e.transferRequestedBy = d.getTransferRequestedBy();
-        e.transferRequestedAt = d.getTransferRequestedAt();
-        e.transferReason = d.getTransferReason();
-        e.transferCancelledBy = d.getTransferCancelledBy();
-        e.transferCancelledAt = d.getTransferCancelledAt();
-        e.transferCancelReason = d.getTransferCancelReason();
-        e.transferExpireAt = d.getTransferExpireAt();
-        e.transferConfirmedAt = d.getTransferConfirmedAt();
-        e.transferRejectedAt = d.getTransferRejectedAt();
-        e.transferRejectReason = d.getTransferRejectReason();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.userId = userId;
+        e.patientId = patientId;
+        e.relationRole = relationRole;
+        e.relationStatus = relationStatus;
+        e.transferState = transferState;
+        e.transferRequestId = transferRequestId;
+        e.transferTargetUserId = transferTargetUserId;
+        e.transferRequestedBy = transferRequestedBy;
+        e.transferRequestedAt = transferRequestedAt;
+        e.transferReason = transferReason;
+        e.transferCancelledBy = transferCancelledBy;
+        e.transferCancelledAt = transferCancelledAt;
+        e.transferCancelReason = transferCancelReason;
+        e.transferExpireAt = transferExpireAt;
+        e.transferConfirmedAt = transferConfirmedAt;
+        e.transferRejectedAt = transferRejectedAt;
+        e.transferRejectReason = transferRejectReason;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -130,28 +137,5 @@ public class GuardianRelationEntity {
     public void promoteToGuardian() {
         this.relationRole = "GUARDIAN";
         this.transferState = "NONE";
-    }
-
-    public SysUserPatientDO toDO() {
-        SysUserPatientDO d = new SysUserPatientDO();
-        d.setId(this.id);
-        d.setUserId(this.userId);
-        d.setPatientId(this.patientId);
-        d.setRelationRole(this.relationRole);
-        d.setRelationStatus(this.relationStatus);
-        d.setTransferState(this.transferState);
-        d.setTransferRequestId(this.transferRequestId);
-        d.setTransferTargetUserId(this.transferTargetUserId);
-        d.setTransferRequestedBy(this.transferRequestedBy);
-        d.setTransferRequestedAt(this.transferRequestedAt);
-        d.setTransferReason(this.transferReason);
-        d.setTransferCancelledBy(this.transferCancelledBy);
-        d.setTransferCancelledAt(this.transferCancelledAt);
-        d.setTransferCancelReason(this.transferCancelReason);
-        d.setTransferExpireAt(this.transferExpireAt);
-        d.setTransferConfirmedAt(this.transferConfirmedAt);
-        d.setTransferRejectedAt(this.transferRejectedAt);
-        d.setTransferRejectReason(this.transferRejectReason);
-        return d;
     }
 }

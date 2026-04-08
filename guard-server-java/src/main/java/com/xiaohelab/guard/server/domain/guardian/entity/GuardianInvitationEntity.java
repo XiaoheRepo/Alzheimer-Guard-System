@@ -1,7 +1,6 @@
 package com.xiaohelab.guard.server.domain.guardian.entity;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.GuardianInvitationDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -36,23 +35,28 @@ public class GuardianInvitationEntity {
 
     private GuardianInvitationEntity() {}
 
-    public static GuardianInvitationEntity fromDO(GuardianInvitationDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static GuardianInvitationEntity reconstitute(
+            Long id, String inviteId, Long patientId, Long inviterUserId, Long inviteeUserId,
+            String relationRole, String status, String reason, String rejectReason,
+            Instant expireAt, Instant acceptedAt, Instant rejectedAt, Instant revokedAt,
+            Instant createdAt, Instant updatedAt) {
         GuardianInvitationEntity e = new GuardianInvitationEntity();
-        e.id = d.getId();
-        e.inviteId = d.getInviteId();
-        e.patientId = d.getPatientId();
-        e.inviterUserId = d.getInviterUserId();
-        e.inviteeUserId = d.getInviteeUserId();
-        e.relationRole = d.getRelationRole();
-        e.status = d.getStatus();
-        e.reason = d.getReason();
-        e.rejectReason = d.getRejectReason();
-        e.expireAt = d.getExpireAt();
-        e.acceptedAt = d.getAcceptedAt();
-        e.rejectedAt = d.getRejectedAt();
-        e.revokedAt = d.getRevokedAt();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
+        e.id = id;
+        e.inviteId = inviteId;
+        e.patientId = patientId;
+        e.inviterUserId = inviterUserId;
+        e.inviteeUserId = inviteeUserId;
+        e.relationRole = relationRole;
+        e.status = status;
+        e.reason = reason;
+        e.rejectReason = rejectReason;
+        e.expireAt = expireAt;
+        e.acceptedAt = acceptedAt;
+        e.rejectedAt = rejectedAt;
+        e.revokedAt = revokedAt;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
         return e;
     }
 
@@ -87,23 +91,5 @@ public class GuardianInvitationEntity {
         this.rejectReason = rejectReason;
         this.rejectedAt = Instant.now();
         return this;
-    }
-
-    public GuardianInvitationDO toDO() {
-        GuardianInvitationDO d = new GuardianInvitationDO();
-        d.setId(this.id);
-        d.setInviteId(this.inviteId);
-        d.setPatientId(this.patientId);
-        d.setInviterUserId(this.inviterUserId);
-        d.setInviteeUserId(this.inviteeUserId);
-        d.setRelationRole(this.relationRole);
-        d.setStatus(this.status);
-        d.setReason(this.reason);
-        d.setRejectReason(this.rejectReason);
-        d.setExpireAt(this.expireAt);
-        d.setAcceptedAt(this.acceptedAt);
-        d.setRejectedAt(this.rejectedAt);
-        d.setRevokedAt(this.revokedAt);
-        return d;
     }
 }

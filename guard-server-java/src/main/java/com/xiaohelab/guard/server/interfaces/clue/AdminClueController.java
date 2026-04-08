@@ -6,7 +6,7 @@ import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
+import com.xiaohelab.guard.server.domain.governance.entity.SysLogEntity;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -112,21 +112,14 @@ public class AdminClueController {
         requireAdmin();
         clueService.assign(clueId, req.getAssigneeUserId());
 
-        SysLogDO log = new SysLogDO();
-        log.setModule("CLUE");
-        log.setAction("ASSIGN");
-        log.setObjectId(String.valueOf(clueId));
-        log.setResult("SUCCESS");
-        log.setRiskLevel("LOW");
-        log.setOperatorUserId(securityContext.currentUserId());
-        log.setOperatorUsername(securityContext.currentUsername());
-        log.setActionSource("USER");
-        log.setExecutionMode("MANUAL");
-        log.setDetail("{\"assignee_user_id\":" + req.getAssigneeUserId() +
-                (req.getReason() != null ? ",\"reason\":\"" + req.getReason().replace("\"", "\\\"") + "\"" : "") + "}");
-        log.setRequestId(requestId);
-        log.setTraceId(traceId);
-        log.setExecutedAt(Instant.now());
+        SysLogEntity log = SysLogEntity.create(
+                "CLUE", "ASSIGN", null,
+                String.valueOf(clueId), null, "SUCCESS",
+                "LOW", securityContext.currentUserId(),
+                securityContext.currentUsername(),
+                "{\"assignee_user_id\":" + req.getAssigneeUserId() +
+                (req.getReason() != null ? ",\"reason\":\"" + req.getReason().replace("\"", "\\\"") + "\"" : "") + "}",
+                "USER", "MANUAL", requestId, traceId);
         auditLogService.writeLog(log);
 
         return ApiResponse.ok(Map.of(

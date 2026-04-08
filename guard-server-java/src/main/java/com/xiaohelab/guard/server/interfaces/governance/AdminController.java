@@ -16,7 +16,7 @@ import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.domain.task.entity.RescueTaskEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
+import com.xiaohelab.guard.server.domain.governance.entity.SysLogEntity;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -521,20 +521,13 @@ public class AdminController {
         if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
 
         Instant now = Instant.now();
-        SysLogDO log = new SysLogDO();
-        log.setModule("SYSTEM");
-        log.setAction("SUPER_EXPORT_DATA");
-        log.setActionId("export_" + (requestId != null ? requestId : ""));
-        log.setResultCode("OK");
-        log.setResult("导出请求已记录");
-        log.setRiskLevel("HIGH");
-        log.setOperatorUserId(securityContext.currentUserId());
-        log.setOperatorUsername(securityContext.currentUsername());
-        log.setExecutedAt(now);
-        log.setCreatedAt(now);
-        log.setDetail("{\"export_type\":\"" + req.getExportType() + "\",\"reason\":\"" + req.getReason() + "\"}");
-        log.setRequestId(requestId);
-        log.setTraceId(traceId);
+        SysLogEntity log = SysLogEntity.create(
+                "SYSTEM", "SUPER_EXPORT_DATA", "export_" + (requestId != null ? requestId : ""),
+                null, "OK", "导出请求已记录",
+                "HIGH", securityContext.currentUserId(),
+                securityContext.currentUsername(),
+                "{\"export_type\":\"" + req.getExportType() + "\",\"reason\":\"" + req.getReason() + "\"}",
+                null, null, requestId, traceId);
         auditLogService.writeLog(log);
 
         return ApiResponse.ok(Map.of(

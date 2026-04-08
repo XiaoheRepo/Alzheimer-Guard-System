@@ -1,28 +1,26 @@
 package com.xiaohelab.guard.server.application.governance;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
+import com.xiaohelab.guard.server.domain.governance.entity.SysLogEntity;
 import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
+import com.xiaohelab.guard.server.domain.governance.repository.SysLogRepository;
 import com.xiaohelab.guard.server.domain.governance.repository.SysUserRepository;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 
 /**
  * 用户治理应用服务（管理端）。
  * 封装用户列表查询、封禁/解封、密码强制重置等操作。
- * application 层可直接使用 SysLogMapper 写审计日志。
  */
 @Service
 @RequiredArgsConstructor
 public class UserGovernanceService {
 
     private final SysUserRepository sysUserRepository;
-    private final SysLogMapper sysLogMapper;
+    private final SysLogRepository sysLogRepository;
 
     public List<SysUserEntity> listUsers(String role, String status, String keyword,
                                          int pageSize, int offset) {
@@ -69,21 +67,11 @@ public class UserGovernanceService {
                               String reason, String traceId) {
         sysUserRepository.updatePassword(targetUserId, encodedPassword);
 
-        Instant now = Instant.now();
-        SysLogDO log = new SysLogDO();
-        log.setModule("USER");
-        log.setAction("RESET_PASSWORD");
-        log.setActionId("reset_pwd_" + targetUserId);
-        log.setObjectId(String.valueOf(targetUserId));
-        log.setResultCode("OK");
-        log.setResult("密码强制重置成功");
-        log.setRiskLevel("HIGH");
-        log.setOperatorUserId(operatorUserId);
-        log.setOperatorUsername(operatorUsername);
-        log.setExecutedAt(now);
-        log.setCreatedAt(now);
-        if (reason != null) log.setDetail(reason);
-        log.setTraceId(traceId);
-        sysLogMapper.insert(log);
+        SysLogEntity log = SysLogEntity.create(
+                "USER", "RESET_PASSWORD", "reset_pwd_" + targetUserId,
+                String.valueOf(targetUserId), "OK", "密码强制重置成功",
+                "HIGH", operatorUserId, operatorUsername,
+                reason, null, null, null, traceId);
+        sysLogRepository.insert(log);
     }
 }

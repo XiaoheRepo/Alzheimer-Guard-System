@@ -3,7 +3,6 @@ package com.xiaohelab.guard.server.domain.task.entity;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.domain.event.DomainEvent;
 import com.xiaohelab.guard.server.domain.event.EventTopics;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.RescueTaskDO;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -44,22 +43,27 @@ public class RescueTaskEntity {
 
     private RescueTaskEntity() {}
 
-    public static RescueTaskEntity fromDO(RescueTaskDO d) {
+    /** 从持久化数据重建（仅 Infrastructure 层 RepositoryImpl 调用）。 */
+    public static RescueTaskEntity reconstitute(Long id, String taskNo, Long patientId, Long createdBy,
+                                                String source, String statusStr, String closeReason,
+                                                String remark, Long eventVersion,
+                                                String aiAnalysisSummary, String posterUrl,
+                                                Instant createdAt, Instant updatedAt, Instant closedAt) {
         RescueTaskEntity e = new RescueTaskEntity();
-        e.id = d.getId();
-        e.taskNo = d.getTaskNo();
-        e.patientId = d.getPatientId();
-        e.createdBy = d.getCreatedBy();
-        e.source = d.getSource();
-        e.status = TaskStatus.valueOf(d.getStatus());
-        e.closeReason = d.getCloseReason();
-        e.remark = d.getRemark();
-        e.eventVersion = d.getEventVersion() == null ? 0L : d.getEventVersion();
-        e.aiAnalysisSummary = d.getAiAnalysisSummary();
-        e.posterUrl = d.getPosterUrl();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
-        e.closedAt = d.getClosedAt();
+        e.id = id;
+        e.taskNo = taskNo;
+        e.patientId = patientId;
+        e.createdBy = createdBy;
+        e.source = source;
+        e.status = TaskStatus.valueOf(statusStr);
+        e.closeReason = closeReason;
+        e.remark = remark;
+        e.eventVersion = eventVersion == null ? 0L : eventVersion;
+        e.aiAnalysisSummary = aiAnalysisSummary;
+        e.posterUrl = posterUrl;
+        e.createdAt = createdAt;
+        e.updatedAt = updatedAt;
+        e.closedAt = closedAt;
         return e;
     }
 
@@ -124,19 +128,9 @@ public class RescueTaskEntity {
         return copy;
     }
 
-    public RescueTaskDO toDO() {
-        RescueTaskDO d = new RescueTaskDO();
-        d.setId(this.id);
-        d.setTaskNo(this.taskNo);
-        d.setPatientId(this.patientId);
-        d.setCreatedBy(this.createdBy);
-        d.setSource(this.source);
-        d.setStatus(this.status.name());
-        d.setCloseReason(this.closeReason);
-        d.setRemark(this.remark);
-        d.setEventVersion(this.eventVersion);
-        d.setClosedAt(this.closedAt);
-        return d;
+    /** 获取状态字符串（供 Infrastructure 层转换使用）。 */
+    public String getStatusName() {
+        return this.status.name();
     }
 
     private static String buildCreatedPayload(String taskNo, Long patientId) {
