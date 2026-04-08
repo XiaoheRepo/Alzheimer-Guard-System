@@ -1,23 +1,23 @@
 package com.xiaohelab.guard.server.interfaces.governance;
 
 import com.xiaohelab.guard.server.application.clue.ClueService;
+import com.xiaohelab.guard.server.application.governance.AuditLogService;
+import com.xiaohelab.guard.server.application.governance.OutboxGovernanceService;
+import com.xiaohelab.guard.server.application.governance.SysConfigService;
+import com.xiaohelab.guard.server.application.governance.UserGovernanceService;
 import com.xiaohelab.guard.server.application.material.MaterialOrderService;
 import com.xiaohelab.guard.server.application.task.CloseRescueTaskUseCase;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
+import com.xiaohelab.guard.server.domain.governance.entity.SysConfigEntity;
+import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysConfigDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysOutboxLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysConfigMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysOutboxLogMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -43,13 +43,13 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class AdminController {
 
-    private final SysUserMapper sysUserMapper;
-    private final SysLogMapper sysLogMapper;
+    private final UserGovernanceService userGovernanceService;
+    private final AuditLogService auditLogService;
+    private final SysConfigService sysConfigService;
+    private final OutboxGovernanceService outboxGovernanceService;
     private final MaterialOrderService materialOrderService;
     private final ClueService clueService;
     private final CloseRescueTaskUseCase closeRescueTaskUseCase;
-    private final SysOutboxLogMapper outboxLogMapper;
-    private final SysConfigMapper sysConfigMapper;
     private final SecurityContext securityContext;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
@@ -67,8 +67,9 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<SysUserDO> list = sysUserMapper.listByFilter(role, status, keyword, pageSize, (pageNo - 1) * pageSize);
-        long total = sysUserMapper.countByFilter(role, status, keyword);
+        List<SysUserEntity> list = userGovernanceService.listUsers(
+                role, status, keyword, pageSize, (pageNo - 1) * pageSize);
+        long total = userGovernanceService.countUsers(role, status, keyword);
         List<Map<String, Object>> items = list.stream().map(this::buildUserVO).toList();
         return ApiResponse.ok(PageResponse.<Map<String, Object>>builder()
                 .items(items).pageNo(pageNo).pageSize(pageSize)
@@ -84,9 +85,13 @@ public class AdminController {
             @Valid @RequestBody UpdateStatusRequest req) {
 
         requireAdmin();
-        SysUserDO user = sysUserMapper.findById(userId);
-        if (user == null) throw BizException.of("E_USER_4041");
-        sysUserMapper.updateStatus(userId, req.getStatus());
+        SysUserEntity user = userGovernanceService.getUser(userId); // throws E_USER_4041
+        if ("BANNED".equals(req.getStatus())) {
+            user.ban();
+        } else {
+            user.unban();
+        }
+        userGovernanceService.updateUserStatus(userId, user.getStatusValue());
         return ApiResponse.ok(Map.of("user_id", String.valueOf(userId), "status", req.getStatus()), traceId);
     }
 
@@ -101,15 +106,8 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<SysLogDO> list;
-        long total;
-        if (module != null && !module.isBlank()) {
-            list = sysLogMapper.listByModule(module, pageSize, (pageNo - 1) * pageSize);
-            total = sysLogMapper.count();
-        } else {
-            list = sysLogMapper.listByFilter(pageSize, (pageNo - 1) * pageSize);
-            total = sysLogMapper.count();
-        }
+        List<SysLogDO> list = auditLogService.listLogs(module, pageSize, (pageNo - 1) * pageSize);
+        long total = auditLogService.countLogs();
         List<Map<String, Object>> items = list.stream().map(l -> Map.<String, Object>of(
                 "log_id", String.valueOf(l.getId()),
                 "module", l.getModule() != null ? l.getModule() : "",
@@ -386,9 +384,9 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<SysLogDO> logs = sysLogMapper.listByModuleAndObjectId(
+        List<SysLogDO> logs = auditLogService.listByModuleAndObjectId(
                 "MATERIAL_ORDER", String.valueOf(orderId), pageSize, (pageNo - 1) * pageSize);
-        long total = sysLogMapper.countByModuleAndObjectId("MATERIAL_ORDER", String.valueOf(orderId));
+        long total = auditLogService.countByModuleAndObjectId("MATERIAL_ORDER", String.valueOf(orderId));
         List<Map<String, Object>> items = logs.stream().map(l -> Map.<String, Object>of(
                 "timeline_id", String.valueOf(l.getId()),
                 "from_status", "",
@@ -500,7 +498,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        long totalLogs = sysLogMapper.count();
+        long totalLogs = auditLogService.countLogs();
         return ApiResponse.ok(Map.<String, Object>of(
                 "window", window,
                 "login_success_rate", 0.98,
@@ -523,6 +521,7 @@ public class AdminController {
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
         if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
 
+        Instant now = Instant.now();
         SysLogDO log = new SysLogDO();
         log.setModule("SYSTEM");
         log.setAction("SUPER_EXPORT_DATA");
@@ -532,17 +531,17 @@ public class AdminController {
         log.setRiskLevel("HIGH");
         log.setOperatorUserId(securityContext.currentUserId());
         log.setOperatorUsername(securityContext.currentUsername());
-        log.setExecutedAt(Instant.now());
-        log.setCreatedAt(Instant.now());
+        log.setExecutedAt(now);
+        log.setCreatedAt(now);
         log.setDetail("{\"export_type\":\"" + req.getExportType() + "\",\"reason\":\"" + req.getReason() + "\"}");
         log.setRequestId(requestId);
         log.setTraceId(traceId);
-        sysLogMapper.insert(log);
+        auditLogService.writeLog(log);
 
         return ApiResponse.ok(Map.of(
                 "export_ref_id", requestId != null ? requestId : "ref_" + System.currentTimeMillis(),
                 "file_url", (Object) null,
-                "logged_at", Instant.now().toString()
+                "logged_at", now.toString()
         ), traceId);
     }
 
@@ -558,7 +557,7 @@ public class AdminController {
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
         if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
 
-        long purgedCount = sysLogMapper.purgeBeforeTime(req.getBeforeTime());
+        long purgedCount = auditLogService.purgeBefore(req.getBeforeTime());
         return ApiResponse.ok(Map.of(
                 "purged_count", purgedCount,
                 "before_time", req.getBeforeTime(),
@@ -576,16 +575,12 @@ public class AdminController {
 
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
 
-        SysConfigDO config = sysConfigMapper.findByKey(req.getConfigKey());
-        String scope = config != null ? config.getScope() : "public";
+        String scope = sysConfigService.findByKey(req.getConfigKey())
+                .map(SysConfigEntity::getScope)
+                .orElse("public");
 
-        SysConfigDO updated = new SysConfigDO();
-        updated.setConfigKey(req.getConfigKey());
-        updated.setConfigValue(req.getConfigValue());
-        updated.setScope(scope);
-        updated.setUpdatedBy(securityContext.currentUserId());
-        updated.setUpdatedReason(req.getReason());
-        sysConfigMapper.upsert(updated);
+        sysConfigService.updateConfig(req.getConfigKey(), req.getConfigValue(),
+                scope, securityContext.currentUserId(), req.getReason());
 
         return ApiResponse.ok(Map.of(
                 "config_key", req.getConfigKey(),
@@ -636,9 +631,9 @@ public class AdminController {
         if ("detail".equals(scope) && !securityContext.isSuperAdmin())
             throw BizException.of("E_GOV_4032");
 
-        long failedLogin = sysLogMapper.countByModuleAndObjectId("AUTH", "LOGIN_FAIL");
-        long riskOps = sysLogMapper.countByModuleAndObjectId("SYSTEM", "HIGH_RISK");
-        long bannedUsers = sysUserMapper.countByFilter(null, "BANNED", null);
+        long failedLogin = auditLogService.countByModuleAndObjectId("AUTH", "LOGIN_FAIL");
+        long riskOps = auditLogService.countByModuleAndObjectId("SYSTEM", "HIGH_RISK");
+        long bannedUsers = userGovernanceService.countUsers(null, "BANNED", null);
 
         return ApiResponse.ok(Map.<String, Object>of(
                 "scope", scope,
@@ -663,7 +658,9 @@ public class AdminController {
         if (("security".equals(scope) || "ai_policy".equals(scope)) && !securityContext.isSuperAdmin())
             throw BizException.of("E_GOV_4032");
 
-        List<SysConfigDO> configs = scope != null ? sysConfigMapper.listByScope(scope) : sysConfigMapper.listAll();
+        List<SysConfigEntity> configs = scope != null
+                ? sysConfigService.listByScope(scope)
+                : sysConfigService.listAll();
         List<Map<String, Object>> items = configs.stream().map(c -> Map.<String, Object>of(
                 "config_key", c.getConfigKey(),
                 "config_value", c.getConfigValue(),
@@ -686,8 +683,8 @@ public class AdminController {
 
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
 
-        List<SysOutboxLogDO> list = outboxLogMapper.listDead(pageSize, (pageNo - 1) * pageSize);
-        long total = outboxLogMapper.countDead();
+        List<SysOutboxLogDO> list = outboxGovernanceService.listDead(pageSize, (pageNo - 1) * pageSize);
+        long total = outboxGovernanceService.countDead();
         List<Map<String, Object>> items = list.stream().map(e -> Map.<String, Object>of(
                 "event_id", e.getEventId(),
                 "created_at", e.getCreatedAt() != null ? e.getCreatedAt().toString() : "",
@@ -720,8 +717,8 @@ public class AdminController {
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
 
         String replayToken = requestId != null ? requestId : "rpt_" + System.currentTimeMillis();
-        int updated = outboxLogMapper.replayDead(eventId, securityContext.currentUserId(),
-                req.getReplayReason(), replayToken);
+        int updated = outboxGovernanceService.replayDead(
+                eventId, securityContext.currentUserId(), req.getReplayReason(), replayToken);
         if (updated == 0) throw BizException.of("E_GOV_4226");
 
         return ApiResponse.ok(Map.of(
@@ -748,32 +745,21 @@ public class AdminController {
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
         if ("AI_AGENT".equalsIgnoreCase(actionSource)) throw BizException.of("E_GOV_4231");
 
-        SysUserDO target = sysUserMapper.findById(userId);
-        if (target == null) throw BizException.of("E_USR_4041");
+        userGovernanceService.getUser(userId); // throws E_USER_4041 if not found
 
-        sysUserMapper.updatePassword(userId, passwordEncoder.encode(req.getNewPassword()));
+        userGovernanceService.resetPassword(
+                userId,
+                passwordEncoder.encode(req.getNewPassword()),
+                securityContext.currentUserId(),
+                securityContext.currentUsername(),
+                req.getReason(),
+                traceId);
 
         Instant now = Instant.now();
         redisTemplate.opsForValue().set(
                 "jwt:invalidate_before:" + userId,
                 String.valueOf(now.toEpochMilli()),
                 24L, TimeUnit.HOURS);
-
-        SysLogDO log = new SysLogDO();
-        log.setModule("USER");
-        log.setAction("RESET_PASSWORD");
-        log.setActionId("reset_pwd_" + userId);
-        log.setObjectId(String.valueOf(userId));
-        log.setResultCode("OK");
-        log.setResult("密码强制重置成功");
-        log.setRiskLevel("HIGH");
-        log.setOperatorUserId(securityContext.currentUserId());
-        log.setOperatorUsername(securityContext.currentUsername());
-        log.setExecutedAt(now);
-        log.setCreatedAt(now);
-        if (req.getReason() != null) log.setDetail(req.getReason());
-        log.setTraceId(traceId);
-        sysLogMapper.insert(log);
 
         return ApiResponse.ok(Map.of(
                 "user_id", String.valueOf(userId),
@@ -788,14 +774,14 @@ public class AdminController {
         if (!securityContext.isAdmin()) throw BizException.of("E_AUTH_4031");
     }
 
-    private Map<String, Object> buildUserVO(SysUserDO u) {
-        return Map.of(
+    private Map<String, Object> buildUserVO(SysUserEntity u) {
+        return Map.<String, Object>of(
                 "user_id", String.valueOf(u.getId()),
-                "username", u.getUsername(),
+                "username", u.getUsername() != null ? u.getUsername() : "",
                 "display_name", u.getDisplayName() != null ? u.getDisplayName() : "",
                 "phone", u.getPhone() != null ? u.getPhone() : "",
-                "role", u.getRole(),
-                "status", u.getStatus(),
+                "role", u.getRole() != null ? u.getRole().name() : "",
+                "status", u.getStatusValue(),
                 "created_at", u.getCreatedAt() != null ? u.getCreatedAt().toString() : ""
         );
     }
