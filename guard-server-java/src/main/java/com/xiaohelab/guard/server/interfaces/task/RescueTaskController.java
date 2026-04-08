@@ -1,20 +1,17 @@
 package com.xiaohelab.guard.server.interfaces.task;
 
+import com.xiaohelab.guard.server.application.notification.NotificationService;
+import com.xiaohelab.guard.server.application.clue.ClueService;
 import com.xiaohelab.guard.server.application.task.CloseRescueTaskUseCase;
 import com.xiaohelab.guard.server.application.task.CreateRescueTaskUseCase;
 import com.xiaohelab.guard.server.application.task.QueryRescueTaskService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
+import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity.CloseType;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.ClueRecordDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.NotificationInboxDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.RescueTaskDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.ClueRecordMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.NotificationInboxMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.RescueTaskMapper;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserPatientMapper;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -27,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 寻回任务接口。
@@ -42,11 +40,9 @@ public class RescueTaskController {
     private final CreateRescueTaskUseCase createRescueTaskUseCase;
     private final CloseRescueTaskUseCase closeRescueTaskUseCase;
     private final QueryRescueTaskService queryRescueTaskService;
+    private final ClueService clueService;
+    private final NotificationService notificationService;
     private final SecurityContext securityContext;
-    private final RescueTaskMapper rescueTaskMapper;
-    private final ClueRecordMapper clueRecordMapper;
-    private final NotificationInboxMapper notificationInboxMapper;
-    private final SysUserPatientMapper sysUserPatientMapper;
 
     /** 创建寻回任务 */
     @PostMapping
@@ -101,7 +97,7 @@ public class RescueTaskController {
 
         Long userId = securityContext.currentUserId();
         String userRole = securityContext.currentRole();
-        List<RescueTaskDO> list = queryRescueTaskService.listByPatient(
+        List<RescueTaskEntity> list = queryRescueTaskService.listByPatient(
                 patientId, userId, userRole, pageNo, pageSize);
         long total = queryRescueTaskService.countByPatient(patientId);
 
@@ -110,7 +106,7 @@ public class RescueTaskController {
                         "task_id", String.valueOf(d.getId()),
                         "patient_id", String.valueOf(d.getPatientId()),
                         "patient_name_masked", "",
-                        "status", d.getStatus(),
+                        "status", d.getStatus() == null ? "" : d.getStatus().name(),
                         "source", d.getSource() == null ? "" : d.getSource(),
                         "latest_event_time", d.getUpdatedAt() == null ? "" : d.getUpdatedAt().toString(),
                         "start_time", d.getCreatedAt() == null ? "" : d.getCreatedAt().toString()))
@@ -133,13 +129,11 @@ public class RescueTaskController {
         String userRole = securityContext.currentRole();
         RescueTaskEntity task = queryRescueTaskService.findById(taskId, userId, userRole);
 
-        // Latest trajectory: pick the most recent valid clue with coords
-        ClueRecordDO latestClue = null;
-        List<ClueRecordDO> clues = clueRecordMapper.listByTaskId(taskId, 1, 0);
-        if (!clues.isEmpty()) latestClue = clues.get(0);
+        Optional<ClueRecordEntity> latestClueOpt = clueService.firstByTask(taskId);
 
         Map<String, Object> latestTrajectory = null;
-        if (latestClue != null) {
+        if (latestClueOpt.isPresent()) {
+            ClueRecordEntity latestClue = latestClueOpt.get();
             latestTrajectory = Map.of(
                     "event_time", latestClue.getCreatedAt() == null ? "" : latestClue.getCreatedAt().toString(),
                     "lat", latestClue.getLocationLat(),
@@ -172,7 +166,7 @@ public class RescueTaskController {
         queryRescueTaskService.findById(taskId, userId, userRole); // auth check
 
         int safeLimit = Math.min(limit, 200);
-        List<ClueRecordDO> clues = clueRecordMapper.listByTaskId(taskId, safeLimit, 0);
+        List<ClueRecordEntity> clues = clueService.listByTask(taskId, safeLimit, 0);
         List<Map<String, Object>> items = clues.stream()
                 .filter(c -> c.getLocationLat() != null && c.getLocationLng() != null)
                 .map(c -> Map.<String, Object>of(
@@ -224,7 +218,6 @@ public class RescueTaskController {
         String userRole = securityContext.currentRole();
         queryRescueTaskService.findById(taskId, userId, userRole); // auth check
 
-        // Stub: return empty event list (no dedicated event store in this version)
         return ApiResponse.ok(Map.of(
                 "items", List.of(),
                 "page_size", pageSize,
@@ -247,13 +240,13 @@ public class RescueTaskController {
         queryRescueTaskService.findById(taskId, userId, userRole); // auth check
 
         int offset = (pageNo - 1) * pageSize;
-        List<ClueRecordDO> list;
+        List<ClueRecordEntity> list;
         if (Boolean.TRUE.equals(suspectedOnly)) {
-            list = clueRecordMapper.listPendingByTaskId(taskId);
+            list = clueService.listPendingByTask(taskId);
         } else {
-            list = clueRecordMapper.listByTaskId(taskId, pageSize, offset);
+            list = clueService.listByTask(taskId, pageSize, offset);
         }
-        long total = clueRecordMapper.countByTaskId(taskId);
+        long total = clueService.countByTask(taskId);
 
         List<Map<String, Object>> items = list.stream()
                 .map(c -> Map.<String, Object>of(
@@ -281,10 +274,10 @@ public class RescueTaskController {
         String userRole = securityContext.currentRole();
         queryRescueTaskService.findById(taskId, userId, userRole); // auth check
 
-        List<ClueRecordDO> clues = clueRecordMapper.listByTaskId(taskId, 1, 0);
+        List<ClueRecordEntity> clues = clueService.listByTask(taskId, 1, 0);
         if (clues.isEmpty()) throw BizException.of("E_CLUE_4043");
 
-        ClueRecordDO c = clues.get(0);
+        ClueRecordEntity c = clues.get(0);
         var data = new java.util.LinkedHashMap<String, Object>();
         data.put("task_id", String.valueOf(taskId));
         data.put("clue_id", String.valueOf(c.getId()));
@@ -309,8 +302,8 @@ public class RescueTaskController {
         queryRescueTaskService.findById(taskId, userId, userRole); // auth check
 
         int offset = (pageNo - 1) * pageSize;
-        List<NotificationInboxDO> list = notificationInboxMapper.listByRelatedTaskId(taskId, level, pageSize, offset);
-        long total = notificationInboxMapper.countByRelatedTaskId(taskId, level);
+        List<NotificationInboxDO> list = notificationService.listAlertsByTask(taskId, level, pageSize, offset);
+        long total = notificationService.countAlertsByTask(taskId, level);
 
         List<Map<String, Object>> items = list.stream()
                 .map(n -> Map.<String, Object>of(
@@ -338,10 +331,10 @@ public class RescueTaskController {
 
         if (!securityContext.isAdmin()) throw BizException.of("E_GOV_4030");
 
-        long total = rescueTaskMapper.countByStatus(null, timeFrom, timeTo);
-        long active = rescueTaskMapper.countByStatus("ACTIVE", timeFrom, timeTo);
-        long resolved = rescueTaskMapper.countByStatus("RESOLVED", timeFrom, timeTo);
-        long falseAlarm = rescueTaskMapper.countByStatus("FALSE_ALARM", timeFrom, timeTo);
+        long total = queryRescueTaskService.countByStatus(null, timeFrom, timeTo);
+        long active = queryRescueTaskService.countByStatus("ACTIVE", timeFrom, timeTo);
+        long resolved = queryRescueTaskService.countByStatus("RESOLVED", timeFrom, timeTo);
+        long falseAlarm = queryRescueTaskService.countByStatus("FALSE_ALARM", timeFrom, timeTo);
         double resolutionRate = total == 0 ? 0.0 : (double) resolved / total;
 
         return ApiResponse.ok(Map.of(
