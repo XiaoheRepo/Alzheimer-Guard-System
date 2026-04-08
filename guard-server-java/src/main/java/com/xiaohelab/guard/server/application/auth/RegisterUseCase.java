@@ -1,6 +1,7 @@
 package com.xiaohelab.guard.server.application.auth;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
+import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class RegisterUseCase {
      * @param realName 真实姓名
      */
     @Transactional
-    public SysUserDO execute(String username, String password, String phone, String realName) {
+    public SysUserEntity execute(String username, String password, String phone, String realName) {
         // 检查用户名是否已存在
         if (sysUserMapper.countByUsername(username) > 0) {
             throw BizException.of("E_USR_4090");
@@ -43,6 +44,6 @@ public class RegisterUseCase {
         user.setStatus("NORMAL");
 
         sysUserMapper.insert(user);
-        return user;
+        return SysUserEntity.fromDO(user);
     }
 }

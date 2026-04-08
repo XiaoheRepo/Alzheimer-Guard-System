@@ -2,12 +2,12 @@ package com.xiaohelab.guard.server.interfaces.clue;
 
 import com.xiaohelab.guard.server.application.clue.ClueService;
 import com.xiaohelab.guard.server.application.clue.ReportClueUseCase;
+import com.xiaohelab.guard.server.application.governance.AuditLogService;
 import com.xiaohelab.guard.server.application.guardian.GuardianInvitationService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
 import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -31,6 +31,7 @@ public class ClueController {
 
     private final ReportClueUseCase reportClueUseCase;
     private final ClueService clueService;
+    private final AuditLogService auditLogService;
     private final GuardianInvitationService guardianInvitationService;
     private final SecurityContext securityContext;
 
@@ -182,8 +183,8 @@ public class ClueController {
             } catch (Exception ignored) {}
         }
 
-        List<SysLogDO> logs = clueService.listTimeline(clueId, pageSize, offset);
-        long total = clueService.countTimeline(clueId);
+        var logs = auditLogService.listByObjectId(String.valueOf(clueId), pageSize, offset);
+        long total = auditLogService.countByObjectId(String.valueOf(clueId));
         boolean hasNext = (long)(offset + pageSize) < total;
         String nextCursor = hasNext
                 ? java.util.Base64.getEncoder().encodeToString(String.valueOf(offset + pageSize).getBytes())

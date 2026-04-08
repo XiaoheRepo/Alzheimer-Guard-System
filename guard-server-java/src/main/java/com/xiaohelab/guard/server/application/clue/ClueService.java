@@ -3,8 +3,6 @@ package com.xiaohelab.guard.server.application.clue;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.domain.clue.entity.ClueRecordEntity;
 import com.xiaohelab.guard.server.domain.clue.repository.ClueRepository;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +19,6 @@ import java.util.Optional;
 public class ClueService {
 
     private final ClueRepository clueRepository;
-    private final SysLogMapper sysLogMapper;
 
     // ===== 查询 =====
 
@@ -53,16 +50,6 @@ public class ClueService {
 
     public long countReviewQueue() {
         return clueRepository.countReviewQueue();
-    }
-
-    // ===== 时间线（来自 sys_log） =====
-
-    public List<SysLogDO> listTimeline(Long clueId, int pageSize, int offset) {
-        return sysLogMapper.listByObjectId(String.valueOf(clueId), pageSize, offset);
-    }
-
-    public long countTimeline(Long clueId) {
-        return sysLogMapper.countByObjectId(String.valueOf(clueId));
     }
 
     // ===== 管理员写操作 =====

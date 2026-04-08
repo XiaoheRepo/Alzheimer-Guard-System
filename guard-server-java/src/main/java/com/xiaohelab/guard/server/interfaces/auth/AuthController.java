@@ -5,7 +5,6 @@ import com.xiaohelab.guard.server.application.auth.RegisterUseCase;
 import com.xiaohelab.guard.server.application.user.UserService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysUserDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import com.xiaohelab.guard.server.security.service.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
@@ -52,13 +51,13 @@ public class AuthController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId,
             @Valid @RequestBody RegisterRequest req) {
 
-        SysUserDO user = registerUseCase.execute(
+        var user = registerUseCase.execute(
                 req.getUsername(), req.getPassword(), req.getPhone(), req.getRealName());
 
         return ApiResponse.ok(Map.of(
                 "user_id", String.valueOf(user.getId()),
                 "username", user.getUsername(),
-                "role", user.getRole()
+                "role", user.getRole().name()
         ), traceId);
     }
 

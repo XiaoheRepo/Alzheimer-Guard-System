@@ -17,7 +17,6 @@ import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysOutboxLogDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -106,7 +105,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<SysLogDO> list = auditLogService.listLogs(module, pageSize, (pageNo - 1) * pageSize);
+        var list = auditLogService.listLogs(module, pageSize, (pageNo - 1) * pageSize);
         long total = auditLogService.countLogs();
         List<Map<String, Object>> items = list.stream().map(l -> Map.<String, Object>of(
                 "log_id", String.valueOf(l.getId()),
@@ -384,7 +383,7 @@ public class AdminController {
             @RequestHeader(value = "X-Trace-Id", required = false) String traceId) {
 
         requireAdmin();
-        List<SysLogDO> logs = auditLogService.listByModuleAndObjectId(
+        var logs = auditLogService.listByModuleAndObjectId(
                 "MATERIAL_ORDER", String.valueOf(orderId), pageSize, (pageNo - 1) * pageSize);
         long total = auditLogService.countByModuleAndObjectId("MATERIAL_ORDER", String.valueOf(orderId));
         List<Map<String, Object>> items = logs.stream().map(l -> Map.<String, Object>of(
@@ -683,7 +682,7 @@ public class AdminController {
 
         if (!securityContext.isSuperAdmin()) throw BizException.of("E_GOV_4032");
 
-        List<SysOutboxLogDO> list = outboxGovernanceService.listDead(pageSize, (pageNo - 1) * pageSize);
+        var list = outboxGovernanceService.listDead(pageSize, (pageNo - 1) * pageSize);
         long total = outboxGovernanceService.countDead();
         List<Map<String, Object>> items = list.stream().map(e -> Map.<String, Object>of(
                 "event_id", e.getEventId(),
