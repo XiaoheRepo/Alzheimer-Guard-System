@@ -15,7 +15,7 @@ import com.xiaohelab.guard.server.domain.governance.entity.SysConfigEntity;
 import com.xiaohelab.guard.server.domain.governance.entity.SysUserEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
-import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
+import com.xiaohelab.guard.server.domain.task.entity.RescueTaskEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;

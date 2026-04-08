@@ -7,7 +7,7 @@ import com.xiaohelab.guard.server.application.task.QueryRescueTaskService;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.response.ApiResponse;
 import com.xiaohelab.guard.server.common.response.PageResponse;
-import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
+import com.xiaohelab.guard.server.domain.task.entity.RescueTaskEntity;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
 import com.xiaohelab.guard.server.security.config.SecurityContext;
 import jakarta.validation.Valid;

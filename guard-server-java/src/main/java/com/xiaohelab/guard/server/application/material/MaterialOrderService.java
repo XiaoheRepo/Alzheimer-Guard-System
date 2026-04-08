@@ -2,13 +2,13 @@ package com.xiaohelab.guard.server.application.material;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.IdGenerator;
+import com.xiaohelab.guard.server.application.governance.AuditLogService;
 import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
+import com.xiaohelab.guard.server.domain.material.repository.MaterialOrderRepository;
 import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.entity.TagAssetEntity;
-import com.xiaohelab.guard.server.domain.tag.repository.TagApplyRecordRepository;
 import com.xiaohelab.guard.server.domain.tag.repository.TagAssetRepository;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.SysLogDO;
-import com.xiaohelab.guard.server.infrastructure.persistence.mapper.SysLogMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +25,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MaterialOrderService {
 
-    private final TagApplyRecordRepository orderRepository;
+    private final MaterialOrderRepository orderRepository;
     private final TagAssetRepository tagAssetRepository;
     private final GuardianRepository guardianRepository;
-    private final SysLogMapper sysLogMapper;
+    private final AuditLogService auditLogService;
 
     // ===== 用户端操作 =====
 
@@ -296,11 +296,11 @@ public class MaterialOrderService {
 
     /** 查询标签历史审计日志（供 PatientController 使用）。 */
     public List<SysLogDO> listTagHistory(String tagCode, int limit, int offset) {
-        return sysLogMapper.listByModuleAndObjectId("TAG_ASSET", tagCode, limit, offset);
+        return auditLogService.listByModuleAndObjectId("TAG_ASSET", tagCode, limit, offset);
     }
 
     public long countTagHistory(String tagCode) {
-        return sysLogMapper.countByModuleAndObjectId("TAG_ASSET", tagCode);
+        return auditLogService.countByModuleAndObjectId("TAG_ASSET", tagCode);
     }
 
     // ===== 管理员标签查询 =====

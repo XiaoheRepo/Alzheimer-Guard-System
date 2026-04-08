@@ -1,7 +1,7 @@
 package com.xiaohelab.guard.server.infrastructure.persistence.repository;
 
-import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
-import com.xiaohelab.guard.server.domain.task.RescueTaskRepository;
+import com.xiaohelab.guard.server.domain.task.entity.RescueTaskEntity;
+import com.xiaohelab.guard.server.domain.task.repository.RescueTaskRepository;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.RescueTaskDO;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.RescueTaskMapper;
 import lombok.RequiredArgsConstructor;

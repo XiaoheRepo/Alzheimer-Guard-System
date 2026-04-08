@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.infrastructure.persistence.repository;
 
+import com.xiaohelab.guard.server.domain.material.repository.MaterialOrderRepository;
 import com.xiaohelab.guard.server.domain.tag.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.domain.tag.repository.TagApplyRecordRepository;
 import com.xiaohelab.guard.server.infrastructure.persistence.do_.TagApplyRecordDO;
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
-public class TagApplyRecordRepositoryImpl implements TagApplyRecordRepository {
+public class TagApplyRecordRepositoryImpl implements TagApplyRecordRepository, MaterialOrderRepository {
 
     private final TagApplyRecordMapper mapper;
 

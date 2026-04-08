@@ -2,8 +2,8 @@ package com.xiaohelab.guard.server.application.task;
 
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.domain.guardian.repository.GuardianRepository;
-import com.xiaohelab.guard.server.domain.task.RescueTaskEntity;
-import com.xiaohelab.guard.server.domain.task.RescueTaskRepository;
+import com.xiaohelab.guard.server.domain.task.entity.RescueTaskEntity;
+import com.xiaohelab.guard.server.domain.task.repository.RescueTaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

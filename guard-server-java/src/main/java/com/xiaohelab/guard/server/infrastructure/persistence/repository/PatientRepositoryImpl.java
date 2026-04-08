@@ -2,6 +2,7 @@ package com.xiaohelab.guard.server.infrastructure.persistence.repository;
 
 import com.xiaohelab.guard.server.domain.patient.entity.PatientEntity;
 import com.xiaohelab.guard.server.domain.patient.repository.PatientRepository;
+import com.xiaohelab.guard.server.domain.profile.repository.ProfileRepository;
 import com.xiaohelab.guard.server.infrastructure.persistence.mapper.PatientProfileMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -12,10 +13,11 @@ import java.util.Optional;
 
 /**
  * PatientRepository 基础设施实现：封装 PatientProfileMapper，向上暴露领域类型。
+ * 同时实现 ProfileRepository（供公共扫码入口使用）。
  */
 @Repository
 @RequiredArgsConstructor
-public class PatientRepositoryImpl implements PatientRepository {
+public class PatientRepositoryImpl implements PatientRepository, ProfileRepository {
 
     private final PatientProfileMapper patientProfileMapper;
 
