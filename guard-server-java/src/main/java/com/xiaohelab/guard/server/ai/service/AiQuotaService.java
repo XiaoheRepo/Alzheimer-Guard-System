@@ -19,10 +19,10 @@ public class AiQuotaService {
 
     private final AiQuotaLedgerRepository ledgerRepository;
 
-    @Value("${guard.ai.user-daily-quota:50}")
+    @Value("${guard.ai.user-daily-quota:20000}")
     private int userDailyQuota;
 
-    @Value("${guard.ai.patient-daily-quota:100}")
+    @Value("${guard.ai.patient-daily-quota:50000}")
     private int patientDailyQuota;
 
     public AiQuotaService(AiQuotaLedgerRepository ledgerRepository) {
