@@ -46,6 +46,11 @@ public class AiSessionService {
         this.quotaService = quotaService;
     }
 
+    /**
+     * 创建一个 AI 会话；若 prompt 非空则立即发起第一轮对话。
+     * @param req 会话创建请求（patientId、taskId可选、首条 prompt）
+     * @throws BizException E_PRO_4033 无监护权
+     */
     @Transactional(rollbackFor = Exception.class)
     public AiSessionEntity create(AiSessionCreateRequest req) {
         AuthUser user = SecurityUtil.current();
@@ -64,6 +69,17 @@ public class AiSessionService {
         return s;
     }
 
+    /**
+     * 在已存在的会话上追加一轮对话：
+     * <ol><li>预占配额（reserve）；</li>
+     *     <li>将 user/assistant 消息 append 到 messages；</li>
+     *     <li>计算 token 数；</li>
+     *     <li>成功时 commit、异常时 rollback 配额。</li></ol>
+     *
+     * @param sessionId 会话业务 ID
+     * @param req       单轮 prompt
+     * @return 包含 session_id / reply / total_tokens 的响应地图
+     */
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> chat(String sessionId, AiChatRequest req) {
         AuthUser user = SecurityUtil.current();
@@ -101,6 +117,10 @@ public class AiSessionService {
         }
     }
 
+    /**
+     * 用户对某一会话提交评分反馈（1–5）。
+     * @throws BizException E_AI_4041 会话不存在；E_AI_4033 非归属用户
+     */
     @Transactional(rollbackFor = Exception.class)
     public AiSessionEntity feedback(String sessionId, Integer rating, String comment) {
         AuthUser user = SecurityUtil.current();
@@ -114,6 +134,9 @@ public class AiSessionService {
         return s;
     }
 
+    /**
+     * 查询会话详情。非管理员需有对应患者的监护权。
+     */
     public AiSessionEntity get(String sessionId) {
         AuthUser user = SecurityUtil.current();
         AiSessionEntity s = sessionRepository.findBySessionId(sessionId)
