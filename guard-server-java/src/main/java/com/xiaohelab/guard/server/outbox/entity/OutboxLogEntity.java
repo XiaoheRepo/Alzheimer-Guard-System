@@ -1,24 +1,57 @@
 package com.xiaohelab.guard.server.outbox.entity;
 
-import com.xiaohelab.guard.server.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 
 /**
  * Outbox 事件日志。HC-02：业务变更与事件发布同事务落库，由 {@code OutboxDispatcher}
  * 异步抢占并发布到 MQ（Kafka / Redis Streams）。
+ * sys_outbox_log 表无 version 列，所以不继承 BaseEntity。
  */
 @Entity
 @Table(name = "sys_outbox_log")
-public class OutboxLogEntity extends BaseEntity {
+@EntityListeners(AuditingEntityListener.class)
+public class OutboxLogEntity {
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "trace_id", length = 64, nullable = false)
+    private String traceId;
+
+    @PrePersist
+    void onCreate() {
+        OffsetDateTime now = OffsetDateTime.now();
+        if (createdAt == null) createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getTraceId() { return traceId; }
+    public void setTraceId(String traceId) { this.traceId = traceId; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
