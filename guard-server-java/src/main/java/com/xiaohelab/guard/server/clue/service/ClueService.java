@@ -109,7 +109,7 @@ public class ClueService {
         c.setRiskScore(new BigDecimal("0.00"));
         clueRepository.save(c);
 
-        outboxService.publish(OutboxTopics.CLUE_REPORTED_VALIDATED, c.getClueNo(),
+        outboxService.publish(OutboxTopics.CLUE_VALIDATED, c.getClueNo(),
                 String.valueOf(patientId),
                 Map.of("clue_id", c.getId(), "clue_no", c.getClueNo(), "task_id", taskId,
                         "patient_id", patientId, "reporter_type", reporterType,
