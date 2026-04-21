@@ -8,6 +8,7 @@ import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.gov.entity.SysConfigEntity;
 import com.xiaohelab.guard.server.gov.repository.SysConfigRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
+/** 系统配置后台（Admin）：CRUD + 批量查询。 */
+@Tag(name = "Admin.SysConfig", description = "系统配置（Admin）")
 @RestController
 @RequestMapping("/api/v1/admin/configs")
 public class SysConfigController {

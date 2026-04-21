@@ -4,11 +4,14 @@ import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.patient.dto.*;
 import com.xiaohelab.guard.server.patient.service.PatientService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** 患者档案接口：创建 / 查询 / 列表 / 更新 / 逻辑删除 / 围栏配置 / 确认安全。 */
+@Tag(name = "Patient", description = "患者档案")
 @RestController
 @RequestMapping("/api/v1/patients")
 public class PatientController {

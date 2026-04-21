@@ -6,11 +6,14 @@ import com.xiaohelab.guard.server.clue.entity.ClueRecordEntity;
 import com.xiaohelab.guard.server.clue.service.ClueService;
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+/** 线索记录接口：家属上报 / 分页查询 / 管理员审核。 */
+@Tag(name = "Clue", description = "线索记录")
 @RestController
 @RequestMapping("/api/v1/clues")
 public class ClueController {

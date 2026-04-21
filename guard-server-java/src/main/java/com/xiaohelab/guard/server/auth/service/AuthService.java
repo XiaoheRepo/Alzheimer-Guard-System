@@ -25,6 +25,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
+/**
+ * 认证与会话服务。
+ * <p>职责：
+ * <ul>
+ *   <li>账号注册、登录（含 IP 记录）、密码修改；</li>
+ *   <li>JWT Access/Refresh 双 Token 签发与刷新；</li>
+ *   <li>退出登录（将 Token 写入 Redis 黑名单，按 JWT 剩余 TTL 自动失效）；</li>
+ *   <li>签发一次性 WebSocket 握手票据（写入 DB + Redis，TTL 短）。</li>
+ * </ul>
+ * 安全约束：密码全部经 BCrypt 哈希；不向外返回 passwordHash 字段。
+ */
 @Service
 public class AuthService {
 

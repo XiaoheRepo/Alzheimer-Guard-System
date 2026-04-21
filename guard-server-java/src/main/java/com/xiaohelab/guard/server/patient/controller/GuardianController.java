@@ -9,12 +9,15 @@ import com.xiaohelab.guard.server.patient.entity.GuardianInvitationEntity;
 import com.xiaohelab.guard.server.patient.entity.GuardianRelationEntity;
 import com.xiaohelab.guard.server.patient.entity.GuardianTransferRequestEntity;
 import com.xiaohelab.guard.server.patient.service.GuardianService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+/** 监护成员管理：邀请 / 响应邀请 / 主监护转移 / 移除成员 / 成员列表。 */
+@Tag(name = "Guardian", description = "监护关系与成员管理")
 @RestController
 @RequestMapping("/api/v1")
 public class GuardianController {

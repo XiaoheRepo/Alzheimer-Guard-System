@@ -24,6 +24,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 患者档案服务。
+ * <p>职责：
+ * <ul>
+ *   <li>建档（自动生成 profile_no / short_code，并把创建者登记为 PRIMARY_GUARDIAN）；</li>
+ *   <li>查询、列表、更新（HC-04 版本号 +1）、逻辑删除（含关联监护关系批量撤销）；</li>
+ *   <li>围栏配置；</li>
+ *   <li>失联状态恢复 confirmSafe；</li>
+ *   <li>所有对外响应通过 DesensitizeUtil 完成手机号脱敏。</li>
+ * </ul>
+ * 所有变更均通过 {@link OutboxService} 发布 profile.* 领域事件。
+ */
 @Service
 public class PatientService {
 

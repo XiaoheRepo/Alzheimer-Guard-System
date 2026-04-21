@@ -7,12 +7,15 @@ import com.xiaohelab.guard.server.material.dto.OrderReviewRequest;
 import com.xiaohelab.guard.server.material.dto.OrderShipRequest;
 import com.xiaohelab.guard.server.material.entity.TagApplyRecordEntity;
 import com.xiaohelab.guard.server.material.service.MaterialOrderService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/** 物资工单接口：申请 / 审核 / 发货 / 签收 / 取消 / 查询。 */
+@Tag(name = "Material.Order", description = "标签工单申领")
 @RestController
 @RequestMapping("/api/v1/material/orders")
 public class MaterialOrderController {

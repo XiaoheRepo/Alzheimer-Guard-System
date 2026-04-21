@@ -6,11 +6,14 @@ import com.xiaohelab.guard.server.ai.entity.AiSessionEntity;
 import com.xiaohelab.guard.server.ai.service.AiSessionService;
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/** AI 会话接口：创建会话、发送消息（同步占位版本）。 */
+@Tag(name = "AI.Session", description = "AI 会话与对话")
 @RestController
 @RequestMapping("/api/v1/ai/sessions")
 public class AiSessionController {

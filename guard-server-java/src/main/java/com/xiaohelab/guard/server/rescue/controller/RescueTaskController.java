@@ -6,10 +6,13 @@ import com.xiaohelab.guard.server.rescue.dto.TaskCloseRequest;
 import com.xiaohelab.guard.server.rescue.dto.TaskCreateRequest;
 import com.xiaohelab.guard.server.rescue.entity.RescueTaskEntity;
 import com.xiaohelab.guard.server.rescue.service.RescueTaskService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+/** 救援任务接口：创建 / 查询 / 列表 / 关闭 / 续期。 */
+@Tag(name = "Rescue", description = "寻回任务")
 @RestController
 @RequestMapping("/api/v1/rescue/tasks")
 public class RescueTaskController {

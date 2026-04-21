@@ -12,6 +12,7 @@ import com.xiaohelab.guard.server.material.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.material.repository.TagAssetRepository;
 import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
 import com.xiaohelab.guard.server.patient.repository.PatientProfileRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,11 +24,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 公开入口控制器（无需登录）：
- *  - GET /r/{resource_token}：扫码 / NFC 进入患者公示页（限展示 + 一次性 entry_token）
- *  - GET /p/{short_code}：海报短码进入
- *  - POST /api/v1/public/clues/manual-entry：匿名线索上报
+ * 公开入口控制器（无需登录）。
+ * <ul>
+ *   <li>GET  /r/{resource_token} —— 扫码 / NFC 进入患者公示页（限展示 + 一次性 entry_token）</li>
+ *   <li>GET  /p/{short_code}    —— 海报短码进入</li>
+ *   <li>POST /api/v1/public/clues/manual-entry —— 匿名线索上报</li>
+ * </ul>
+ * 公开入口必须做速率限制 + 一次性 token 防止信息被批量爬取。
  */
+@Tag(name = "Public", description = "无需登录的公开入口（扫码 / 海报 / 匿名线索）")
 @RestController
 public class PublicEntryController {
 

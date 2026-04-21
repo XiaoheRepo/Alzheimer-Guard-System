@@ -9,6 +9,7 @@ import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.outbox.entity.OutboxLogEntity;
 import com.xiaohelab.guard.server.outbox.repository.OutboxLogRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
 
+/** Outbox 管理后台（Admin）：查询 DEAD 消息 / 重放 / 统计。 */
+@Tag(name = "Admin.Outbox", description = "Outbox 消息状态管理（Admin）")
 @RestController
 @RequestMapping("/api/v1/admin/outbox")
 public class OutboxAdminController {

@@ -4,12 +4,19 @@ import com.xiaohelab.guard.server.auth.dto.*;
 import com.xiaohelab.guard.server.auth.service.AuthService;
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * 认证与会话管理。提供注册 / 登录 / 刷新 Token / 当前用户 / 修改密码 /
+ * 退出 / WebSocket 一次性 ticket 签发。除 me/changePassword/logout/wsTicket 外，
+ * 其余接口均为白名单（见 SecurityConfig）。
+ */
+@Tag(name = "Auth", description = "认证、会话与 WebSocket Ticket")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
