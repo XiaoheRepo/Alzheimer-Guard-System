@@ -89,7 +89,12 @@ public class RescueTaskService {
         return t;
     }
 
-    /** 查询单个任务（权限校验）。 */
+    /**
+     * 查询单个任务。
+     * @param taskId 任务主键
+     * @return 任务实体
+     * @throws BizException E_TASK_4041 任务不存在；越权访问时抛 E_PRO_4033
+     */
     public RescueTaskEntity get(Long taskId) {
         AuthUser user = SecurityUtil.current();
         RescueTaskEntity t = taskRepository.findById(taskId)
@@ -98,7 +103,12 @@ public class RescueTaskService {
         return t;
     }
 
-    /** 列出当前用户有权查看的任务（分页）。 */
+    /**
+     * 分页列出当前登录用户所有有权查看的任务。
+     * @param page 页码（0-based）
+     * @param size 每页大小
+     * @return 分页结果；若无可访问患者返回空页
+     */
     public Page<RescueTaskEntity> listMine(int page, int size) {
         AuthUser user = SecurityUtil.current();
         List<Long> patientIds = authorizationService.listAccessiblePatientIds(user.getUserId());

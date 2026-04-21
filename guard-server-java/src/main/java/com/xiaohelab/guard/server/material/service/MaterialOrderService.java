@@ -49,6 +49,14 @@ public class MaterialOrderService {
         this.outboxService = outboxService;
     }
 
+    /**
+     * 家属创建物资工单（PENDING_AUDIT）。
+     * 落库同时通过 Outbox 发布 MAT_ORDER_CREATED 事件供通知/对账消费。
+     *
+     * @param req 工单创建请求（收货信息、数量、备注等）
+     * @return 已落库的工单实体
+     * @throws BizException E_PRO_4033 无监护权
+     */
     @Transactional(rollbackFor = Exception.class)
     public TagApplyRecordEntity create(OrderCreateRequest req) {
         AuthUser user = SecurityUtil.current();
@@ -74,6 +82,15 @@ public class MaterialOrderService {
         return o;
     }
 
+    /**
+     * 管理员审核：APPROVE 则从标签池锁定分配 N 枚标签（SKIP LOCKED），REJECT 则置 REJECTED。
+     * APPROVE 成功后发布 MAT_ORDER_APPROVED + TAG_ALLOCATED 两条事件。
+     *
+     * @param orderId 工单主键
+     * @param req     审核请求（action=APPROVE/REJECT）
+     * @throws BizException E_MAT_4030 非管理员；E_MAT_4041 工单不存在；
+     *                      E_MAT_4091 状态非 PENDING_AUDIT；E_MAT_4221 标签库存不足
+     */
     @Transactional(rollbackFor = Exception.class)
     public TagApplyRecordEntity review(Long orderId, OrderReviewRequest req) {
         AuthUser user = SecurityUtil.current();
@@ -126,6 +143,10 @@ public class MaterialOrderService {
         return o;
     }
 
+    /**
+     * 管理员登记发货（PENDING_SHIP → SHIPPED）。
+     * @throws BizException E_MAT_4091 状态非 PENDING_SHIP；E_MAT_4222 标签尚未分配
+     */
     @Transactional(rollbackFor = Exception.class)
     public TagApplyRecordEntity ship(Long orderId, OrderShipRequest req) {
         AuthUser user = SecurityUtil.current();
@@ -146,6 +167,10 @@ public class MaterialOrderService {
         return o;
     }
 
+    /**
+     * 家属/管理员登记收货（SHIPPED → RECEIVED）。
+     * @throws BizException E_MAT_4030 非申请人本人且非管理员；E_MAT_4091 状态非 SHIPPED
+     */
     @Transactional(rollbackFor = Exception.class)
     public TagApplyRecordEntity receive(Long orderId) {
         AuthUser user = SecurityUtil.current();
@@ -165,6 +190,10 @@ public class MaterialOrderService {
         return o;
     }
 
+    /**
+     * 取消工单：仅允许在 PENDING_AUDIT 状态由申请人或管理员发起。
+     * @throws BizException E_MAT_4030 越权；E_MAT_4094 状态不允许取消
+     */
     @Transactional(rollbackFor = Exception.class)
     public TagApplyRecordEntity cancel(Long orderId, String reason) {
         AuthUser user = SecurityUtil.current();
@@ -183,6 +212,10 @@ public class MaterialOrderService {
         return o;
     }
 
+    /**
+     * 查询单个工单：申请人本人或管理员直通；其它角色需具备对应患者监护权。
+     * @throws BizException E_MAT_4041 工单不存在；E_MAT_4030 / E_PRO_4033 越权
+     */
     public TagApplyRecordEntity get(Long orderId) {
         AuthUser user = SecurityUtil.current();
         TagApplyRecordEntity o = orderRepository.findById(orderId)
@@ -193,6 +226,9 @@ public class MaterialOrderService {
         return o;
     }
 
+    /**
+     * 分页列出当前用户申请的工单（按创建时间倒序）。
+     */
     public Page<TagApplyRecordEntity> listMine(int page, int size) {
         AuthUser user = SecurityUtil.current();
         return orderRepository.findByApplicantUserIdOrderByCreatedAtDesc(user.getUserId(), PageRequest.of(page, size));

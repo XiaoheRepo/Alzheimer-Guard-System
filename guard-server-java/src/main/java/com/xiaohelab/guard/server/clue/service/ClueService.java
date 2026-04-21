@@ -49,6 +49,15 @@ public class ClueService {
         this.outboxService = outboxService;
     }
 
+    /**
+     * 家属上报线索。若携带 task_id 则以任务绑定的 patient_id 为准，否则使用请求中的 patient_id；
+     * 最终会校验当前登录用户对该患者具有监护权。
+     *
+     * @param req      线索上报请求（坐标、照片、描述等）
+     * @param clientIp 请求侧 IP（用于风控留痕）
+     * @return 已落库的线索实体
+     * @throws BizException E_TASK_4041 任务不存在；E_PRO_4041 未指定患者；E_PRO_4033 无监护权
+     */
     @Transactional(rollbackFor = Exception.class)
     public ClueRecordEntity familyReport(ClueReportRequest req, String clientIp) {
         AuthUser user = SecurityUtil.current();
@@ -64,6 +73,16 @@ public class ClueService {
         return saveClue(req, user.getUserId(), "FAMILY", patientId, taskId, clientIp, null);
     }
 
+    /**
+     * 匿名扫码上报线索（通过患者短码入口）。
+     * 入口 token 的 jti 会被记录以便风控回溯；同时落设备指纹。
+     *
+     * @param req               线索上报请求
+     * @param entryTokenJti     入口 token 的唯一标识
+     * @param clientIp          请求侧 IP
+     * @param deviceFingerprint 设备指纹 hash
+     * @return 已落库的线索实体
+     */
     @Transactional(rollbackFor = Exception.class)
     public ClueRecordEntity anonymousReport(ClueReportRequest req, String entryTokenJti,
                                             String clientIp, String deviceFingerprint) {
@@ -75,6 +94,10 @@ public class ClueService {
         return c;
     }
 
+    /**
+     * 内部统一落库方法：坐标归一化为 WGS84、生成业务单号、序列化照片数组、发布 CLUE_VALIDATED 事件。
+     * 家属与匿名两种上报路径共用此方法，差异仅在 {@code reporterUserId}/{@code reporterType}/{@code entryTokenJti}。
+     */
     private ClueRecordEntity saveClue(ClueReportRequest req, Long reporterUserId, String reporterType,
                                       Long patientId, Long taskId, String clientIp, String entryTokenJti) {
         // 1. 坐标系归一化（toWgs84 入参为 lng,lat，返回 [lng,lat]）
@@ -118,6 +141,10 @@ public class ClueService {
         return c;
     }
 
+    /**
+     * 查询单条线索详情（监护权校验）。
+     * @throws BizException E_CLUE_4043 线索不存在
+     */
     public ClueRecordEntity get(Long clueId) {
         AuthUser user = SecurityUtil.current();
         ClueRecordEntity c = clueRepository.findById(clueId)
@@ -126,6 +153,12 @@ public class ClueService {
         return c;
     }
 
+    /**
+     * 按任务分页列出线索（倒序）。
+     * @param taskId 任务主键
+     * @param page   页码
+     * @param size   每页大小
+     */
     public Page<ClueRecordEntity> listByTask(Long taskId, int page, int size) {
         AuthUser user = SecurityUtil.current();
         RescueTaskEntity t = taskRepository.findById(taskId)
