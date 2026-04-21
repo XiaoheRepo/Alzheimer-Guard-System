@@ -77,9 +77,11 @@ public class ClueService {
 
     private ClueRecordEntity saveClue(ClueReportRequest req, Long reporterUserId, String reporterType,
                                       Long patientId, Long taskId, String clientIp, String entryTokenJti) {
-        // 1. 坐标系归一化
-        double[] wgs = CoordUtil.toWgs84(req.getLatitude(), req.getLongitude(),
+        // 1. 坐标系归一化（toWgs84 入参为 lng,lat，返回 [lng,lat]）
+        double[] wgs = CoordUtil.toWgs84(req.getLongitude(), req.getLatitude(),
                 req.getCoordSystem() != null ? req.getCoordSystem() : "WGS84");
+        double normLng = wgs[0];
+        double normLat = wgs[1];
 
         ClueRecordEntity c = new ClueRecordEntity();
         c.setClueNo(BusinessNoUtil.clueNo());
@@ -89,8 +91,8 @@ public class ClueService {
         c.setSourceType(req.getSourceType());
         c.setReporterUserId(reporterUserId);
         c.setReporterType(reporterType);
-        c.setLatitude(wgs[0]);
-        c.setLongitude(wgs[1]);
+        c.setLatitude(normLat);
+        c.setLongitude(normLng);
         c.setCoordSystem("WGS84");
         c.setDescription(req.getDescription());
         c.setTagOnly(Boolean.TRUE.equals(req.getTagOnly()));
@@ -111,7 +113,7 @@ public class ClueService {
                 String.valueOf(patientId),
                 Map.of("clue_id", c.getId(), "clue_no", c.getClueNo(), "task_id", taskId,
                         "patient_id", patientId, "reporter_type", reporterType,
-                        "lat", wgs[0], "lng", wgs[1]));
+                        "lat", normLat, "lng", normLng));
         log.info("[Clue] reported clueNo={} patientId={} reporter={}", c.getClueNo(), patientId, reporterType);
         return c;
     }
