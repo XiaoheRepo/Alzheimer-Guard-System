@@ -31,4 +31,18 @@ public interface RescueTaskRepository extends JpaRepository<RescueTaskEntity, Lo
     @Query("select count(t) from RescueTaskEntity t " +
             "where t.createdBy = :userId and t.status in ('ACTIVE','SUSTAINED')")
     long countActiveByCreator(@Param("userId") Long userId);
+
+    /**
+     * 任务列表查询（带多条件筛选）。null 值表示不过滤该条件。
+     * <p>API V2.0 §3.1.5：patient_id / status / source 筛选。</p>
+     */
+    @Query("select t from RescueTaskEntity t where t.patientId in :pids " +
+            "and (:patientId is null or t.patientId = :patientId) " +
+            "and (:status is null or t.status = :status) " +
+            "and (:source is null or t.source = :source)")
+    Page<RescueTaskEntity> searchMine(@Param("pids") List<Long> patientIds,
+                                      @Param("patientId") Long patientId,
+                                      @Param("status") String status,
+                                      @Param("source") String source,
+                                      Pageable pageable);
 }
