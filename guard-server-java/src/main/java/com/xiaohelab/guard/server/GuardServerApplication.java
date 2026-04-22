@@ -1,12 +1,17 @@
 package com.xiaohelab.guard.server;
 
+import java.time.OffsetDateTime;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import java.util.Optional;
 
 /**
  * 阿尔兹海默症患者协同寻回系统 - 后端服务主入口。
@@ -22,11 +27,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * </ul>
  */
 @SpringBootApplication(exclude = { RedisRepositoriesAutoConfiguration.class })
-@EnableJpaAuditing
+@EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
 @EnableJpaRepositories(basePackages = "com.xiaohelab.guard.server")
 @EnableScheduling
 @EnableAsync
 public class GuardServerApplication {
+
+    @Bean
+    public DateTimeProvider offsetDateTimeProvider() {
+        return () -> Optional.of(OffsetDateTime.now());
+    }
 
     /**
      * 应用启动入口。
