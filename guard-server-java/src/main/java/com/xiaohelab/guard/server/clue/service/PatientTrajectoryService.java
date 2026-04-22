@@ -107,4 +107,54 @@ public class PatientTrajectoryService {
         authorizationService.assertGuardian(user, patientId);
         return trajectoryRepository.findByPatientIdAndWindowStartBetweenOrderByWindowStartAsc(patientId, from, to);
     }
+
+    /**
+     * 3.2.7 任务轨迹最新切片（Cursor 分页）。
+     * <p>支持 since（时间锚点）/ afterVersion（id 增量）两种增量拉取。</p>
+     * <p>安全：必须为该任务对应患者的监护人或管理员。</p>
+     *
+     * @param taskId        目标任务
+     * @param since         时间锚点（可选）
+     * @param afterVersion  id 增量锚点（可选）
+     * @param pageSize      每页条数（1~200）
+     * @return Cursor 分页响应
+     */
+    public TrajectoryLatestResponse queryLatestForTask(Long taskId, OffsetDateTime since,
+                                                       Long afterVersion, int pageSize) {
+        AuthUser user = SecurityUtil.current();
+        RescueTaskEntity task = rescueTaskRepository.findById(taskId)
+                .orElseThrow(() -> BizException.of(ErrorCode.E_TASK_4041));
+        authorizationService.assertGuardian(user, task.getPatientId());
+
+        int safeSize = Math.min(Math.max(pageSize, 1), 200);
+        // 多取 1 条判断 has_next
+        Page<PatientTrajectoryEntity> page = trajectoryRepository.findLatestForTask(
+                taskId, since, afterVersion, PageRequest.of(0, safeSize + 1));
+        List<PatientTrajectoryEntity> raw = page.getContent();
+        boolean hasNext = raw.size() > safeSize;
+        if (hasNext) raw = raw.subList(0, safeSize);
+
+        List<TrajectoryLatestResponse.Point> items = new ArrayList<>(raw.size());
+        for (PatientTrajectoryEntity e : raw) {
+            TrajectoryLatestResponse.Point p = new TrajectoryLatestResponse.Point();
+            p.setTrajectoryId(e.getId());
+            p.setPatientId(e.getPatientId());
+            p.setTaskId(e.getTaskId());
+            p.setClueId(e.getClueId());
+            p.setLatitude(e.getLatitude());
+            p.setLongitude(e.getLongitude());
+            p.setCoordSystem("WGS84");
+            p.setRecordedAt(e.getWindowEnd());
+            p.setSourceType(e.getSourceType());
+            p.setVersion(e.getId()); // id 作为单调递增 version 锚点
+            items.add(p);
+        }
+
+        String nextCursor = null;
+        if (hasNext && !items.isEmpty()) {
+            // Cursor = base64(`{"id": <last_id>}`) —— 毕设简化：直接用 id 字符串作为游标
+            nextCursor = String.valueOf(items.get(items.size() - 1).getTrajectoryId());
+        }
+        return new TrajectoryLatestResponse(items, safeSize, nextCursor, hasNext);
+    }
 }
