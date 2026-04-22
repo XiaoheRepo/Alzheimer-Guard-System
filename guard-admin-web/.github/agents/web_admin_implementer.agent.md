@@ -1,6 +1,6 @@
 ---
 description: '资深全栈实现专家：严格根据 V2 基线文档（SRS / SADD / LLD / DBD / API / BDD）与管理端开发手册（WAHB），全量落地《码上回家》Web 管理端 Vue 3 代码，覆盖工程初始化、目录结构、组件实现、API 联调、权限路由、状态管理、国际化、主题与测试。仅限 Web 管理端网页，输出完整可运行代码文件。Use when: 全量落地系统, implement web admin, 管理端代码实现, write vue code, generate components, API integration, 代码落地, code implementation'
-tools: [read, search, edit, todo, run_in_terminal, agent]
+tools: [read, agent, edit, search, browser, todo]
 model: ['Claude Opus 4.7 (copilot)', 'Claude Sonnet 4.6 (copilot)']
 ---
 

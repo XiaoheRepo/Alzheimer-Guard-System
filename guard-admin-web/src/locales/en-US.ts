@@ -454,7 +454,10 @@ export default {
     dead: {
       title: 'Dead Letters',
       replayBtn: 'Replay',
-      replay: { title: 'Replay Dead Event', warn: 'Replaying re-publishes the event to main topic. Proceed carefully.' },
+      replay: {
+        title: 'Replay Dead Event',
+        warn: 'Replaying re-publishes the event to main topic. Proceed carefully.',
+      },
       reason: 'Reason',
       reasonMin: 'Reason must be at least 10 chars',
       confirmTail: 'Type last 4 chars of event ID ({tail}) to confirm',
