@@ -90,6 +90,17 @@ public class TagApplyRecordEntity extends BaseEntity {
     @Column(name = "exception_desc", length = 512)
     private String exceptionDesc;
 
+    /** 异常处置行政理由（LLD §6.3.8）。 */
+    @Column(name = "resolve_reason", length = 256)
+    private String resolveReason;
+
+    /** 处置人（ADMIN / SUPER_ADMIN user_id）。 */
+    @Column(name = "resolved_by")
+    private Long resolvedBy;
+
+    @Column(name = "resolved_at")
+    private OffsetDateTime resolvedAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getOrderNo() { return orderNo; }
@@ -140,4 +151,10 @@ public class TagApplyRecordEntity extends BaseEntity {
     public void setCancelledAt(OffsetDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
     public String getExceptionDesc() { return exceptionDesc; }
     public void setExceptionDesc(String exceptionDesc) { this.exceptionDesc = exceptionDesc; }
+    public String getResolveReason() { return resolveReason; }
+    public void setResolveReason(String resolveReason) { this.resolveReason = resolveReason; }
+    public Long getResolvedBy() { return resolvedBy; }
+    public void setResolvedBy(Long resolvedBy) { this.resolvedBy = resolvedBy; }
+    public OffsetDateTime getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(OffsetDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
 }

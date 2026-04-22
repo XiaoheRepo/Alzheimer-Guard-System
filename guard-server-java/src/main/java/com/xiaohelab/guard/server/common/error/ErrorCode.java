@@ -29,6 +29,8 @@ public enum ErrorCode {
     E_GOV_4046(HttpStatus.NOT_FOUND, "E_GOV_4046", "Outbox DEAD 事件不存在"),
     E_GOV_4091(HttpStatus.CONFLICT, "E_GOV_4091", "用户名已存在"),
     E_GOV_4092(HttpStatus.CONFLICT, "E_GOV_4092", "邮箱已存在"),
+    E_GOV_4094(HttpStatus.UNPROCESSABLE_ENTITY, "E_GOV_4094", "导出结果超过 10000 条,请缩短时间范围"),
+    E_GOV_4095(HttpStatus.UNPROCESSABLE_ENTITY, "E_GOV_4095", "时间范围非法或超出归档窗口"),
     E_GOV_4096(HttpStatus.CONFLICT, "E_GOV_4096", "Outbox 事件状态不允许重放"),
     E_GOV_4097(HttpStatus.CONFLICT, "E_GOV_4097", "Agent 确认等级不足"),
     E_GOV_4098(HttpStatus.CONFLICT, "E_GOV_4098", "同分区有更早未修复 DEAD 事件"),
@@ -144,7 +146,9 @@ public enum ErrorCode {
     E_MAT_4221(HttpStatus.UNPROCESSABLE_ENTITY, "E_MAT_4221", "标签数量与工单不匹配"),
     E_MAT_4222(HttpStatus.UNPROCESSABLE_ENTITY, "E_MAT_4222", "发货前置条件不满足"),
     E_MAT_4223(HttpStatus.UNPROCESSABLE_ENTITY, "E_MAT_4223", "resource_token 验签/解密失败"),
+    E_MAT_4224(HttpStatus.UNPROCESSABLE_ENTITY, "E_MAT_4224", "补发物流单号重复或库存不足"),
     E_MAT_4225(HttpStatus.UNPROCESSABLE_ENTITY, "E_MAT_4225", "批量发号超限"),
+    E_MAT_4226(HttpStatus.UNPROCESSABLE_ENTITY, "E_MAT_4226", "action 枚举非法或 reason 为空"),
 
     // ===== AI =====
     E_AI_4001(HttpStatus.BAD_REQUEST, "E_AI_4001", "session_id 或 prompt 非法"),

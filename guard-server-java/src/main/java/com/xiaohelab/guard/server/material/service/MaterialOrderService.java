@@ -8,7 +8,9 @@ import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.BusinessNoUtil;
+import com.xiaohelab.guard.server.gov.service.AuditLogger;
 import com.xiaohelab.guard.server.material.dto.OrderCreateRequest;
+import com.xiaohelab.guard.server.material.dto.OrderResolveExceptionRequest;
 import com.xiaohelab.guard.server.material.dto.OrderReviewRequest;
 import com.xiaohelab.guard.server.material.dto.OrderShipRequest;
 import com.xiaohelab.guard.server.material.entity.TagApplyRecordEntity;
@@ -37,13 +39,16 @@ public class MaterialOrderService {
     private final TagAssetRepository tagRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
+    private final AuditLogger auditLogger;
 
     public MaterialOrderService(TagApplyRecordRepository orderRepository, TagAssetRepository tagRepository,
-                                GuardianAuthorizationService authorizationService, OutboxService outboxService) {
+                                GuardianAuthorizationService authorizationService, OutboxService outboxService,
+                                AuditLogger auditLogger) {
         this.orderRepository = orderRepository;
         this.tagRepository = tagRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
+        this.auditLogger = auditLogger;
     }
 
     /**
@@ -229,5 +234,99 @@ public class MaterialOrderService {
     public Page<TagApplyRecordEntity> listMine(int page, int size) {
         AuthUser user = SecurityUtil.current();
         return orderRepository.findByApplicantUserIdOrderByCreatedAtDesc(user.getUserId(), PageRequest.of(page, size));
+    }
+
+    /**
+     * 管理员处置 EXCEPTION 工单（API §3.4.12，LLD §6.3.8，FR-MAT-004 / SRS AC-07）。
+     *
+     * <p>状态机：</p>
+     * <ul>
+     *   <li>{@code action = RESHIP}：EXCEPTION → SHIPPED（携带新物流单号/承运商）</li>
+     *   <li>{@code action = VOID}：EXCEPTION → VOIDED（行政终态，不再流转）</li>
+     * </ul>
+     *
+     * <p>前置：</p>
+     * <ol>
+     *   <li>仅 ADMIN / SUPER_ADMIN 可执行（E_AUTH_4031）</li>
+     *   <li>工单必须存在且 status = EXCEPTION（否则 E_MAT_4091）</li>
+     *   <li>RESHIP 时 tracking_no + carrier 必填（Controller 层 @Valid + Service 二次强校验）</li>
+     *   <li>RESHIP 时 tracking_no 需全局唯一（否则 E_MAT_4224）</li>
+     * </ol>
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public TagApplyRecordEntity resolveException(Long orderId, OrderResolveExceptionRequest req) {
+        AuthUser user = SecurityUtil.current();
+        // 授权：ADMIN / SUPER_ADMIN（handbook §24.3 rule 1）
+        if (!user.isAdmin()) throw BizException.of(ErrorCode.E_AUTH_4031);
+
+        TagApplyRecordEntity o = orderRepository.findById(orderId)
+                .orElseThrow(() -> BizException.of(ErrorCode.E_MAT_4041));
+        if (!"EXCEPTION".equals(o.getStatus())) {
+            throw BizException.of(ErrorCode.E_MAT_4091);
+        }
+
+        String action = req.getAction();
+        OffsetDateTime now = OffsetDateTime.now();
+        String fromStatus = o.getStatus();
+
+        if ("RESHIP".equals(action)) {
+            // RESHIP 所需参数强校验（兜底 DTO @Pattern）
+            if (req.getTrackingNo() == null || req.getTrackingNo().isBlank()
+                    || req.getCarrier() == null || req.getCarrier().isBlank()) {
+                throw BizException.of(ErrorCode.E_MAT_4226, "RESHIP 需同时提供 tracking_no 与 carrier");
+            }
+            // 补发物流单号全局唯一性校验
+            orderRepository.findByLogisticsNo(req.getTrackingNo()).ifPresent(dup -> {
+                if (!dup.getId().equals(orderId)) {
+                    throw BizException.of(ErrorCode.E_MAT_4224,
+                            "tracking_no 已被工单 " + dup.getOrderNo() + " 占用");
+                }
+            });
+            o.setLogisticsNo(req.getTrackingNo());
+            o.setLogisticsCompany(req.getCarrier());
+            o.setShippedAt(now);
+            o.setStatus("SHIPPED");
+        } else if ("VOID".equals(action)) {
+            o.setStatus("VOIDED");
+        } else {
+            // 理论上 DTO 层已拦截，保留防御
+            throw BizException.of(ErrorCode.E_MAT_4226);
+        }
+
+        // 共通处置落库
+        o.setResolveReason(req.getReason());
+        o.setResolvedBy(user.getUserId());
+        o.setResolvedAt(now);
+        orderRepository.save(o);
+
+        // Outbox：两种动作对应独立 Topic（便于对账 / 财务补偿分路消费）
+        String topic = "RESHIP".equals(action)
+                ? OutboxTopics.MAT_ORDER_EXCEPTION_RESHIPPED
+                : OutboxTopics.MAT_ORDER_EXCEPTION_VOIDED;
+        outboxService.publish(topic, o.getOrderNo(), String.valueOf(o.getPatientId()),
+                Map.of(
+                        "order_id", o.getId(),
+                        "order_no", o.getOrderNo(),
+                        "patient_id", o.getPatientId(),
+                        "from_status", fromStatus,
+                        "to_status", o.getStatus(),
+                        "operator_user_id", user.getUserId(),
+                        "reason", req.getReason(),
+                        "tracking_no", req.getTrackingNo() == null ? "" : req.getTrackingNo(),
+                        "carrier", req.getCarrier() == null ? "" : req.getCarrier()
+                ));
+
+        // 审计（HIGH + CONFIRM_2，见 handbook §12.1 白名单）
+        auditLogger.logSuccess("MAT", "admin_resolve_exception_order",
+                String.valueOf(o.getId()), "HIGH", "CONFIRM_2",
+                Map.of(
+                        "order_id", o.getId(),
+                        "action", action,
+                        "from_status", fromStatus,
+                        "to_status", o.getStatus(),
+                        "reason", req.getReason(),
+                        "tracking_no", req.getTrackingNo() == null ? "" : req.getTrackingNo()
+                ));
+        return o;
     }
 }

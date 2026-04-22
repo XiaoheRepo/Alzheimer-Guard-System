@@ -25,4 +25,22 @@ public interface SysLogRepository extends JpaRepository<SysLogEntity, Long> {
                                    Pageable pageable);
 
     List<SysLogEntity> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+
+    /**
+     * 审计导出查询（FR-GOV-007，API §3.6.21）。
+     * <p>按时间区间 + 可选操作人 / 动作 / 资源类型(module) 过滤；按 createdAt 升序以便阅读。
+     * 查询调用方必须传 Pageable(size=10001) 以侦测是否超限。</p>
+     */
+    @Query("select l from SysLogEntity l " +
+            "where l.createdAt between :from and :to " +
+            "  and (:operatorId is null or l.operatorUserId = :operatorId) " +
+            "  and (:action is null or l.action = :action) " +
+            "  and (:module is null or l.module = :module) " +
+            "order by l.createdAt asc")
+    List<SysLogEntity> findForExport(@Param("from") OffsetDateTime from,
+                                      @Param("to") OffsetDateTime to,
+                                      @Param("operatorId") Long operatorId,
+                                      @Param("action") String action,
+                                      @Param("module") String module,
+                                      Pageable pageable);
 }

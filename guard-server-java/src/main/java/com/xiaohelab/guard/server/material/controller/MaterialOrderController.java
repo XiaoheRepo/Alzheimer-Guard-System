@@ -3,6 +3,7 @@ package com.xiaohelab.guard.server.material.controller;
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.material.dto.OrderCreateRequest;
+import com.xiaohelab.guard.server.material.dto.OrderResolveExceptionRequest;
 import com.xiaohelab.guard.server.material.dto.OrderReviewRequest;
 import com.xiaohelab.guard.server.material.dto.OrderShipRequest;
 import com.xiaohelab.guard.server.material.entity.TagApplyRecordEntity;
@@ -68,5 +69,16 @@ public class MaterialOrderController {
     public Result<TagApplyRecordEntity> cancel(@PathVariable Long orderId,
                                                @RequestBody Map<String, String> body) {
         return Result.ok(orderService.cancel(orderId, body.get("cancel_reason")));
+    }
+
+    /**
+     * 3.4.12 物流异常处置（ADMIN / SUPER_ADMIN）：
+     * 对 EXCEPTION 工单执行 RESHIP（补发新物流）或 VOID（直接作废）。
+     */
+    @PostMapping("/{orderId}/resolve-exception")
+    @Idempotent
+    public Result<TagApplyRecordEntity> resolveException(@PathVariable Long orderId,
+                                                         @Valid @RequestBody OrderResolveExceptionRequest req) {
+        return Result.ok(orderService.resolveException(orderId, req));
     }
 }

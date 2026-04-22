@@ -40,6 +40,8 @@ public final class OutboxTopics {
     public static final String MAT_ORDER_REJECTED      = "material.order.rejected";
     public static final String MAT_ORDER_SHIPPED       = "material.order.shipped";
     public static final String MAT_ORDER_RECEIVED      = "material.order.received";
+    public static final String MAT_ORDER_EXCEPTION_RESHIPPED = "order.exception.reshipped";
+    public static final String MAT_ORDER_EXCEPTION_VOIDED    = "order.exception.voided";
     public static final String TAG_ALLOCATED           = "tag.allocated";
     public static final String TAG_BOUND               = "tag.bound";
     public static final String TAG_SUSPECTED_LOST      = "tag.suspected_lost";

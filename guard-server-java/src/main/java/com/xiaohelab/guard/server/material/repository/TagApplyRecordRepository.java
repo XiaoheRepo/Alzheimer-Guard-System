@@ -21,4 +21,7 @@ public interface TagApplyRecordRepository extends JpaRepository<TagApplyRecordEn
 
     /** 管理员治理用：申请人在给定状态集合下的工单数（含 PENDING_AUDIT / PENDING_SHIP 等未终态）。 */
     long countByApplicantUserIdAndStatusIn(Long applicantUserId, Collection<String> statuses);
+
+    /** 物流单号全局唯一性校验（补发时防糊错，LLD §6.3.8）。 */
+    Optional<TagApplyRecordEntity> findByLogisticsNo(String logisticsNo);
 }
