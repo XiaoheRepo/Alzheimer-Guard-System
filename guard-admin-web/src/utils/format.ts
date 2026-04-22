@@ -39,7 +39,7 @@ export function maskPhone(v?: string | null): string {
 export function maskEmail(v?: string | null): string {
   if (!v) return '-'
   const [name, domain] = v.split('@')
-  if (!domain) return v
+  if (!domain || !name) return v
   if (name.length <= 2) return `${name[0]}*@${domain}`
   return `${name.slice(0, 2)}****@${domain}`
 }

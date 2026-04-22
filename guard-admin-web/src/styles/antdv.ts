@@ -1,6 +1,7 @@
 // src/styles/antdv.ts
 // AntDV 主题 Token（对齐 WAHB §4）
-import { theme, type ThemeConfig } from 'ant-design-vue'
+import { theme } from 'ant-design-vue'
+import type { ThemeConfig } from 'ant-design-vue/es/config-provider/context'
 
 const commonToken = {
   colorPrimary: '#F97316',

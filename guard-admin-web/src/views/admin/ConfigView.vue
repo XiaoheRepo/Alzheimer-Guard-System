@@ -3,11 +3,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
-import {
-  listConfigs,
-  updateConfig,
-  type SysConfigItem,
-} from '@/api/admin'
+import { listConfigs, updateConfig, type SysConfigItem } from '@/api/admin'
 import PageHeader from '@/components/common/PageHeader.vue'
 import ProTable from '@/components/common/ProTable.vue'
 import PermissionButton from '@/components/domain/PermissionButton.vue'
@@ -29,12 +25,12 @@ const editDlg = reactive({
 })
 
 const columns = [
-  { title: t('page.config.col.key'), dataIndex: 'config_key', key: 'config_key', width: 220 },
-  { title: t('page.config.col.value'), key: 'config_value' },
-  { title: t('page.config.col.type'), dataIndex: 'value_type', key: 'value_type', width: 100 },
-  { title: t('page.config.col.group'), dataIndex: 'group', key: 'group', width: 120 },
-  { title: t('page.config.col.updatedAt'), key: 'updated_at', width: 180 },
-  { title: t('common.action'), key: 'action', width: 100, fixed: 'right' },
+  { title: t('page.config.columns.key'), dataIndex: 'config_key', key: 'config_key', width: 220 },
+  { title: t('page.config.columns.value'), key: 'config_value' },
+  { title: t('page.config.columns.type'), dataIndex: 'value_type', key: 'value_type', width: 100 },
+  { title: t('page.config.columns.group'), dataIndex: 'group', key: 'group', width: 120 },
+  { title: t('page.config.columns.updatedAt'), key: 'updated_at', width: 180 },
+  { title: t('common.operation'), key: 'action', width: 100, fixed: 'right' },
 ]
 
 async function load() {
@@ -62,7 +58,7 @@ function openEdit(item: SysConfigItem) {
 async function onSave() {
   if (!editDlg.item) return
   if (editDlg.reason.trim().length < 5) {
-    message.warning(t('page.config.reasonMin'))
+    message.warning(t('page.config.reason') + ' ≥ 5')
     return
   }
   editDlg.submitting = true
@@ -130,20 +126,20 @@ const headerTitle = computed(() => props.title || t('menu.adminConfig'))
 
     <a-modal
       v-model:open="editDlg.open"
-      :title="t('page.config.edit.title')"
+      :title="t('page.config.editTitle')"
       :confirm-loading="editDlg.submitting"
       :ok-text="t('common.submit')"
       :cancel-text="t('common.cancel')"
       @ok="onSave"
     >
       <a-form v-if="editDlg.item" layout="vertical">
-        <a-form-item :label="t('page.config.col.key')">
+        <a-form-item :label="t('page.config.columns.key')">
           <a-typography-text code>{{ editDlg.item.config_key }}</a-typography-text>
         </a-form-item>
-        <a-form-item :label="t('page.config.old')">
+        <a-form-item :label="t('page.config.columns.value')">
           <a-typography-text code>{{ editDlg.item.config_value }}</a-typography-text>
         </a-form-item>
-        <a-form-item :label="t('page.config.new')" required>
+        <a-form-item :label="t('page.config.columns.value') + ' (new)'" required>
           <a-textarea v-model:value="editDlg.value" :rows="3" />
         </a-form-item>
         <a-form-item :label="t('page.config.reason')" required>

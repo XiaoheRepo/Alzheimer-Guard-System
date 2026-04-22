@@ -1,6 +1,6 @@
 <!-- src/views/admin/UserListView.vue / P-14 -->
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { message, Modal } from 'ant-design-vue'
 import {
@@ -12,6 +12,7 @@ import {
   type AdminUserListItem,
 } from '@/api/admin'
 import type { Role, UserStatus } from '@/types/common'
+import { useAuthStore } from '@/stores/auth'
 import PageHeader from '@/components/common/PageHeader.vue'
 import ProTable from '@/components/common/ProTable.vue'
 import StatusBadge from '@/components/domain/StatusBadge.vue'
@@ -21,6 +22,8 @@ import { fmtDateTime, maskPhone, maskEmail } from '@/utils/format'
 import type { ApiError } from '@/utils/request'
 
 const { t } = useI18n()
+const auth = useAuthStore()
+const canEditRole = computed(() => auth.isSuperAdmin)
 
 const filter = reactive({
   role: undefined as Role | undefined,
@@ -184,14 +187,20 @@ function prevPage() {
             <a-select v-model:value="filter.role" allow-clear style="width: 160px">
               <a-select-option value="FAMILY">{{ t('field.userRole.FAMILY') }}</a-select-option>
               <a-select-option value="ADMIN">{{ t('field.userRole.ADMIN') }}</a-select-option>
-              <a-select-option value="SUPER_ADMIN">{{ t('field.userRole.SUPER_ADMIN') }}</a-select-option>
+              <a-select-option value="SUPER_ADMIN">{{
+                t('field.userRole.SUPER_ADMIN')
+              }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="t('page.user.col.status')">
             <a-select v-model:value="filter.status" allow-clear style="width: 160px">
               <a-select-option value="ACTIVE">{{ t('field.userStatus.ACTIVE') }}</a-select-option>
-              <a-select-option value="DISABLED">{{ t('field.userStatus.DISABLED') }}</a-select-option>
-              <a-select-option value="DEACTIVATED">{{ t('field.userStatus.DEACTIVATED') }}</a-select-option>
+              <a-select-option value="DISABLED">{{
+                t('field.userStatus.DISABLED')
+              }}</a-select-option>
+              <a-select-option value="DEACTIVATED">{{
+                t('field.userStatus.DEACTIVATED')
+              }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="t('common.keyword')">
@@ -229,28 +238,32 @@ function prevPage() {
               size="small"
               :roles="['ADMIN', 'SUPER_ADMIN']"
               @click="openEdit(record)"
-            >{{ t('common.edit') }}</PermissionButton>
+              >{{ t('common.edit') }}</PermissionButton
+            >
             <PermissionButton
               v-if="record.status === 'ACTIVE'"
               type="link"
               size="small"
               :roles="['SUPER_ADMIN']"
               @click="onDisable(record)"
-            >{{ t('page.user.disable.btn') }}</PermissionButton>
+              >{{ t('page.user.disable.btn') }}</PermissionButton
+            >
             <PermissionButton
               v-else-if="record.status === 'DISABLED'"
               type="link"
               size="small"
               :roles="['SUPER_ADMIN']"
               @click="onEnable(record)"
-            >{{ t('page.user.enable.btn') }}</PermissionButton>
+              >{{ t('page.user.enable.btn') }}</PermissionButton
+            >
             <PermissionButton
               danger
               type="link"
               size="small"
               :roles="['SUPER_ADMIN']"
               @click="onDelete(record)"
-            >{{ t('common.delete') }}</PermissionButton>
+              >{{ t('common.delete') }}</PermissionButton
+            >
           </a-space>
         </template>
       </template>
@@ -259,7 +272,9 @@ function prevPage() {
     <div style="margin-top: 12px; text-align: right">
       <a-space>
         <a-button :disabled="cursorIdx === 0" @click="prevPage">{{ t('common.prev') }}</a-button>
-        <a-button :disabled="!nextCursor" type="primary" @click="nextPage">{{ t('common.next') }}</a-button>
+        <a-button :disabled="!nextCursor" type="primary" @click="nextPage">{{
+          t('common.next')
+        }}</a-button>
       </a-space>
     </div>
 
@@ -285,16 +300,14 @@ function prevPage() {
           <a-input v-model:value="editDlg.phone" />
         </a-form-item>
         <a-form-item :label="t('page.user.col.role')">
-          <PermissionButton
-            v-if="false"
-            :roles="['SUPER_ADMIN']"
-            style="display: none"
-          />
-          <a-select v-model:value="editDlg.role">
+          <a-select v-model:value="editDlg.role" :disabled="!canEditRole">
             <a-select-option value="FAMILY">FAMILY</a-select-option>
             <a-select-option value="ADMIN">ADMIN</a-select-option>
             <a-select-option value="SUPER_ADMIN">SUPER_ADMIN</a-select-option>
           </a-select>
+          <div v-if="!canEditRole" class="text-muted" style="font-size: 12px">
+            {{ t('page.user.roleEditOnlySuper') }}
+          </div>
         </a-form-item>
       </a-form>
     </a-modal>

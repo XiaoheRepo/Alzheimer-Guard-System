@@ -3,11 +3,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
-import {
-  listDeadEvents,
-  replayDeadEvent,
-  type DeadEventItem,
-} from '@/api/admin'
+import { listDeadEvents, replayDeadEvent, type DeadEventItem } from '@/api/admin'
 import PageHeader from '@/components/common/PageHeader.vue'
 import ProTable from '@/components/common/ProTable.vue'
 import PermissionButton from '@/components/domain/PermissionButton.vue'
@@ -152,7 +148,9 @@ function prevPage() {
     <div style="margin-top: 12px; text-align: right">
       <a-space>
         <a-button :disabled="cursorIdx === 0" @click="prevPage">{{ t('common.prev') }}</a-button>
-        <a-button :disabled="!nextCursor" type="primary" @click="nextPage">{{ t('common.next') }}</a-button>
+        <a-button :disabled="!nextCursor" type="primary" @click="nextPage">{{
+          t('common.next')
+        }}</a-button>
       </a-space>
     </div>
 

@@ -3,11 +3,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
-import {
-  listAuditLogs,
-  exportAuditLogs,
-  type AuditLogItem,
-} from '@/api/admin'
+import { listAuditLogs, exportAuditLogs, type AuditLogItem } from '@/api/admin'
 import PageHeader from '@/components/common/PageHeader.vue'
 import ProTable from '@/components/common/ProTable.vue'
 import PermissionButton from '@/components/domain/PermissionButton.vue'
@@ -34,13 +30,13 @@ const current = ref<AuditLogItem | null>(null)
 const nextCursor = ref<string>('')
 
 const columns = [
-  { title: t('page.log.col.time'), key: 'ts', width: 180 },
-  { title: t('page.log.col.operator'), key: 'operator', width: 160 },
-  { title: t('page.log.col.action'), dataIndex: 'action', width: 200 },
-  { title: t('page.log.col.resource'), key: 'resource', width: 200 },
-  { title: t('page.log.col.status'), dataIndex: 'status', width: 100 },
-  { title: t('page.log.col.traceId'), key: 'trace_id', width: 160 },
-  { title: t('common.action'), key: 'detail', width: 100, fixed: 'right' },
+  { title: t('page.log.columns.ts'), key: 'ts', width: 180 },
+  { title: t('page.log.columns.operator'), key: 'operator', width: 160 },
+  { title: t('page.log.columns.action'), dataIndex: 'action', width: 200 },
+  { title: t('page.log.columns.resource'), key: 'resource', width: 200 },
+  { title: t('page.log.columns.status'), dataIndex: 'status', width: 100 },
+  { title: t('page.log.columns.traceId'), key: 'trace_id', width: 160 },
+  { title: t('common.operation'), key: 'detail', width: 100, fixed: 'right' },
 ]
 
 async function load() {
@@ -93,10 +89,7 @@ async function onExport() {
       resource_type: filter.resource_type || undefined,
       trace_id: filter.trace_id || undefined,
     })
-    downloadBlob(
-      blob,
-      `audit-log-${new Date().toISOString().slice(0, 10)}.csv`,
-    )
+    downloadBlob(blob, `audit-log-${new Date().toISOString().slice(0, 10)}.csv`)
   } catch (e) {
     message.error((e as ApiError)?.message || t('error.UNKNOWN'))
   } finally {
@@ -184,26 +177,30 @@ onMounted(load)
       </a-space>
     </div>
 
-    <a-drawer
-      v-model:open="drawerOpen"
-      width="720"
-      :title="t('page.log.detail.title')"
-    >
+    <a-drawer v-model:open="drawerOpen" width="720" :title="t('page.log.detail.title')">
       <template v-if="current">
         <a-descriptions bordered :column="1" size="small">
-          <a-descriptions-item :label="t('page.log.col.time')">{{ fmtDateTime(current.ts) }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.time')">{{
+            fmtDateTime(current.ts)
+          }}</a-descriptions-item>
           <a-descriptions-item :label="t('page.log.col.operator')">
             {{ current.operator_name || current.operator_id || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.action')">{{ current.action }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.action')">{{
+            current.action
+          }}</a-descriptions-item>
           <a-descriptions-item :label="t('page.log.col.resource')">
             {{ current.resource_type }} / {{ current.resource_id }}
           </a-descriptions-item>
           <a-descriptions-item :label="t('page.log.col.traceId')">
             <CopyableText :text="current.trace_id" />
           </a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.status')">{{ current.status }}</a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.duration')">{{ current.duration_ms }} ms</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.status')">{{
+            current.status
+          }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.duration')"
+            >{{ current.duration_ms }} ms</a-descriptions-item
+          >
         </a-descriptions>
 
         <a-divider>{{ t('page.log.col.request') }}</a-divider>
