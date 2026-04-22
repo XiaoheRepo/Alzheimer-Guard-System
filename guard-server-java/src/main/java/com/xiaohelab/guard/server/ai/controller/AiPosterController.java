@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Tag(name = "AI.Poster", description = "寻人海报生成")
 @RestController
-@RequestMapping("/api/v1/ai/posters")
+@RequestMapping({"/api/v1/ai/poster", "/api/v1/ai/posters"})
 public class AiPosterController {
 
     private final AiPosterService posterService;
