@@ -46,6 +46,7 @@ public final class OutboxTopics {
     public static final String TAG_BOUND               = "tag.bound";
     public static final String TAG_SUSPECTED_LOST      = "tag.suspected_lost";
     public static final String TAG_LOST                = "tag.lost";
+    public static final String TAG_BATCH_GENERATED     = "tag.batch.generated";
 
     // AI
     public static final String AI_STRATEGY_GENERATED   = "ai.strategy.generated";

@@ -115,4 +115,110 @@ public class TagService {
         }
         return t;
     }
+
+    /**
+     * 3.4.8 批量发号（管理员）。
+     * <p>同步落库 UNBOUND 标签并登记任务（本毕设系统采用同步实现，保证接口语义可用）。</p>
+     *
+     * @param tagType   QR_CODE / NFC
+     * @param quantity  1-10000
+     * @param batchKeyId 可选加密批次密钥 ID（当前仅记录于 batch_no）
+     * @return 任务登记信息 Map{job_id,status,quantity,created_at}
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> batchGenerate(String tagType, int quantity, String batchKeyId) {
+        AuthUser user = SecurityUtil.current();
+        if (!user.isAdmin()) throw BizException.of(ErrorCode.E_MAT_4030);
+        if (quantity <= 0 || quantity > BATCH_GENERATE_LIMIT) {
+            throw BizException.of(ErrorCode.E_MAT_4225);
+        }
+        if (tagType == null || !(tagType.equals("QR_CODE") || tagType.equals("NFC"))) {
+            throw BizException.of(ErrorCode.E_MAT_4225);
+        }
+        String jobId = BusinessNoUtil.batchJobId();
+        String batchNo = batchKeyId != null && !batchKeyId.isBlank() ? batchKeyId : jobId;
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // 1. 构造并批量落库
+        List<TagAssetEntity> batch = new ArrayList<>(quantity);
+        for (int i = 0; i < quantity; i++) {
+            TagAssetEntity t = new TagAssetEntity();
+            t.setTagCode(BusinessNoUtil.tagCode());
+            t.setTagType(tagType);
+            t.setStatus("UNBOUND");
+            t.setBatchNo(batchNo);
+            batch.add(t);
+        }
+        tagRepository.saveAll(batch);
+
+        // 2. 登记任务
+        Map<String, Object> job = new LinkedHashMap<>();
+        job.put("job_id", jobId);
+        job.put("status", "COMPLETED");
+        job.put("tag_type", tagType);
+        job.put("total_count", quantity);
+        job.put("success_count", quantity);
+        job.put("fail_count", 0);
+        job.put("quantity", quantity);
+        job.put("created_at", now);
+        job.put("completed_at", OffsetDateTime.now());
+        jobRegistry.put(jobId, job);
+
+        // 3. 发布发号事件
+        outboxService.publish(OutboxTopics.TAG_BATCH_GENERATED, jobId, batchNo,
+                Map.of("job_id", jobId, "tag_type", tagType,
+                        "quantity", quantity, "batch_no", batchNo,
+                        "operator", user.getUserId()));
+
+        log.info("[Tag] batchGenerate jobId={} tagType={} quantity={} by={}",
+                jobId, tagType, quantity, user.getUserId());
+        return job;
+    }
+
+    /** 3.4.9 查询发号任务。 */
+    public Map<String, Object> queryBatchJob(String jobId) {
+        AuthUser user = SecurityUtil.current();
+        if (!user.isAdmin()) throw BizException.of(ErrorCode.E_MAT_4030);
+        Map<String, Object> job = jobRegistry.get(jobId);
+        if (job == null) throw BizException.of(ErrorCode.E_MAT_4044);
+        return job;
+    }
+
+    /**
+     * 3.4.10 库存摘要：按 tag_type 聚合各状态数量。
+     */
+    public Map<String, Object> inventorySummary() {
+        AuthUser user = SecurityUtil.current();
+        if (!user.isAdmin()) throw BizException.of(ErrorCode.E_MAT_4030);
+        // 1. 聚合查询 [tagType, status, count]
+        List<Object[]> rows = tagRepository.aggInventoryByTypeAndStatus();
+        // 2. 按 tagType 分桶
+        Map<String, Map<String, Long>> bucket = new LinkedHashMap<>();
+        for (Object[] row : rows) {
+            String tagType = (String) row[0];
+            String status = (String) row[1];
+            long cnt = ((Number) row[2]).longValue();
+            bucket.computeIfAbsent(tagType, k -> new HashMap<>()).merge(status, cnt, Long::sum);
+        }
+        // 3. 组装响应
+        List<Map<String, Object>> summary = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Long>> e : bucket.entrySet()) {
+            Map<String, Long> counts = e.getValue();
+            long total = counts.values().stream().mapToLong(Long::longValue).sum();
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("tag_type", e.getKey());
+            item.put("total", total);
+            item.put("unbound", counts.getOrDefault("UNBOUND", 0L));
+            item.put("allocated", counts.getOrDefault("ALLOCATED", 0L));
+            item.put("bound", counts.getOrDefault("BOUND", 0L));
+            item.put("suspected_lost", counts.getOrDefault("SUSPECTED_LOST", 0L));
+            item.put("lost", counts.getOrDefault("LOST", 0L));
+            item.put("voided", counts.getOrDefault("VOIDED", 0L));
+            summary.add(item);
+        }
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("summary", summary);
+        resp.put("updated_at", OffsetDateTime.now());
+        return resp;
+    }
 }
