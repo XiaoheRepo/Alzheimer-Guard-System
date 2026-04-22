@@ -182,8 +182,7 @@ export default {
           primaryGuardian: 'Primary Guardian',
         },
       },
-      banner:
-        'Admin view. PII is desensitized. Export/screenshot is strictly forbidden.',
+      banner: 'Admin view. PII is desensitized. Export/screenshot is strictly forbidden.',
       detail: {
         title: 'Patient Detail',
         tabBasic: 'Basic',

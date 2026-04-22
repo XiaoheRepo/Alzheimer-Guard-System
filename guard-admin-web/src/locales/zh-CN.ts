@@ -182,8 +182,7 @@ export default {
           primaryGuardian: '主监护',
         },
       },
-      banner:
-        '当前为管理员视角，所有 PII 已脱敏；严禁导出或截图外传。',
+      banner: '当前为管理员视角，所有 PII 已脱敏；严禁导出或截图外传。',
       detail: {
         title: '患者档案详情',
         tabBasic: '基础资料',
