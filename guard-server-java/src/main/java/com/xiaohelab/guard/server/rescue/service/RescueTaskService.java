@@ -197,7 +197,7 @@ public class RescueTaskService {
             ps.setShortCode(p.getShortCode());
             if (p.getBirthday() != null) {
                 try {
-                    ps.setAge(Period.between(LocalDate.parse(p.getBirthday()), LocalDate.now()).getYears());
+                    ps.setAge(Period.between(p.getBirthday(), LocalDate.now()).getYears());
                 } catch (Exception ignored) { /* 生日格式异常仅忽略 age，不影响主流程 */ }
             }
             TaskSnapshotResponse.Appearance ap = new TaskSnapshotResponse.Appearance();

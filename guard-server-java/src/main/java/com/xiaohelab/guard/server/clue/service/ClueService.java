@@ -21,11 +21,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -165,6 +169,46 @@ public class ClueService {
                 .orElseThrow(() -> BizException.of(ErrorCode.E_TASK_4041));
         authorizationService.assertGuardian(user, t.getPatientId());
         return clueRepository.findByTaskIdOrderByCreatedAtDesc(taskId, PageRequest.of(page, size));
+    }
+
+    /**
+     * 3.2.6 线索列表查询（Offset 分页 + 多条件筛选）。
+     * <p>权限策略：</p>
+     * <ul>
+     *   <li>ADMIN：可不传 patient_id 与 task_id，返回全量（仅限管理后台）。</li>
+     *   <li>家属：必须传入 patient_id 或 task_id，后端会校验监护关系。</li>
+     * </ul>
+     */
+    public Page<ClueRecordEntity> list(Long taskId, Long patientId, String status,
+                                       Boolean suspectFlag, int pageNo, int pageSize) {
+        AuthUser user = SecurityUtil.current();
+        Long effectivePatientId = patientId;
+        if (taskId != null) {
+            RescueTaskEntity t = taskRepository.findById(taskId)
+                    .orElseThrow(() -> BizException.of(ErrorCode.E_TASK_4041));
+            effectivePatientId = t.getPatientId();
+        }
+        // 家属必须指定 patient_id / task_id，且具备监护权
+        if (!user.isAdmin()) {
+            if (effectivePatientId == null) {
+                throw BizException.of(ErrorCode.E_PRO_4041);
+            }
+            authorizationService.assertGuardian(user, effectivePatientId);
+        }
+        final Long pid = effectivePatientId;
+        Specification<ClueRecordEntity> spec = (root, cq, cb) -> {
+            List<Predicate> ps = new ArrayList<>();
+            if (taskId != null)       ps.add(cb.equal(root.get("taskId"), taskId));
+            if (pid != null)          ps.add(cb.equal(root.get("patientId"), pid));
+            if (status != null && !status.isBlank())
+                                      ps.add(cb.equal(root.get("status"), status));
+            if (suspectFlag != null)  ps.add(cb.equal(root.get("suspectFlag"), suspectFlag));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+        int idx = Math.max(pageNo, 1) - 1;
+        int size = Math.min(Math.max(pageSize, 1), 100);
+        return clueRepository.findAll(spec,
+                PageRequest.of(idx, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     /** 管理员复核：OVERRIDE 或 REJECT（仅针对 suspect_flag=true 的线索）。 */
