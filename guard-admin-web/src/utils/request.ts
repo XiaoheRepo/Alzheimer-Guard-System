@@ -117,6 +117,10 @@ function handleBizError(
 
 request.interceptors.response.use(
   (resp) => {
+    // blob / stream 类型：绕过业务包络解析
+    if (resp.config.responseType === 'blob' || resp.config.responseType === 'arraybuffer') {
+      return resp as unknown as never
+    }
     const parsed = safeParse(resp.data)
     const traceId = (resp.headers['x-trace-id'] as string) || (parsed?.trace_id as string) || ''
     if (parsed && parsed.code === 'ok') {

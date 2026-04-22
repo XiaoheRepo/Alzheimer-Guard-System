@@ -12,3 +12,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+declare module '@vue/runtime-core' {
+  interface ComponentCustomProperties {
+    $t: (key: string, ...args: unknown[]) => string
+  }
+}
+export {}

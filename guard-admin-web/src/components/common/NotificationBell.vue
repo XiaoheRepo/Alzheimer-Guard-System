@@ -3,18 +3,18 @@
 import { onMounted } from 'vue'
 import { BellOutlined } from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useNotificationStore } from '@/stores/notification'
 import { getInbox } from '@/api/notification'
 
 const store = useNotificationStore()
 const router = useRouter()
+const { t } = useI18n()
 
 async function refresh() {
   try {
     const res = await getInbox({ limit: 10 })
     store.setItems(res.items || [])
-    const unread = (res.items || []).filter((x) => !x.read).length
-    store.setUnreadCount(unread)
   } catch {
     /* ignore */
   }
@@ -31,7 +31,7 @@ onMounted(() => {
 
 <template>
   <a-badge :count="store.unreadCount" :offset="[-4, 4]">
-    <a-button type="text" shape="circle" :aria-label="$t('menu.notification')" @click="go">
+    <a-button type="text" shape="circle" :aria-label="t('menu.notification')" @click="go">
       <template #icon><BellOutlined /></template>
     </a-button>
   </a-badge>

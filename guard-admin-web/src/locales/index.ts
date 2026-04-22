@@ -7,6 +7,7 @@ export type AppLocale = 'zh-CN' | 'en-US'
 
 export const i18n = createI18n({
   legacy: false,
+  globalInjection: true,
   locale: 'zh-CN',
   fallbackLocale: 'zh-CN',
   messages: { 'zh-CN': zhCN, 'en-US': enUS },

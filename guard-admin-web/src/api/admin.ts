@@ -1,7 +1,7 @@
 // src/api/admin.ts
 // 系统配置 / 审计日志 / 用户管理 / DEAD / WS
 // 对齐 API_V2.0.md §3.6.8+ / §3.7 / §3.8
-import { http } from '@/utils/request'
+import { http, request } from '@/utils/request'
 import type { CursorPage, OffsetPage, Role, UserStatus } from '@/types/common'
 
 /** -------- 系统配置 -------- */
@@ -57,15 +57,15 @@ export function listAuditLogs(params: Record<string, unknown>): Promise<CursorPa
 }
 
 /** GET /api/v1/admin/logs/export （返回文件流，使用 responseType blob） */
-export function exportAuditLogs(params: Record<string, unknown>) {
-  // baseURL 内已配置；此处需要 blob；走底层 request
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const req = http as any
-  return req.get<Blob>('/api/v1/admin/logs/export', {
+export async function exportAuditLogs(params: Record<string, unknown>): Promise<Blob> {
+  const resp = await request.get<Blob>('/api/v1/admin/logs/export', {
     params,
     responseType: 'blob',
     transformResponse: [(d: unknown) => d],
   })
+  // 响应拦截器对 blob 直接返回 AxiosResponse
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (resp as any)?.data ?? (resp as unknown as Blob)
 }
 
 /** -------- 用户管理 -------- */
