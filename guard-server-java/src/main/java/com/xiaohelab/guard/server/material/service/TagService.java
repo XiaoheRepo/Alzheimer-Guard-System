@@ -29,9 +29,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class TagService {
 
+    private static final Logger log = LoggerFactory.getLogger(TagService.class);
+    private static final int BATCH_GENERATE_LIMIT = 10000;
+
     private final TagAssetRepository tagRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
+
+    /** 进程内批量发号任务登记表（足以满足毕设场景；生产环境应落库 tag_generation_job）。 */
+    private final Map<String, Map<String, Object>> jobRegistry = new ConcurrentHashMap<>();
 
     public TagService(TagAssetRepository tagRepository,
                       GuardianAuthorizationService authorizationService,
