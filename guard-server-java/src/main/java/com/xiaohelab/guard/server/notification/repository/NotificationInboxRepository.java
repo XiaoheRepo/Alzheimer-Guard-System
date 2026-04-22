@@ -17,6 +17,12 @@ public interface NotificationInboxRepository extends JpaRepository<NotificationI
     Page<NotificationInboxEntity> findByUserIdAndReadStatusOrderByCreatedAtDesc(
             Long userId, String readStatus, Pageable pageable);
 
+    Page<NotificationInboxEntity> findByUserIdAndTypeOrderByCreatedAtDesc(
+            Long userId, String type, Pageable pageable);
+
+    Page<NotificationInboxEntity> findByUserIdAndReadStatusAndTypeOrderByCreatedAtDesc(
+            Long userId, String readStatus, String type, Pageable pageable);
+
     long countByUserIdAndReadStatus(Long userId, String readStatus);
 
     @Modifying
