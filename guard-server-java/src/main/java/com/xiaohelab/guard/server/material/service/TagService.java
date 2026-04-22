@@ -11,7 +11,6 @@ import com.xiaohelab.guard.server.material.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.material.repository.TagAssetRepository;
 import com.xiaohelab.guard.server.outbox.service.OutboxService;
 import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
-import com.xiaohelab.guard.server.patient.repository.PatientProfileRepository;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +23,13 @@ import java.util.Map;
 public class TagService {
 
     private final TagAssetRepository tagRepository;
-    private final PatientProfileRepository patientRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
 
     public TagService(TagAssetRepository tagRepository,
-                      PatientProfileRepository patientRepository,
                       GuardianAuthorizationService authorizationService,
                       OutboxService outboxService) {
         this.tagRepository = tagRepository;
-        this.patientRepository = patientRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
     }

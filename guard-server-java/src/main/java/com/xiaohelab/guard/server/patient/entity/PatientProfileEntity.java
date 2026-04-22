@@ -2,8 +2,6 @@ package com.xiaohelab.guard.server.patient.entity;
 
 import com.xiaohelab.guard.server.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;

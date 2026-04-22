@@ -13,12 +13,9 @@ import com.xiaohelab.guard.server.patient.dto.TransferCreateRequest;
 import com.xiaohelab.guard.server.patient.entity.GuardianInvitationEntity;
 import com.xiaohelab.guard.server.patient.entity.GuardianRelationEntity;
 import com.xiaohelab.guard.server.patient.entity.GuardianTransferRequestEntity;
-import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
 import com.xiaohelab.guard.server.patient.repository.*;
 import com.xiaohelab.guard.server.user.entity.UserEntity;
 import com.xiaohelab.guard.server.user.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,12 +27,9 @@ import java.util.Map;
 @Service
 public class GuardianService {
 
-    private static final Logger log = LoggerFactory.getLogger(GuardianService.class);
-
     private final GuardianInvitationRepository invitationRepository;
     private final GuardianRelationRepository relationRepository;
     private final GuardianTransferRequestRepository transferRepository;
-    private final PatientProfileRepository patientRepository;
     private final UserRepository userRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
@@ -43,14 +37,12 @@ public class GuardianService {
     public GuardianService(GuardianInvitationRepository invitationRepository,
                            GuardianRelationRepository relationRepository,
                            GuardianTransferRequestRepository transferRepository,
-                           PatientProfileRepository patientRepository,
                            UserRepository userRepository,
                            GuardianAuthorizationService authorizationService,
                            OutboxService outboxService) {
         this.invitationRepository = invitationRepository;
         this.relationRepository = relationRepository;
         this.transferRepository = transferRepository;
-        this.patientRepository = patientRepository;
         this.userRepository = userRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
@@ -136,7 +128,7 @@ public class GuardianService {
     @Transactional(rollbackFor = Exception.class)
     public GuardianTransferRequestEntity initiateTransfer(Long patientId, TransferCreateRequest req) {
         AuthUser user = SecurityUtil.current();
-        PatientProfileEntity p = authorizationService.assertPrimary(user, patientId);
+        authorizationService.assertPrimary(user, patientId);
         if (req.getToUserId().equals(user.getUserId())) {
             throw BizException.of(ErrorCode.E_PRO_4099);
         }

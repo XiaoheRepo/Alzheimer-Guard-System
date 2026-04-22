@@ -3,7 +3,6 @@ package com.xiaohelab.guard.server.gov.controller;
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.common.error.ErrorCode;
-import com.xiaohelab.guard.server.common.event.OutboxTopics;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;

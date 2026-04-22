@@ -3,15 +3,11 @@ package com.xiaohelab.guard.server.clue.service;
 import com.xiaohelab.guard.server.clue.dto.TrackPointRequest;
 import com.xiaohelab.guard.server.clue.entity.PatientTrajectoryEntity;
 import com.xiaohelab.guard.server.clue.repository.PatientTrajectoryRepository;
-import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.event.OutboxTopics;
-import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.CoordUtil;
 import com.xiaohelab.guard.server.outbox.service.OutboxService;
-import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
-import com.xiaohelab.guard.server.patient.repository.PatientProfileRepository;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,16 +28,13 @@ public class PatientTrajectoryService {
     private static final Logger log = LoggerFactory.getLogger(PatientTrajectoryService.class);
 
     private final PatientTrajectoryRepository trajectoryRepository;
-    private final PatientProfileRepository patientRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
 
     public PatientTrajectoryService(PatientTrajectoryRepository trajectoryRepository,
-                                    PatientProfileRepository patientRepository,
                                     GuardianAuthorizationService authorizationService,
                                     OutboxService outboxService) {
         this.trajectoryRepository = trajectoryRepository;
-        this.patientRepository = patientRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
     }

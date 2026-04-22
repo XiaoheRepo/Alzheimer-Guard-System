@@ -12,7 +12,6 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 
 /**

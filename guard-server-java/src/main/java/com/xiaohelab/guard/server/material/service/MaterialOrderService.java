@@ -17,8 +17,6 @@ import com.xiaohelab.guard.server.material.repository.TagApplyRecordRepository;
 import com.xiaohelab.guard.server.material.repository.TagAssetRepository;
 import com.xiaohelab.guard.server.outbox.service.OutboxService;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -33,7 +31,6 @@ import java.util.stream.Collectors;
 @Service
 public class MaterialOrderService {
 
-    private static final Logger log = LoggerFactory.getLogger(MaterialOrderService.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final TagApplyRecordRepository orderRepository;

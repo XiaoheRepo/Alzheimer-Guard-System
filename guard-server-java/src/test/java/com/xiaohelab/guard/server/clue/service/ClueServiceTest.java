@@ -12,7 +12,6 @@ import com.xiaohelab.guard.server.outbox.service.OutboxService;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
 import com.xiaohelab.guard.server.rescue.repository.RescueTaskRepository;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
