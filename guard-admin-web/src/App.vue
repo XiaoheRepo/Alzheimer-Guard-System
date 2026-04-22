@@ -10,9 +10,7 @@ import { setLocale } from '@/locales'
 const app = useAppStore()
 
 const antdvLocale = computed(() => (app.locale === 'zh-CN' ? zhCN : enUS))
-const antdvTheme = computed(() =>
-  app.effectiveTheme === 'dark' ? darkTheme : lightTheme,
-)
+const antdvTheme = computed(() => (app.effectiveTheme === 'dark' ? darkTheme : lightTheme))
 
 watch(
   () => app.locale,
