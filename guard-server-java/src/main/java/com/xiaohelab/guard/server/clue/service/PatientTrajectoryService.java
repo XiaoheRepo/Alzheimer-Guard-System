@@ -3,19 +3,27 @@ package com.xiaohelab.guard.server.clue.service;
 import com.xiaohelab.guard.server.clue.dto.TrackPointRequest;
 import com.xiaohelab.guard.server.clue.entity.PatientTrajectoryEntity;
 import com.xiaohelab.guard.server.clue.repository.PatientTrajectoryRepository;
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.event.OutboxTopics;
+import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.CoordUtil;
 import com.xiaohelab.guard.server.outbox.service.OutboxService;
 import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
+import com.xiaohelab.guard.server.rescue.dto.TrajectoryLatestResponse;
+import com.xiaohelab.guard.server.rescue.entity.RescueTaskEntity;
+import com.xiaohelab.guard.server.rescue.repository.RescueTaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,13 +39,16 @@ public class PatientTrajectoryService {
     private final PatientTrajectoryRepository trajectoryRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
+    private final RescueTaskRepository rescueTaskRepository;
 
     public PatientTrajectoryService(PatientTrajectoryRepository trajectoryRepository,
                                     GuardianAuthorizationService authorizationService,
-                                    OutboxService outboxService) {
+                                    OutboxService outboxService,
+                                    RescueTaskRepository rescueTaskRepository) {
         this.trajectoryRepository = trajectoryRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
+        this.rescueTaskRepository = rescueTaskRepository;
     }
 
     @Transactional(rollbackFor = Exception.class)
