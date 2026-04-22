@@ -29,24 +29,27 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfileEn
      * @param primaryGuardianUserId 主监护人 user_id（可空）
      * @param cursor  上一页 last id；取 `id < cursor`
      */
-    @Query("select p from PatientProfileEntity p " +
-            "where p.deletedAt is null " +
-            "  and (:kw is null or " +
-            "       lower(p.name) like concat('%', :kw, '%') or " +
-            "       lower(p.shortCode) like concat('%', :kw, '%') or " +
-            "       lower(coalesce(p.profileNo, '')) like concat('%', :kw, '%')) " +
-            "  and (:status is null or p.lostStatus = :status) " +
-            "  and (:gender is null or p.gender = :gender) " +
-            "  and (:primaryUserId is null or exists (" +
-            "       select 1 from GuardianRelationEntity g " +
-            "       where g.patientId = p.id and g.userId = :primaryUserId " +
-            "         and g.relationRole = 'PRIMARY_GUARDIAN' and g.relationStatus = 'ACTIVE')) " +
-            "  and (:cursor is null or p.id < :cursor) " +
-            "order by p.id desc")
+    // 使用 Native Query + CAST 规避 Hibernate 6 + PostgreSQL 的 bytea 类型推断 Bug（text ~~ bytea）
+    @Query(nativeQuery = true, value =
+            "SELECT * FROM patient_profile p " +
+            "WHERE p.deleted_at IS NULL " +
+            "  AND (CAST(:kw AS text) IS NULL " +
+            "       OR lower(p.name) LIKE '%' || CAST(:kw AS text) || '%' " +
+            "       OR lower(p.short_code) LIKE '%' || CAST(:kw AS text) || '%' " +
+            "       OR lower(COALESCE(p.profile_no,'')) LIKE '%' || CAST(:kw AS text) || '%') " +
+            "  AND (CAST(:status AS text) IS NULL OR p.lost_status = CAST(:status AS text)) " +
+            "  AND (CAST(:gender AS text) IS NULL OR p.gender = CAST(:gender AS text)) " +
+            "  AND (CAST(:primaryUserId AS bigint) IS NULL OR EXISTS (" +
+            "       SELECT 1 FROM guardian_relation g " +
+            "       WHERE g.patient_id = p.id AND g.user_id = CAST(:primaryUserId AS bigint) " +
+            "         AND g.relation_role = 'PRIMARY_GUARDIAN' AND g.relation_status = 'ACTIVE')) " +
+            "  AND (CAST(:cursor AS bigint) IS NULL OR p.id < CAST(:cursor AS bigint)) " +
+            "ORDER BY p.id DESC " +
+            "LIMIT :lim")
     List<PatientProfileEntity> findForAdmin(@Param("kw") String keyword,
                                             @Param("status") String status,
                                             @Param("gender") String gender,
                                             @Param("primaryUserId") Long primaryGuardianUserId,
                                             @Param("cursor") Long cursor,
-                                            Pageable pageable);
+                                            @Param("lim") int limit);
 }

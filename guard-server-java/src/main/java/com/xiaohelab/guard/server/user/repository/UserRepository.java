@@ -39,21 +39,24 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      * @param cursor   上一页最后一条的 id；取 `id < cursor` 的记录
      * @param pageable 分页参数（仅用 size）
      */
-    @Query("select u from UserEntity u " +
-            "where (:kw is null or " +
-            "       lower(u.username) like concat('%', :kw, '%') or " +
-            "       lower(coalesce(u.nickname, '')) like concat('%', :kw, '%') or " +
-            "       lower(u.email) like concat('%', :kw, '%') or " +
-            "       coalesce(u.phone, '') like concat('%', :kw, '%')) " +
-            "  and u.role in :roles " +
-            "  and (:statuses is null or u.status in :statuses) " +
-            "  and (:cursor is null or u.id < :cursor) " +
-            "order by u.id desc")
+    // 使用 Native Query + CAST 规避 Hibernate 6 + PostgreSQL 的 bytea 类型推断 Bug
+    @Query(nativeQuery = true, value =
+            "SELECT * FROM sys_user u " +
+            "WHERE (CAST(:kw AS text) IS NULL " +
+            "       OR lower(u.username) LIKE '%' || CAST(:kw AS text) || '%' " +
+            "       OR lower(COALESCE(u.nickname,'')) LIKE '%' || CAST(:kw AS text) || '%' " +
+            "       OR lower(u.email) LIKE '%' || CAST(:kw AS text) || '%' " +
+            "       OR COALESCE(u.phone,'') LIKE '%' || CAST(:kw AS text) || '%') " +
+            "  AND u.role IN (:roles) " +
+            "  AND (:statuses IS NULL OR u.status IN (:statuses)) " +
+            "  AND (CAST(:cursor AS bigint) IS NULL OR u.id < CAST(:cursor AS bigint)) " +
+            "ORDER BY u.id DESC " +
+            "LIMIT :lim")
     List<UserEntity> findForAdmin(@Param("kw") String keyword,
                                   @Param("roles") Collection<String> roles,
                                   @Param("statuses") Collection<String> statuses,
                                   @Param("cursor") Long cursor,
-                                  Pageable pageable);
+                                  @Param("lim") int limit);
 
     /**
      * 条件性原子状态迁移（CAS）。

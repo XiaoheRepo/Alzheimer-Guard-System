@@ -22,7 +22,6 @@ import com.xiaohelab.guard.server.user.entity.UserEntity;
 import com.xiaohelab.guard.server.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,8 +78,7 @@ public class AdminPatientService {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim().toLowerCase();
 
         List<PatientProfileEntity> raw = patientProfileRepository.findForAdmin(
-                kw, status, gender, primaryGuardianUserId, cursorId,
-                PageRequest.of(0, size + 1));
+                kw, status, gender, primaryGuardianUserId, cursorId, size + 1);
         boolean hasNext = raw.size() > size;
         if (hasNext) raw = raw.subList(0, size);
 

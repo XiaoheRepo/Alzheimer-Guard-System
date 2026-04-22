@@ -604,6 +604,7 @@ export default {
       EXCEPTION: '异常',
     },
     tagState: {
+      total: '合计',
       UNBOUND: '未分配',
       ALLOCATED: '已分配',
       BOUND: '已绑定',

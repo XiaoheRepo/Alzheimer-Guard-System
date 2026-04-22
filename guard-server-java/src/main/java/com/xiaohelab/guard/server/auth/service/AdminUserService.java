@@ -206,7 +206,7 @@ public class AdminUserService {
 
         // 4. 多取 1 条以判断 has_next
         List<UserEntity> raw = userRepository.findForAdmin(
-                kw, visibleRoles, statuses, cursorId, PageRequest.of(0, size + 1));
+                kw, visibleRoles, statuses, cursorId, size + 1);
         boolean hasNext = raw.size() > size;
         if (hasNext) raw = raw.subList(0, size);
 

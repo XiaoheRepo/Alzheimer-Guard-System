@@ -598,6 +598,7 @@ export default {
       EXCEPTION: 'Exception',
     },
     tagState: {
+      total: 'Total',
       UNBOUND: 'Unbound',
       ALLOCATED: 'Allocated',
       BOUND: 'Bound',

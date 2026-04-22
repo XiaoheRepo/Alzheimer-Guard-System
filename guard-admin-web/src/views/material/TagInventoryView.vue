@@ -77,14 +77,15 @@ async function onGenSubmit() {
   }
 }
 
-const kpis = [
-  { key: 'unbound', label: t('field.tagState.UNBOUND'), color: '#999' },
-  { key: 'allocated', label: t('field.tagState.ALLOCATED'), color: '#0EA5E9' },
-  { key: 'bound', label: t('field.tagState.BOUND'), color: '#52c41a' },
-  { key: 'suspected_lost', label: t('field.tagState.SUSPECTED_LOST'), color: '#faad14' },
-  { key: 'lost', label: t('field.tagState.LOST'), color: '#ff4d4f' },
-  { key: 'voided', label: t('field.tagState.VOIDED'), color: '#666' },
-] as const
+// 必须用 computed，否则切换语言后 label 不会刷新
+const kpis = computed(() => [
+  { key: 'unbound' as const, label: t('field.tagState.UNBOUND'), color: '#999' },
+  { key: 'allocated' as const, label: t('field.tagState.ALLOCATED'), color: '#0EA5E9' },
+  { key: 'bound' as const, label: t('field.tagState.BOUND'), color: '#52c41a' },
+  { key: 'suspected_lost' as const, label: t('field.tagState.SUSPECTED_LOST'), color: '#faad14' },
+  { key: 'lost' as const, label: t('field.tagState.LOST'), color: '#ff4d4f' },
+  { key: 'voided' as const, label: t('field.tagState.VOIDED'), color: '#666' },
+])
 </script>
 
 <template>
@@ -118,7 +119,7 @@ const kpis = [
         size="middle"
         :columns="[
           { title: t('page.tag.gen.type'), dataIndex: 'tag_type', width: 120 },
-          { title: t('field.tagState.total') || 'Total', dataIndex: 'total', width: 100 },
+          { title: t('field.tagState.total'), dataIndex: 'total', width: 100 },
           { title: t('field.tagState.UNBOUND'), dataIndex: 'unbound', width: 100 },
           { title: t('field.tagState.ALLOCATED'), dataIndex: 'allocated', width: 100 },
           { title: t('field.tagState.BOUND'), dataIndex: 'bound', width: 100 },
