@@ -1,0 +1,475 @@
+package com.xiaohelab.guard.server.auth.service;
+
+import com.xiaohelab.guard.server.auth.dto.AdminUserActionRequest;
+import com.xiaohelab.guard.server.auth.dto.AdminUserDetailResponse;
+import com.xiaohelab.guard.server.auth.dto.AdminUserListItem;
+import com.xiaohelab.guard.server.auth.dto.AdminUserUpdateRequest;
+import com.xiaohelab.guard.server.common.dto.CursorResponse;
+import com.xiaohelab.guard.server.common.error.ErrorCode;
+import com.xiaohelab.guard.server.common.exception.BizException;
+import com.xiaohelab.guard.server.common.event.OutboxTopics;
+import com.xiaohelab.guard.server.common.security.AuthUser;
+import com.xiaohelab.guard.server.common.security.JwtRevocationService;
+import com.xiaohelab.guard.server.common.security.SecurityUtil;
+import com.xiaohelab.guard.server.common.util.CursorUtil;
+import com.xiaohelab.guard.server.common.util.DesensitizeUtil;
+import com.xiaohelab.guard.server.gov.service.AuditLogger;
+import com.xiaohelab.guard.server.material.repository.TagApplyRecordRepository;
+import com.xiaohelab.guard.server.outbox.service.OutboxService;
+import com.xiaohelab.guard.server.patient.repository.GuardianRelationRepository;
+import com.xiaohelab.guard.server.rescue.repository.RescueTaskRepository;
+import com.xiaohelab.guard.server.user.entity.UserEntity;
+import com.xiaohelab.guard.server.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * 管理员治理 - 用户管理服务（V2.1 增量）。
+ * <p>对应：API §3.6.15~3.6.20、LLD §8.3.8~8.3.13、FR-GOV-011~014、BDD §24。</p>
+ *
+ * <p>核心授权矩阵（handbook §24.3 10 条铁律）：</p>
+ * <ol>
+ *   <li>仅 ADMIN / SUPER_ADMIN 可访问本类全部接口</li>
+ *   <li>ADMIN 的可视 / 操作对象仅 FAMILY；SUPER_ADMIN 可操作 FAMILY / ADMIN</li>
+ *   <li>SUPER_ADMIN 账号不可被禁用 / 注销 / 角色降级（含自身）</li>
+ *   <li>任何管理员不可对自身执行状态/角色变更</li>
+ *   <li>role 字段仅 SUPER_ADMIN 可修改</li>
+ *   <li>注销需 CONFIRM_3；禁用 / 改角色需 CONFIRM_2；启用需 CONFIRM_1</li>
+ *   <li>写操作必须 CAS + 幂等 + Outbox + 审计，四件套缺一不可</li>
+ *   <li>禁用 / 改角色 / 注销后必须立即吊销目标在途 JWT</li>
+ *   <li>注销存在前置校验（仍为主监护 / 有未终态物资工单 / 有未终态寻回任务）</li>
+ *   <li>所有高危写操作必须记录行政理由（reason ≥ 10）</li>
+ * </ol>
+ */
+@Service
+public class AdminUserService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminUserService.class);
+
+    /** 物资工单未终态集合（见 BDD §10.3 物资工单状态机）。 */
+    private static final List<String> MATERIAL_ORDER_OPEN = List.of(
+            "PENDING_AUDIT", "PENDING_PAYMENT", "PENDING_SHIP", "SHIPPED");
+
+    private final UserRepository userRepository;
+    private final GuardianRelationRepository guardianRelationRepository;
+    private final TagApplyRecordRepository tagApplyRecordRepository;
+    private final RescueTaskRepository rescueTaskRepository;
+    private final OutboxService outboxService;
+    private final AuditLogger auditLogger;
+    private final JwtRevocationService jwtRevocationService;
+
+    public AdminUserService(UserRepository userRepository,
+                            GuardianRelationRepository guardianRelationRepository,
+                            TagApplyRecordRepository tagApplyRecordRepository,
+                            RescueTaskRepository rescueTaskRepository,
+                            OutboxService outboxService,
+                            AuditLogger auditLogger,
+                            JwtRevocationService jwtRevocationService) {
+        this.userRepository = userRepository;
+        this.guardianRelationRepository = guardianRelationRepository;
+        this.tagApplyRecordRepository = tagApplyRecordRepository;
+        this.rescueTaskRepository = rescueTaskRepository;
+        this.outboxService = outboxService;
+        this.auditLogger = auditLogger;
+        this.jwtRevocationService = jwtRevocationService;
+    }
+
+    // =========================================================
+    // 1. 列表（GET /api/v1/admin/users）—— LOW 风险，只读
+    // =========================================================
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public CursorResponse<AdminUserListItem> list(String keyword,
+                                                  String role,
+                                                  String status,
+                                                  String cursor,
+                                                  int pageSize) {
+        AuthUser me = SecurityUtil.current();
+        assertAdmin(me);
+        int size = normalizePageSize(pageSize);
+
+        // 1. 角色可视范围（规则 2）
+        Set<String> visibleRoles = me.isSuperAdmin()
+                ? Set.of("FAMILY", "ADMIN", "SUPER_ADMIN")
+                : Set.of("FAMILY");
+        if (role != null && !role.isBlank()) {
+            if (!visibleRoles.contains(role)) {
+                throw BizException.of(ErrorCode.E_AUTH_4031);
+            }
+            visibleRoles = Set.of(role);
+        }
+
+        // 2. 状态白名单
+        List<String> statuses = (status == null || status.isBlank()) ? null : List.of(status);
+
+        // 3. 游标翻页
+        Long cursorId = CursorUtil.decodeId(cursor);
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+
+        // 4. 多取 1 条以判断 has_next
+        List<UserEntity> raw = userRepository.findForAdmin(
+                kw, visibleRoles, statuses, cursorId, PageRequest.of(0, size + 1));
+        boolean hasNext = raw.size() > size;
+        if (hasNext) raw = raw.subList(0, size);
+
+        List<AdminUserListItem> items = raw.stream().map(this::toListItem).collect(Collectors.toList());
+        String nextCursor = hasNext && !items.isEmpty()
+                ? CursorUtil.encode(raw.get(raw.size() - 1).getId())
+                : null;
+
+        // 5. 审计（LOW + 条件摘要）
+        auditLogger.logSuccess("GOV", "admin.user.list", null, "LOW", null,
+                Map.of("keyword", kw == null ? "" : kw,
+                        "role", role == null ? "" : role,
+                        "status", status == null ? "" : status,
+                        "page_size", size,
+                        "result_size", items.size()));
+        return CursorResponse.of(items, size, nextCursor, hasNext);
+    }
+
+    // =========================================================
+    // 2. 详情（GET /api/v1/admin/users/{id}）—— LOW 只读
+    // =========================================================
+    @Transactional(readOnly = true, rollbackFor = Exception.class)
+    public AdminUserDetailResponse detail(Long userId) {
+        AuthUser me = SecurityUtil.current();
+        assertAdmin(me);
+        UserEntity u = loadAndAssertVisible(userId, me);
+
+        AdminUserDetailResponse r = new AdminUserDetailResponse();
+        r.setUserId(String.valueOf(u.getId()));
+        r.setUsername(u.getUsername());
+        r.setNickname(u.getNickname());
+        r.setEmail(DesensitizeUtil.email(u.getEmail()));
+        r.setPhone(DesensitizeUtil.phone(u.getPhone()));
+        r.setRole(u.getRole());
+        r.setStatus(u.getStatus());
+        r.setEmailVerified(u.getEmailVerified());
+        r.setLastLoginAt(u.getLastLoginAt());
+        r.setLastLoginIp(u.getLastLoginIp());
+        r.setDeactivatedAt(u.getDeactivatedAt());
+        r.setCreatedAt(u.getCreatedAt());
+        r.setUpdatedAt(u.getUpdatedAt());
+
+        // 统计：用于前端展示注销前置不满足的提示
+        AdminUserDetailResponse.Stats stats = new AdminUserDetailResponse.Stats();
+        stats.setPrimaryGuardianPatientCount(guardianRelationRepository.findPrimaryActivePatientIds(userId).size());
+        stats.setGuardianPatientCount(guardianRelationRepository.findByUserIdAndRelationStatus(userId, "ACTIVE").size());
+        stats.setPendingMaterialOrderCount(
+                tagApplyRecordRepository.countByApplicantUserIdAndStatusIn(userId, MATERIAL_ORDER_OPEN));
+        r.setStats(stats);
+
+        auditLogger.logSuccess("GOV", "admin.user.read", String.valueOf(userId), "LOW", null,
+                Map.of("target_user_id", userId));
+        return r;
+    }
+
+    // =========================================================
+    // 3. 修改（PUT /api/v1/admin/users/{id}）—— HIGH / CRITICAL
+    // =========================================================
+    @Transactional(rollbackFor = Exception.class)
+    public AdminUserDetailResponse update(Long userId,
+                                          AdminUserUpdateRequest req,
+                                          String confirmLevel) {
+        AuthUser me = SecurityUtil.current();
+        assertAdmin(me);
+        assertNotSelf(me, userId);
+        UserEntity u = loadAndAssertVisible(userId, me);
+
+        boolean hasRoleChange = req.getRole() != null && !req.getRole().equals(u.getRole());
+        // 规则 5：role 仅 SUPER_ADMIN 可改
+        if (hasRoleChange && !me.isSuperAdmin()) {
+            throw BizException.of(ErrorCode.E_USR_4035);
+        }
+        // 规则 3：SUPER_ADMIN 不可降级
+        if (hasRoleChange && "SUPER_ADMIN".equals(u.getRole())) {
+            throw BizException.of(ErrorCode.E_USR_4033);
+        }
+        // 规则 6：改角色需 CONFIRM_2
+        if (hasRoleChange) {
+            requireConfirmLevel(confirmLevel, "CONFIRM_2");
+        }
+
+        // 变更前快照
+        Map<String, Object> before = snapshot(u);
+
+        // 字段变更
+        boolean changed = false;
+        if (req.getNickname() != null && !req.getNickname().equals(u.getNickname())) {
+            u.setNickname(req.getNickname());
+            changed = true;
+        }
+        if (req.getEmail() != null && !req.getEmail().equalsIgnoreCase(u.getEmail())) {
+            if (userRepository.existsByEmail(req.getEmail())) {
+                throw BizException.of(ErrorCode.E_GOV_4092);
+            }
+            u.setEmail(req.getEmail());
+            u.setEmailVerified(false); // API 契约：邮箱变更后必须重新验证
+            changed = true;
+        }
+        if (req.getPhone() != null && !req.getPhone().equals(u.getPhone())) {
+            u.setPhone(req.getPhone());
+            changed = true;
+        }
+        if (hasRoleChange) {
+            u.setRole(req.getRole());
+            changed = true;
+        }
+
+        if (!changed) {
+            // 无实际变更：直接返回当前视图，不落审计写操作
+            return detailView(u);
+        }
+
+        userRepository.save(u);
+
+        // 角色变更：吊销 JWT + Outbox 广播 + CRITICAL 审计
+        if (hasRoleChange) {
+            jwtRevocationService.revokeAllForUser(userId);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("user_id", String.valueOf(userId));
+            payload.put("from_role", before.get("role"));
+            payload.put("to_role", u.getRole());
+            payload.put("operator_user_id", me.getUserId());
+            payload.put("occurred_at", OffsetDateTime.now().toString());
+            outboxService.publish(OutboxTopics.USER_ROLE_CHANGED,
+                    String.valueOf(userId), String.valueOf(userId), payload);
+            auditLogger.logSuccess("GOV", "admin.user.update", String.valueOf(userId),
+                    "CRITICAL", "CONFIRM_2",
+                    Map.of("before", before, "after", snapshot(u), "role_changed", true));
+        } else {
+            auditLogger.logSuccess("GOV", "admin.user.update", String.valueOf(userId),
+                    "HIGH", null,
+                    Map.of("before", before, "after", snapshot(u), "role_changed", false));
+        }
+        return detailView(u);
+    }
+
+    // =========================================================
+    // 4. 禁用（POST /api/v1/admin/users/{id}/disable）—— HIGH + CONFIRM_2
+    // =========================================================
+    @Transactional(rollbackFor = Exception.class)
+    public void disable(Long userId, AdminUserActionRequest req, String confirmLevel) {
+        AuthUser me = SecurityUtil.current();
+        assertAdmin(me);
+        assertNotSelf(me, userId);
+        requireConfirmLevel(confirmLevel, "CONFIRM_2");
+        UserEntity u = loadAndAssertVisible(userId, me);
+
+        // 规则 3
+        if ("SUPER_ADMIN".equals(u.getRole())) throw BizException.of(ErrorCode.E_USR_4033);
+        // 状态前置：仅 ACTIVE 可禁用
+        if (!"ACTIVE".equals(u.getStatus())) throw BizException.of(ErrorCode.E_USR_4091);
+
+        int rows = userRepository.casStatus(userId, "ACTIVE", "DISABLED");
+        if (rows == 0) throw BizException.of(ErrorCode.E_USR_4091);
+
+        // 吊销 JWT
+        jwtRevocationService.revokeAllForUser(userId);
+
+        // Outbox
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("user_id", String.valueOf(userId));
+        payload.put("operator_user_id", me.getUserId());
+        payload.put("reason", req.getReason());
+        payload.put("primary_patient_ids", guardianRelationRepository.findPrimaryActivePatientIds(userId)
+                .stream().map(String::valueOf).toList());
+        payload.put("occurred_at", OffsetDateTime.now().toString());
+        outboxService.publish(OutboxTopics.USER_DISABLED,
+                String.valueOf(userId), String.valueOf(userId), payload);
+
+        auditLogger.logSuccess("GOV", "admin.user.disable", String.valueOf(userId),
+                "HIGH", "CONFIRM_2",
+                Map.of("target_user_id", userId, "reason", req.getReason()));
+    }
+
+    // =========================================================
+    // 5. 启用（POST /api/v1/admin/users/{id}/enable）—— MEDIUM + CONFIRM_1
+    // =========================================================
+    @Transactional(rollbackFor = Exception.class)
+    public void enable(Long userId, AdminUserActionRequest req, String confirmLevel) {
+        AuthUser me = SecurityUtil.current();
+        assertAdmin(me);
+        assertNotSelf(me, userId);
+        requireConfirmLevel(confirmLevel, "CONFIRM_1");
+        UserEntity u = loadAndAssertVisible(userId, me);
+
+        // 启用仅作用于 DISABLED
+        if (!"DISABLED".equals(u.getStatus())) throw BizException.of(ErrorCode.E_USR_4091);
+        int rows = userRepository.casStatus(userId, "DISABLED", "ACTIVE");
+        if (rows == 0) throw BizException.of(ErrorCode.E_USR_4091);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("user_id", String.valueOf(userId));
+        payload.put("operator_user_id", me.getUserId());
+        payload.put("reason", req.getReason());
+        payload.put("occurred_at", OffsetDateTime.now().toString());
+        outboxService.publish(OutboxTopics.USER_ENABLED,
+                String.valueOf(userId), String.valueOf(userId), payload);
+
+        auditLogger.logSuccess("GOV", "admin.user.enable", String.valueOf(userId),
+                "MEDIUM", "CONFIRM_1",
+                Map.of("target_user_id", userId, "reason", req.getReason()));
+    }
+
+    // =========================================================
+    // 6. 注销（DELETE /api/v1/admin/users/{id}）—— CRITICAL + CONFIRM_3
+    // =========================================================
+    @Transactional(rollbackFor = Exception.class)
+    public void deactivate(Long userId, AdminUserActionRequest req, String confirmLevel) {
+        AuthUser me = SecurityUtil.current();
+        assertAdmin(me);
+        assertNotSelf(me, userId);
+        requireConfirmLevel(confirmLevel, "CONFIRM_3");
+        UserEntity u = loadAndAssertVisible(userId, me);
+
+        // 规则 3：SUPER_ADMIN 不可注销
+        if ("SUPER_ADMIN".equals(u.getRole())) throw BizException.of(ErrorCode.E_USR_4033);
+        // 幂等：已 DEACTIVATED 视为成功（不重复发事件）
+        if ("DEACTIVATED".equals(u.getStatus())) {
+            log.info("[Admin] 用户 id={} 已为 DEACTIVATED, 幂等返回", userId);
+            return;
+        }
+        // 前置校验 A：仍为患者主监护 → E_USR_4092
+        List<Long> primary = guardianRelationRepository.findPrimaryActivePatientIds(userId);
+        if (!primary.isEmpty()) {
+            throw BizException.of(ErrorCode.E_USR_4092,
+                    "仍为 " + primary.size() + " 位患者主监护人,请先转移或降级主监护关系");
+        }
+        // 前置校验 B：仍有未终态物资工单
+        long openOrders = tagApplyRecordRepository.countByApplicantUserIdAndStatusIn(userId, MATERIAL_ORDER_OPEN);
+        if (openOrders > 0) {
+            throw BizException.of(ErrorCode.E_USR_4093,
+                    "仍有 " + openOrders + " 个未终态物资工单");
+        }
+        // 前置校验 C：仍有未终态寻回任务
+        long activeRescue = rescueTaskRepository.countActiveByCreator(userId);
+        if (activeRescue > 0) {
+            throw BizException.of(ErrorCode.E_USR_4093,
+                    "仍有 " + activeRescue + " 个 ACTIVE/SUSTAINED 寻回任务");
+        }
+
+        long epoch = System.currentTimeMillis() / 1000L;
+        String suffix = "#DEL_" + epoch;
+        int rows = userRepository.casDeactivate(userId, suffix, OffsetDateTime.now());
+        if (rows == 0) {
+            // 并发兜底：另一路已迁出 ACTIVE/DISABLED
+            throw BizException.of(ErrorCode.E_USR_4091);
+        }
+
+        // 撤销非主监护活跃关系（按 LLD §8.3.13）
+        int revokedRelations = guardianRelationRepository.revokeNonPrimaryForUser(userId);
+
+        jwtRevocationService.revokeAllForUser(userId);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("user_id", String.valueOf(userId));
+        payload.put("operator_user_id", me.getUserId());
+        payload.put("reason", req.getReason());
+        payload.put("revoked_relations", revokedRelations);
+        payload.put("occurred_at", OffsetDateTime.now().toString());
+        outboxService.publish(OutboxTopics.USER_DEACTIVATED,
+                String.valueOf(userId), String.valueOf(userId), payload);
+
+        auditLogger.logSuccess("GOV", "admin.user.deactivate", String.valueOf(userId),
+                "CRITICAL", "CONFIRM_3",
+                Map.of("target_user_id", userId,
+                        "reason", req.getReason(),
+                        "suffix", suffix,
+                        "revoked_relations", revokedRelations));
+    }
+
+    // ===============================================
+    // 内部辅助
+    // ===============================================
+
+    /** 规则 1：仅 ADMIN / SUPER_ADMIN 可访问。 */
+    private void assertAdmin(AuthUser me) {
+        if (!me.isAdmin()) throw BizException.of(ErrorCode.E_AUTH_4031);
+    }
+
+    /** 规则 4：不可对自身执行。 */
+    private void assertNotSelf(AuthUser me, Long targetUserId) {
+        if (me.getUserId().equals(targetUserId)) throw BizException.of(ErrorCode.E_USR_4034);
+    }
+
+    /** 规则 2：加载并校验可见性；不可见一律返回 404（不泄露账号存在性）。 */
+    private UserEntity loadAndAssertVisible(Long userId, AuthUser me) {
+        UserEntity u = userRepository.findById(userId)
+                .orElseThrow(() -> BizException.of(ErrorCode.E_USR_4041));
+        if (!me.isSuperAdmin() && !"FAMILY".equals(u.getRole())) {
+            // ADMIN 不可见 ADMIN/SUPER_ADMIN：按 4041 返回避免枚举
+            throw BizException.of(ErrorCode.E_USR_4041);
+        }
+        return u;
+    }
+
+    /** Header CONFIRM 校验。 */
+    private void requireConfirmLevel(String actual, String expected) {
+        if (actual == null || !actual.equals(expected)) {
+            throw BizException.of(ErrorCode.E_AUTH_4031,
+                    "该操作需要 X-Confirm-Level=" + expected);
+        }
+    }
+
+    private int normalizePageSize(int pageSize) {
+        if (pageSize <= 0) return 20;
+        return Math.min(pageSize, 100);
+    }
+
+    private AdminUserListItem toListItem(UserEntity u) {
+        AdminUserListItem i = new AdminUserListItem();
+        i.setUserId(String.valueOf(u.getId()));
+        i.setUsername(u.getUsername());
+        i.setNickname(u.getNickname());
+        i.setEmail(DesensitizeUtil.email(u.getEmail()));
+        i.setPhone(DesensitizeUtil.phone(u.getPhone()));
+        i.setRole(u.getRole());
+        i.setStatus(u.getStatus());
+        i.setEmailVerified(u.getEmailVerified());
+        i.setLastLoginAt(u.getLastLoginAt());
+        i.setCreatedAt(u.getCreatedAt());
+        return i;
+    }
+
+    private Map<String, Object> snapshot(UserEntity u) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("nickname", u.getNickname());
+        m.put("email", u.getEmail()); // 内部审计字段，不对外返回
+        m.put("phone", u.getPhone());
+        m.put("role", u.getRole());
+        m.put("status", u.getStatus());
+        return m;
+    }
+
+    private AdminUserDetailResponse detailView(UserEntity u) {
+        AdminUserDetailResponse r = new AdminUserDetailResponse();
+        r.setUserId(String.valueOf(u.getId()));
+        r.setUsername(u.getUsername());
+        r.setNickname(u.getNickname());
+        r.setEmail(DesensitizeUtil.email(u.getEmail()));
+        r.setPhone(DesensitizeUtil.phone(u.getPhone()));
+        r.setRole(u.getRole());
+        r.setStatus(u.getStatus());
+        r.setEmailVerified(u.getEmailVerified());
+        r.setLastLoginAt(u.getLastLoginAt());
+        r.setLastLoginIp(u.getLastLoginIp());
+        r.setDeactivatedAt(u.getDeactivatedAt());
+        r.setCreatedAt(u.getCreatedAt());
+        r.setUpdatedAt(u.getUpdatedAt());
+        return r;
+    }
+
+    /** 包可见：供测试覆盖数量检验。 */
+    static Collection<String> materialOrderOpenStatuses() { return MATERIAL_ORDER_OPEN; }
+}
