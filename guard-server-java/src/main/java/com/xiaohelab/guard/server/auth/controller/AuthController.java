@@ -16,9 +16,9 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 /**
- * 认证与会话管理。提供注册 / 登录 / 刷新 Token / 当前用户 / 修改密码 /
- * 退出 / WebSocket 一次性 ticket 签发。除 me/changePassword/logout/wsTicket 外，
- * 其余接口均为白名单（见 SecurityConfig）。
+ * 认证与会话管理。提供注册 / 登录 / 刷新 Token / 退出 / WebSocket 一次性 ticket 签发。
+ * 用户资料与改密码接口见 {@link UserProfileController}（/api/v1/users/**）。
+ * login/register/token/refresh 为公开白名单（见 SecurityConfig）。
  */
 @Tag(name = "Auth", description = "认证、会话与 WebSocket Ticket")
 @RestController
@@ -64,21 +64,22 @@ public class AuthController {
         return Result.ok(authService.refresh(req.getRefreshToken()));
     }
 
-    /** 查询当前登录用户资料（由 JWT 解析得到 userId）。 */
-    @GetMapping("/me")
-    public Result<UserInfoResponse> me() {
-        return Result.ok(authService.me());
+    /**
+     * 请求密码重置（§3.6.4）。无论邮箱是否注册均返回相同消息，防止用户枚举。
+     */
+    @PostMapping("/password-reset/request")
+    public Result<Void> passwordResetRequest(@Valid @RequestBody PasswordResetRequestDto req) {
+        authService.requestPasswordReset(req);
+        return Result.ok(null);
     }
 
     /**
-     * 修改当前用户密码。受 {@link Idempotent} 保护。
-     * @param req 修改密码请求（old_password/new_password）
+     * 确认密码重置（§3.6.5）。用邮件中的 Token 设置新密码；Token 一次性消费。
      */
-    @PostMapping("/change-password")
-    @Idempotent
-    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordRequest req) {
-        authService.changePassword(req);
-        return Result.ok();
+    @PostMapping("/password-reset/confirm")
+    public Result<Void> passwordResetConfirm(@Valid @RequestBody PasswordResetConfirmDto req) {
+        authService.confirmPasswordReset(req);
+        return Result.ok(null);
     }
 
     /**
@@ -104,15 +105,5 @@ public class AuthController {
             }
         }
         return Result.ok(Map.of("revoked_at", revokedAt));
-    }
-
-    /**
-     * 签发一次性 WebSocket 握手 ticket（30s TTL，一次性消费）。
-     * @return {@code {"ticket": "Wxxx", "expires_in": 30}}
-     */
-    @PostMapping("/ws-ticket")
-    public Result<Map<String, Object>> wsTicket() {
-        String ticket = authService.issueWsTicket();
-        return Result.ok(Map.of("ticket", ticket, "expires_in", 30));
     }
 }

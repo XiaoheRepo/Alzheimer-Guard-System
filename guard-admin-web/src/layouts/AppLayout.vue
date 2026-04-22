@@ -181,10 +181,7 @@ const breadcrumb = computed(() => {
 
       <a-layout-content class="app-content">
         <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" v-if="$route.meta.keepAlive" />
-          </keep-alive>
-          <component :is="Component" v-if="!$route.meta.keepAlive" />
+          <component :is="Component" />
         </router-view>
       </a-layout-content>
     </a-layout>

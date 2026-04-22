@@ -139,7 +139,7 @@ function prevPage() {
             size="small"
             @click="openReplay(record)"
           >
-            {{ t('page.dead.replay') }}
+            {{ t('page.dead.replayBtn') }}
           </PermissionButton>
         </template>
       </template>

@@ -60,4 +60,7 @@ public final class RedisKeys {
     public static String pushTokenLock(Long userId, String deviceId) {
         return "lock:push:" + userId + ":" + deviceId;
     }
+
+    /** 密码重置令牌（TTL = 30 分钟）。 */
+    public static String pwdReset(String token) { return "auth:pwd_reset:" + token; }
 }

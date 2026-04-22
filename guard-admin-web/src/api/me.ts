@@ -3,16 +3,16 @@
 import { http } from '@/utils/request'
 import type { CurrentUser } from '@/stores/auth'
 
-/** GET /api/v1/users/me */
+/** GET /api/v1/auth/me */
 export function getCurrentUser(): Promise<CurrentUser> {
-  return http.get<CurrentUser>('/api/v1/users/me')
+  return http.get<CurrentUser>('/api/v1/auth/me')
 }
 
-/** PUT /api/v1/users/me/password */
+/** PUT /api/v1/auth/me/password */
 export function changePassword(body: {
   old_password: string
   new_password: string
   request_time: string
 }): Promise<null> {
-  return http.put<null>('/api/v1/users/me/password', body)
+  return http.put<null>('/api/v1/auth/me/password', body)
 }
