@@ -33,9 +33,6 @@ export function passwordResetRequest(body: { email: string }): Promise<null> {
 }
 
 /** POST /api/v1/auth/password-reset/confirm */
-export function passwordResetConfirm(body: {
-  token: string
-  new_password: string
-}): Promise<null> {
+export function passwordResetConfirm(body: { token: string; new_password: string }): Promise<null> {
   return http.post<null>('/api/v1/auth/password-reset/confirm', body)
 }

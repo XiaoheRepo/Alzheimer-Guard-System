@@ -1,34 +1,43 @@
 <script setup lang="ts">
-import { theme } from 'ant-design-vue'
+import { computed, watch } from 'vue'
+import { ConfigProvider } from 'ant-design-vue'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import enUS from 'ant-design-vue/es/locale/en_US'
+import { useAppStore } from '@/stores/app'
+import { lightTheme, darkTheme } from '@/styles/antdv'
+import { setLocale } from '@/locales'
 
-const { defaultAlgorithm } = theme
+const app = useAppStore()
 
-const themeConfig = {
-  algorithm: defaultAlgorithm,
-  token: {
-    colorPrimary: '#1677ff',
-    colorLink: '#1677ff',
-    colorSuccess: '#52c41a',
-    colorWarning: '#faad14',
-    colorError: '#ff4d4f',
-    borderRadius: 6,
+const antdvLocale = computed(() => (app.locale === 'zh-CN' ? zhCN : enUS))
+const antdvTheme = computed(() =>
+  app.effectiveTheme === 'dark' ? darkTheme : lightTheme,
+)
+
+watch(
+  () => app.locale,
+  (l) => {
+    void setLocale(l)
   },
-}
+  { immediate: true },
+)
+
+watch(
+  () => app.effectiveTheme,
+  (t) => {
+    document.documentElement.dataset.theme = t
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <a-config-provider :theme="themeConfig">
-    <router-view />
-  </a-config-provider>
+  <ConfigProvider :locale="antdvLocale" :theme="antdvTheme">
+    <RouterView />
+  </ConfigProvider>
 </template>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 #app {
   height: 100vh;
 }

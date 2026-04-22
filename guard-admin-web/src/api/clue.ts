@@ -42,10 +42,7 @@ export function overrideClue(
   clueId: string,
   body: { reason: string; request_time: string },
 ): Promise<ClueListItem> {
-  return http.post<ClueListItem>(
-    `/api/v1/clues/${encodeURIComponent(clueId)}/override`,
-    body,
-  )
+  return http.post<ClueListItem>(`/api/v1/clues/${encodeURIComponent(clueId)}/override`, body)
 }
 
 /** POST /api/v1/clues/{clue_id}/reject */
@@ -53,8 +50,5 @@ export function rejectClue(
   clueId: string,
   body: { reason: string; request_time: string },
 ): Promise<ClueListItem> {
-  return http.post<ClueListItem>(
-    `/api/v1/clues/${encodeURIComponent(clueId)}/reject`,
-    body,
-  )
+  return http.post<ClueListItem>(`/api/v1/clues/${encodeURIComponent(clueId)}/reject`, body)
 }

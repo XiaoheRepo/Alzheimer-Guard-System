@@ -29,10 +29,7 @@ export function updateConfig(
   configKey: string,
   body: { value: string; reason?: string },
 ): Promise<SysConfigItem> {
-  return http.put<SysConfigItem>(
-    `/api/v1/admin/configs/${encodeURIComponent(configKey)}`,
-    body,
-  )
+  return http.put<SysConfigItem>(`/api/v1/admin/configs/${encodeURIComponent(configKey)}`, body)
 }
 
 /** -------- 审计日志 -------- */
@@ -55,9 +52,7 @@ export interface AuditLogItem {
 }
 
 /** GET /api/v1/admin/logs */
-export function listAuditLogs(
-  params: Record<string, unknown>,
-): Promise<CursorPage<AuditLogItem>> {
+export function listAuditLogs(params: Record<string, unknown>): Promise<CursorPage<AuditLogItem>> {
   return http.get<CursorPage<AuditLogItem>>('/api/v1/admin/logs', { params })
 }
 
@@ -65,7 +60,7 @@ export function listAuditLogs(
 export function exportAuditLogs(params: Record<string, unknown>) {
   // baseURL 内已配置；此处需要 blob；走底层 request
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const req = (http as any)
+  const req = http as any
   return req.get<Blob>('/api/v1/admin/logs/export', {
     params,
     responseType: 'blob',
@@ -95,9 +90,7 @@ export function listAdminUsers(
 
 /** GET /api/v1/admin/users/{user_id} */
 export function getAdminUser(userId: string): Promise<AdminUserListItem> {
-  return http.get<AdminUserListItem>(
-    `/api/v1/admin/users/${encodeURIComponent(userId)}`,
-  )
+  return http.get<AdminUserListItem>(`/api/v1/admin/users/${encodeURIComponent(userId)}`)
 }
 
 /** PUT /api/v1/admin/users/{user_id} */
@@ -105,10 +98,7 @@ export function updateAdminUser(
   userId: string,
   body: { nickname?: string; email?: string; phone?: string; role?: Role },
 ): Promise<AdminUserListItem> {
-  return http.put<AdminUserListItem>(
-    `/api/v1/admin/users/${encodeURIComponent(userId)}`,
-    body,
-  )
+  return http.put<AdminUserListItem>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, body)
 }
 
 /** POST /api/v1/admin/users/{user_id}/disable */
@@ -135,17 +125,11 @@ export function enableAdminUser(
 }
 
 /** DELETE /api/v1/admin/users/{user_id} */
-export function deleteAdminUser(
-  userId: string,
-  body: { reason: string },
-): Promise<null> {
-  return http.delete<null>(
-    `/api/v1/admin/users/${encodeURIComponent(userId)}`,
-    {
-      data: body,
-      headers: { 'X-Confirm-Level': 'CONFIRM_3' },
-    },
-  )
+export function deleteAdminUser(userId: string, body: { reason: string }): Promise<null> {
+  return http.delete<null>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, {
+    data: body,
+    headers: { 'X-Confirm-Level': 'CONFIRM_3' },
+  })
 }
 
 /** -------- DEAD 事件 -------- */
@@ -167,10 +151,7 @@ export interface DeadEventItem {
 export function listDeadEvents(
   params: Record<string, unknown>,
 ): Promise<CursorPage<DeadEventItem>> {
-  return http.get<CursorPage<DeadEventItem>>(
-    '/api/v1/admin/super/outbox/dead',
-    { params },
-  )
+  return http.get<CursorPage<DeadEventItem>>('/api/v1/admin/super/outbox/dead', { params })
 }
 
 /** POST /api/v1/admin/super/outbox/dead/{event_id}/replay */

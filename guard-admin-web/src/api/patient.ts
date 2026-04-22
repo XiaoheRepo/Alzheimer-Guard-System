@@ -54,9 +54,7 @@ export function listAdminPatients(
 
 /** GET /api/v1/admin/patients/{patient_id} */
 export function getAdminPatient(patientId: string): Promise<AdminPatientDetail> {
-  return http.get<AdminPatientDetail>(
-    `/api/v1/admin/patients/${encodeURIComponent(patientId)}`,
-  )
+  return http.get<AdminPatientDetail>(`/api/v1/admin/patients/${encodeURIComponent(patientId)}`)
 }
 
 /** POST /api/v1/admin/patients/{patient_id}/guardians/force-transfer */

@@ -26,14 +26,10 @@ export interface MaterialOrder {
   trace_id?: string
 }
 
-export type OrderListResponse =
-  | OffsetPage<MaterialOrder>
-  | CursorPage<MaterialOrder>
+export type OrderListResponse = OffsetPage<MaterialOrder> | CursorPage<MaterialOrder>
 
 /** GET /api/v1/material/orders */
-export function listOrders(
-  params: Record<string, unknown>,
-): Promise<OrderListResponse> {
+export function listOrders(params: Record<string, unknown>): Promise<OrderListResponse> {
   return http.get<OrderListResponse>('/api/v1/material/orders', { params })
 }
 

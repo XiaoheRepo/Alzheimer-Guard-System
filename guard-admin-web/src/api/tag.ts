@@ -40,7 +40,5 @@ export function batchGenerate(body: {
 
 /** GET /api/v1/tags/batch-generate/jobs/{job_id} */
 export function getBatchJob(jobId: string): Promise<BatchJob> {
-  return http.get<BatchJob>(
-    `/api/v1/tags/batch-generate/jobs/${encodeURIComponent(jobId)}`,
-  )
+  return http.get<BatchJob>(`/api/v1/tags/batch-generate/jobs/${encodeURIComponent(jobId)}`)
 }

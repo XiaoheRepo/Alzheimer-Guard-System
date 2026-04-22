@@ -63,17 +63,13 @@ export interface TrajectoryLatest {
 }
 
 /** GET /api/v1/rescue/tasks */
-export function listTasks(
-  params: Record<string, unknown>,
-): Promise<OffsetPage<TaskListItem>> {
+export function listTasks(params: Record<string, unknown>): Promise<OffsetPage<TaskListItem>> {
   return http.get<OffsetPage<TaskListItem>>('/api/v1/rescue/tasks', { params })
 }
 
 /** GET /api/v1/rescue/tasks/{task_id}/snapshot */
 export function getTaskSnapshot(taskId: string): Promise<TaskSnapshot> {
-  return http.get<TaskSnapshot>(
-    `/api/v1/rescue/tasks/${encodeURIComponent(taskId)}/snapshot`,
-  )
+  return http.get<TaskSnapshot>(`/api/v1/rescue/tasks/${encodeURIComponent(taskId)}/snapshot`)
 }
 
 /** GET /api/v1/rescue/tasks/{task_id}/full */
@@ -110,8 +106,5 @@ export function closeTask(
     request_time: string
   },
 ): Promise<TaskSnapshot> {
-  return http.post<TaskSnapshot>(
-    `/api/v1/rescue/tasks/${encodeURIComponent(taskId)}/close`,
-    body,
-  )
+  return http.post<TaskSnapshot>(`/api/v1/rescue/tasks/${encodeURIComponent(taskId)}/close`, body)
 }
