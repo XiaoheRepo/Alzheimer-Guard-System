@@ -106,7 +106,8 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of(
                 "Authorization", "Content-Type", "X-Confirm-Level",
-                "X-Request-Id", "X-Idempotency-Key", "X-Entry-Token"));
+                "X-Request-Id", "X-Idempotency-Key", "X-Entry-Token",
+                "X-Trace-Id", "X-Request-Time"));
         config.setExposedHeaders(List.of("X-Trace-Id"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
