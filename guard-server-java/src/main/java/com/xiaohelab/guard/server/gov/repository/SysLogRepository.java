@@ -24,6 +24,30 @@ public interface SysLogRepository extends JpaRepository<SysLogEntity, Long> {
                                    @Param("cursor") Long cursor,
                                    Pageable pageable);
 
+    /**
+     * 审计日志游标分页查询（§3.6.10）。
+     * 支持 module / action / action_source / operator_user_id / date_from / date_to / risk_level + cursor。
+     */
+    @Query("select l from SysLogEntity l " +
+            "where (:module is null or l.module = :module) " +
+            "  and (:action is null or l.action = :action) " +
+            "  and (:actionSource is null or l.actionSource = :actionSource) " +
+            "  and (:operatorId is null or l.operatorUserId = :operatorId) " +
+            "  and (:dateFrom is null or l.createdAt >= :dateFrom) " +
+            "  and (:dateTo is null or l.createdAt <= :dateTo) " +
+            "  and (:riskLevel is null or l.riskLevel = :riskLevel) " +
+            "  and (:cursor is null or l.id < :cursor) " +
+            "order by l.id desc")
+    List<SysLogEntity> findForQuery(@Param("module") String module,
+                                    @Param("action") String action,
+                                    @Param("actionSource") String actionSource,
+                                    @Param("operatorId") Long operatorId,
+                                    @Param("dateFrom") OffsetDateTime dateFrom,
+                                    @Param("dateTo") OffsetDateTime dateTo,
+                                    @Param("riskLevel") String riskLevel,
+                                    @Param("cursor") Long cursor,
+                                    Pageable pageable);
+
     List<SysLogEntity> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 
     /**
