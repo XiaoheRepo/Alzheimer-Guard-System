@@ -43,6 +43,9 @@ spring:
 
   jackson:
     time-zone: UTC
+    # 全局字段命名策略：Java 驼峰 <-> JSON 蛇形（API V2.0 §1.4 契约基线）
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: NON_NULL
     serialization:
       write-dates-as-timestamps: false
     deserialization:
