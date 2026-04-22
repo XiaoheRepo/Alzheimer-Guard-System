@@ -197,8 +197,10 @@ public class AdminUserService {
             visibleRoles = Set.of(role);
         }
 
-        // 2. 状态白名单
-        List<String> statuses = (status == null || status.isBlank()) ? null : List.of(status);
+        // 2. 状态白名单；null 表示不过滤，传全量值避免 SQL 集合 IS NULL 类型推断失败
+        List<String> statuses = (status == null || status.isBlank())
+                ? List.of("ACTIVE", "DISABLED", "DEACTIVATED")
+                : List.of(status);
 
         // 3. 游标翻页
         Long cursorId = CursorUtil.decodeId(cursor);

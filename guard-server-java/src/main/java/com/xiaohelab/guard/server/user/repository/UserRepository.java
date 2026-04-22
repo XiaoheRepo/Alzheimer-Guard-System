@@ -48,7 +48,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             "       OR lower(u.email) LIKE '%' || CAST(:kw AS text) || '%' " +
             "       OR COALESCE(u.phone,'') LIKE '%' || CAST(:kw AS text) || '%') " +
             "  AND u.role IN (:roles) " +
-            "  AND (:statuses IS NULL OR u.status IN (:statuses)) " +
+            "  AND u.status IN (:statuses) " +
             "  AND (CAST(:cursor AS bigint) IS NULL OR u.id < CAST(:cursor AS bigint)) " +
             "ORDER BY u.id DESC " +
             "LIMIT :lim")

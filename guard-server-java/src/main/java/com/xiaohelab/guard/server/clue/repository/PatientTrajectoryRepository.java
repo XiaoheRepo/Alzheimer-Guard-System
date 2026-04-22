@@ -21,11 +21,15 @@ public interface PatientTrajectoryRepository extends JpaRepository<PatientTrajec
     /**
      * 任务下最新轨迹点（cursor 游标：按 id 倒序；since / afterId 任一条件满足即可增量拉取）。
      * 由 {@code since} 或 {@code afterId} 至少一项过滤；不传则从最新开始。
+     * <p>改为 nativeQuery + CAST 以规避 Hibernate 6 + PostgreSQL 对可空参数的类型推断 Bug。</p>
      */
-    @Query("select t from PatientTrajectoryEntity t where t.taskId = :taskId " +
-            "and (:since is null or t.windowStart > :since) " +
-            "and (:afterId is null or t.id > :afterId) " +
-            "order by t.id desc")
+    @Query(nativeQuery = true,
+            value = "SELECT * FROM patient_trajectory t WHERE t.task_id = :taskId " +
+                    "  AND (CAST(:since   AS timestamptz) IS NULL OR t.window_start > CAST(:since   AS timestamptz)) " +
+                    "  AND (CAST(:afterId AS bigint)      IS NULL OR t.id           > CAST(:afterId AS bigint))",
+            countQuery = "SELECT count(*) FROM patient_trajectory t WHERE t.task_id = :taskId " +
+                    "  AND (CAST(:since   AS timestamptz) IS NULL OR t.window_start > CAST(:since   AS timestamptz)) " +
+                    "  AND (CAST(:afterId AS bigint)      IS NULL OR t.id           > CAST(:afterId AS bigint))")
     Page<PatientTrajectoryEntity> findLatestForTask(@Param("taskId") Long taskId,
                                                     @Param("since") OffsetDateTime since,
                                                     @Param("afterId") Long afterId,

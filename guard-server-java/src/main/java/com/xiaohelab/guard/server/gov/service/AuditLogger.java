@@ -17,7 +17,7 @@ import java.util.Map;
 
 /**
  * 审计日志落库服务（HC-03）。
- * <p>必须在调用方业务事务内使用（{@link Propagation#MANDATORY}），以保证状态变更与审计写入的强一致。</p>
+ * <p>使用 {@link Propagation#REQUIRES_NEW} 开独立写事务，避免调用方只读事务导致 INSERT 失败。</p>
  *
  * <p>审计字段规范见 {@code doc/backend_handbook_v2.md §12.5 / §24.7}：</p>
  * <ul>
@@ -49,7 +49,7 @@ public class AuditLogger {
      * @param confirmLevel 确认等级（CONFIRM_1/2/3，可空）
      * @param detail       扩展详情（自动序列化为 JSON）
      */
-    @Transactional(propagation = Propagation.MANDATORY, rollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     public void logSuccess(String module,
                            String action,
                            String objectId,

@@ -35,11 +35,18 @@ public interface RescueTaskRepository extends JpaRepository<RescueTaskEntity, Lo
     /**
      * 任务列表查询（带多条件筛选）。null 值表示不过滤该条件。
      * <p>API V2.0 §3.1.5：patient_id / status / source 筛选。</p>
+     * <p>改为 nativeQuery + CAST 以规避 Hibernate 6 + PostgreSQL 的 "could not determine data type of parameter"
+     * Bug（对 {@code (:x is null or ...)} 模式在参数为 null 时推断失败）。</p>
      */
-    @Query("select t from RescueTaskEntity t where t.patientId in :pids " +
-            "and (:patientId is null or t.patientId = :patientId) " +
-            "and (:status is null or t.status = :status) " +
-            "and (:source is null or t.source = :source)")
+    @Query(nativeQuery = true,
+            value = "SELECT * FROM rescue_task t WHERE t.patient_id IN (:pids) " +
+                    "  AND (CAST(:patientId AS bigint) IS NULL OR t.patient_id = CAST(:patientId AS bigint)) " +
+                    "  AND (CAST(:status AS text) IS NULL OR t.status = CAST(:status AS text)) " +
+                    "  AND (CAST(:source AS text) IS NULL OR t.source = CAST(:source AS text))",
+            countQuery = "SELECT count(*) FROM rescue_task t WHERE t.patient_id IN (:pids) " +
+                    "  AND (CAST(:patientId AS bigint) IS NULL OR t.patient_id = CAST(:patientId AS bigint)) " +
+                    "  AND (CAST(:status AS text) IS NULL OR t.status = CAST(:status AS text)) " +
+                    "  AND (CAST(:source AS text) IS NULL OR t.source = CAST(:source AS text))")
     Page<RescueTaskEntity> searchMine(@Param("pids") List<Long> patientIds,
                                       @Param("patientId") Long patientId,
                                       @Param("status") String status,

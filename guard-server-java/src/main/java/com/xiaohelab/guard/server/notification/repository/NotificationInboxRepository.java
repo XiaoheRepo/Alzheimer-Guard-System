@@ -38,12 +38,14 @@ public interface NotificationInboxRepository extends JpaRepository<NotificationI
      *   <li>{@code type} 为 null 表示全类型；</li>
      *   <li>{@code beforeTime} 为 null 表示不限时间上界。</li>
      * </ul>
+     * <p>改为 nativeQuery + CAST 以规避 Hibernate 6 + PostgreSQL 对可空参数的类型推断 Bug。</p>
      */
     @Modifying
-    @Query("update NotificationInboxEntity n set n.readStatus = 'READ', n.readAt = :at " +
-            "where n.userId = :uid and n.readStatus = 'UNREAD' " +
-            "and (:type is null or n.type = :type) " +
-            "and (:beforeTime is null or n.createdAt <= :beforeTime)")
+    @Query(nativeQuery = true,
+            value = "UPDATE notification_inbox SET read_status = 'READ', read_at = :at " +
+                    "WHERE user_id = :uid AND read_status = 'UNREAD' " +
+                    "  AND (CAST(:type       AS text)        IS NULL OR type        = CAST(:type       AS text)) " +
+                    "  AND (CAST(:beforeTime AS timestamptz) IS NULL OR created_at <= CAST(:beforeTime AS timestamptz))")
     int markAllReadForUser(@Param("uid") Long userId,
                            @Param("type") String type,
                            @Param("beforeTime") OffsetDateTime beforeTime,
