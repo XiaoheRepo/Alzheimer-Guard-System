@@ -7,8 +7,8 @@ import { useI18n } from 'vue-i18n'
 const app = useAppStore()
 const { t } = useI18n()
 
-function onChange(mode: ThemeMode) {
-  app.setThemeMode(mode)
+function onChange({ key }: { key: string }) {
+  app.setThemeMode(key as ThemeMode)
 }
 </script>
 
@@ -25,7 +25,7 @@ function onChange(mode: ThemeMode) {
       }}
     </a-button>
     <template #overlay>
-      <a-menu @click="({ key }) => onChange(key as ThemeMode)">
+      <a-menu @click="onChange">
         <a-menu-item key="light">{{ t('common.themeLight') }}</a-menu-item>
         <a-menu-item key="dark">{{ t('common.themeDark') }}</a-menu-item>
         <a-menu-item key="system">{{ t('common.themeSystem') }}</a-menu-item>

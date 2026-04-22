@@ -6,8 +6,8 @@ import type { AppLocale } from '@/locales'
 
 const app = useAppStore()
 
-function onChange(locale: AppLocale) {
-  app.setLocale(locale)
+function onChange({ key }: { key: string }) {
+  app.setLocale(key as AppLocale)
 }
 </script>
 
@@ -18,7 +18,7 @@ function onChange(locale: AppLocale) {
       {{ app.locale === 'zh-CN' ? '中文' : 'EN' }}
     </a-button>
     <template #overlay>
-      <a-menu @click="({ key }) => onChange(key as AppLocale)">
+      <a-menu @click="onChange">
         <a-menu-item key="zh-CN">中文</a-menu-item>
         <a-menu-item key="en-US">English</a-menu-item>
       </a-menu>
