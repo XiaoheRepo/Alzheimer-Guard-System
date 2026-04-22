@@ -3,9 +3,9 @@ spring:
     name: guard-server-java
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/guard_db}
-    username: ${DB_USER:guard}
-    password: ${DB_PASSWORD:guard}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/alzheimer_system}
+    username: ${DB_USER:alzheimer_admin}
+    password: ${DB_PASSWORD:Alzheimer_db_pass_2026!}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -40,20 +40,6 @@ spring:
           max-active: 16
           max-idle: 8
           min-idle: 2
-
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
-    consumer:
-      group-id: guard-server
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      enable-auto-commit: false
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-      retries: 3
 
   jackson:
     time-zone: UTC
@@ -93,6 +79,11 @@ guard:
     anonymous-per-ip-per-minute: 30
     anonymous-per-device-per-minute: 10
     login-per-ip-per-minute: 10
+  init:
+    super-admin-username: ${SUPER_ADMIN_USERNAME:superadmin}
+    super-admin-password: ${SUPER_ADMIN_PASSWORD:Admin@2026!}
+    super-admin-email: ${SUPER_ADMIN_EMAIL:admin@xiaohelab.com}
+
 
 management:
   endpoints:

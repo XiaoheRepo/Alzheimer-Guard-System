@@ -34,5 +34,6 @@ public class GuardServerApplication {
      */
     public static void main(String[] args) {
         SpringApplication.run(GuardServerApplication.class, args);
+        System.out.println("Guard Server started on port 8080");
     }
 }
