@@ -60,19 +60,9 @@ async function onSubmit() {
           />
         </a-form-item>
         <a-form-item :label="t('page.auth.reset.confirmPwd')" required>
-          <a-input-password
-            v-model:value="form.confirm"
-            size="large"
-            autocomplete="new-password"
-          />
+          <a-input-password v-model:value="form.confirm" size="large" autocomplete="new-password" />
         </a-form-item>
-        <a-button
-          type="primary"
-          size="large"
-          block
-          :loading="loading"
-          html-type="submit"
-        >
+        <a-button type="primary" size="large" block :loading="loading" html-type="submit">
           {{ t('common.submit') }}
         </a-button>
         <div style="text-align: center; margin-top: 8px">

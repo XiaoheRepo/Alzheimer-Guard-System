@@ -16,14 +16,17 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'change', pagination: TablePaginationConfig, filters: Record<string, unknown>, sorter: unknown): void
+  (
+    e: 'change',
+    pagination: TablePaginationConfig,
+    filters: Record<string, unknown>,
+    sorter: unknown,
+  ): void
   (e: 'retry'): void
 }>()
 
 const rowKeyFn = computed(() =>
-  typeof props.rowKey === 'string'
-    ? (props.rowKey as string)
-    : (props.rowKey as (r: T) => string),
+  typeof props.rowKey === 'string' ? (props.rowKey as string) : (props.rowKey as (r: T) => string),
 )
 </script>
 
@@ -36,13 +39,7 @@ const rowKeyFn = computed(() =>
       <slot name="toolbar" />
     </div>
 
-    <a-alert
-      v-if="error"
-      type="error"
-      :message="error"
-      show-icon
-      style="margin-bottom: 12px"
-    >
+    <a-alert v-if="error" type="error" :message="error" show-icon style="margin-bottom: 12px">
       <template #action>
         <a-button size="small" @click="emit('retry')">{{ $t('common.retry') }}</a-button>
       </template>

@@ -96,13 +96,7 @@ async function onResetSubmit() {
             <template #prefix><LockOutlined /></template>
           </a-input-password>
         </a-form-item>
-        <a-button
-          type="primary"
-          size="large"
-          block
-          :loading="loading"
-          html-type="submit"
-        >
+        <a-button type="primary" size="large" block :loading="loading" html-type="submit">
           {{ t('page.auth.login.submit') }}
         </a-button>
         <div class="forgot">
