@@ -252,6 +252,55 @@
 | L2 | 按 module 过滤 | |
 | L3 | 非 Admin 调用 | 403 |
 
+#### 2.10.4 Admin User 用户治理
+
+**覆盖文件**：`auth/service/AdminUserService`, `auth/controller/AdminUserController`（V2.1 增量，对应 FR-GOV-011 ~ FR-GOV-014）
+
+| #    | 场景                                         | 期望                                                         |
+| ---- | -------------------------------------------- | ------------------------------------------------------------ |
+| AU1  | `SUPER_ADMIN` 分页列表                       | 200 · 含全部 3 种 role                                       |
+| AU2  | `ADMIN` 分页列表                             | 200 · 结果仅 `role=FAMILY`（服务端强制过滤）                 |
+| AU3  | 非管理员访问                                 | 403 · `E_AUTH_4031`                                          |
+| AU4  | `ADMIN` 查看 `role=ADMIN` 详情               | 403 · `E_USR_4032`                                           |
+| AU5  | `ADMIN` 修改 `role=FAMILY` 的 nickname/email | 200 · `email_verified=false` · 触发验证邮件                  |
+| AU6  | `ADMIN` 传入 `role` 字段                     | 403 · `E_USR_4035`                                           |
+| AU7  | `SUPER_ADMIN` 修改自身 role                  | 403 · `E_USR_4034`                                           |
+| AU8  | `SUPER_ADMIN` 对 `SUPER_ADMIN` 目标降级      | 403 · `E_USR_4033`                                           |
+| AU9  | `role` 变更成功                              | outbox `user.role.changed` · Redis JWT 黑名单生效 · 目标重登  |
+| AU10 | 禁用普通 `FAMILY`                            | status=DISABLED · outbox `user.disabled` · 目标 JWT 立即 401 |
+| AU11 | 禁用已为 DISABLED 的账号                     | 409 · `E_USR_4091`                                           |
+| AU12 | 禁用 `SUPER_ADMIN`                           | 403 · `E_USR_4033`                                           |
+| AU13 | 禁用自身                                     | 403 · `E_USR_4034`                                           |
+| AU14 | 禁用目标为 `PRIMARY_GUARDIAN`                | 200 · `detail.primary_patient_ids` 非空                      |
+| AU15 | 启用 DISABLED 账号                           | status=ACTIVE · outbox `user.enabled`                        |
+| AU16 | 启用非 DISABLED 账号                         | 409 · `E_USR_4091`                                           |
+| AU17 | 注销缺少 `X-Confirm-Level`                   | 403 · `E_AUTH_4031`                                          |
+| AU18 | 注销目标仍持有主监护                         | 409 · `E_USR_4092`                                           |
+| AU19 | 注销目标持有 `PENDING_AUDIT` 工单            | 409 · `E_USR_4093`                                           |
+| AU20 | 注销成功                                     | status=DEACTIVATED · `username/email/phone` 追加 `#DEL_{ts}` · JWT 全部失效 · outbox `user.deactivated` · sys_log `risk=CRITICAL confirm=CONFIRM_3` |
+| AU21 | 注销后同名重新注册                           | 成功（唯一约束已释放）                                       |
+
+#### 2.10.5 Admin Patient 档案治理
+
+**覆盖文件**：`patient/service/AdminPatientService`, `patient/controller/AdminPatientController`（V2.1 增量，对应 FR-PRO-011 / FR-PRO-012）
+
+| #    | 场景                                               | 期望                                                         |
+| ---- | -------------------------------------------------- | ------------------------------------------------------------ |
+| AP1  | `ADMIN` 全局列表                                   | 200 · `patient_name/phone/email` 均脱敏（正则 `\*{3,}` 命中） |
+| AP2  | `ADMIN` 查看无监护关系的患者详情                   | 200 · 含 `guardian_list`                                     |
+| AP3  | 非管理员访问                                       | 403 · `E_AUTH_4031`                                          |
+| AP4  | 列表 `keyword` 模糊匹配 `profile_no` / `short_code` | 命中返回                                                     |
+| AP5  | 列表按 `primary_guardian_user_id` 过滤             | 仅含该用户为主监护的记录                                     |
+| AP6  | 列表游标翻页                                       | `next_cursor` 有效，下一页 `id < cursor`                     |
+| AP7  | 强制转移 · 非 `SUPER_ADMIN`                        | 403 · `E_AUTH_4031`                                          |
+| AP8  | 强制转移 · 缺少 `X-Confirm-Level=CONFIRM_3`        | 403 · `E_AUTH_4031`                                          |
+| AP9  | 强制转移 · `target_user_id` 不是 ACTIVE 监护成员   | 422 · `E_PRO_4044`                                           |
+| AP10 | 强制转移 · target 非 FAMILY / 非 ACTIVE            | 403 · `E_PRO_4035`                                           |
+| AP11 | 强制转移 · target = 当前主监护                     | 422 · `E_PRO_4044` 或业务拒绝                                |
+| AP12 | 强制转移成功                                       | 原主 → `GUARDIAN` · 目标 → `PRIMARY_GUARDIAN` · `profile_version +1` · outbox `patient.primary_guardian.force_transferred` · sys_log `risk=CRITICAL` |
+| AP13 | 强制转移后原主账号恢复                             | 角色保持 `GUARDIAN`，不自动回滚                              |
+| AP14 | 管理员列表记录 sys_log                             | `action=admin.patient.list risk=MEDIUM`                      |
+
 ### 2.11 WebSocket
 
 | # | 场景 | 期望 |

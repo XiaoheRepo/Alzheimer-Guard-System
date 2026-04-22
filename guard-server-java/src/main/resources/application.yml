@@ -33,7 +33,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:Alzheimer_redis_pass_2026!}
       database: 0
       lettuce:
         pool:
