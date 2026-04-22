@@ -23,4 +23,12 @@ public interface RescueTaskRepository extends JpaRepository<RescueTaskEntity, Lo
     Page<RescueTaskEntity> findByPatientIdInOrderByCreatedAtDesc(List<Long> patientIds, Pageable pageable);
 
     Page<RescueTaskEntity> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
+
+    /**
+     * 管理员治理用：统计由目标用户发起、且仍为 ACTIVE / SUSTAINED 态的寻回任务数。
+     * <p>注销前置校验（E_USR_4093）。</p>
+     */
+    @Query("select count(t) from RescueTaskEntity t " +
+            "where t.createdBy = :userId and t.status in ('ACTIVE','SUSTAINED')")
+    long countActiveByCreator(@Param("userId") Long userId);
 }

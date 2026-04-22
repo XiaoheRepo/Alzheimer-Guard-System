@@ -52,4 +52,12 @@ public final class OutboxTopics {
 
     // GOV
     public static final String NOTIFICATION_SENT       = "notification.sent";
+
+    // GOV / 管理员治理（V2.1 增量：对应 SRS FR-GOV-011 ~ FR-GOV-014、FR-PRO-012）
+    public static final String USER_ROLE_CHANGED       = "user.role.changed";
+    public static final String USER_DISABLED           = "user.disabled";
+    public static final String USER_ENABLED            = "user.enabled";
+    public static final String USER_DEACTIVATED        = "user.deactivated";
+    public static final String PATIENT_PRIMARY_GUARDIAN_FORCE_TRANSFERRED
+            = "patient.primary_guardian.force_transferred";
 }

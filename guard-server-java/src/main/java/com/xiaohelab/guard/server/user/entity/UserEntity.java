@@ -46,6 +46,10 @@ public class UserEntity extends BaseEntity {
     @Column(name = "last_login_ip", length = 64)
     private String lastLoginIp;
 
+    /** 逻辑注销时间（DEACTIVATED 终态时填入，对应 LLD §8.3.13）。 */
+    @Column(name = "deactivated_at")
+    private OffsetDateTime deactivatedAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }
@@ -70,4 +74,6 @@ public class UserEntity extends BaseEntity {
     public void setLastLoginAt(OffsetDateTime lastLoginAt) { this.lastLoginAt = lastLoginAt; }
     public String getLastLoginIp() { return lastLoginIp; }
     public void setLastLoginIp(String lastLoginIp) { this.lastLoginIp = lastLoginIp; }
+    public OffsetDateTime getDeactivatedAt() { return deactivatedAt; }
+    public void setDeactivatedAt(OffsetDateTime deactivatedAt) { this.deactivatedAt = deactivatedAt; }
 }
