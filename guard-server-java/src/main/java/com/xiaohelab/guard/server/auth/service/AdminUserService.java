@@ -13,10 +13,16 @@ import com.xiaohelab.guard.server.common.security.JwtRevocationService;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.CursorUtil;
 import com.xiaohelab.guard.server.common.util.DesensitizeUtil;
+import com.xiaohelab.guard.server.common.util.TraceIdUtil;
 import com.xiaohelab.guard.server.gov.service.AuditLogger;
 import com.xiaohelab.guard.server.material.repository.TagApplyRecordRepository;
+import com.xiaohelab.guard.server.notification.entity.NotificationInboxEntity;
+import com.xiaohelab.guard.server.notification.repository.NotificationInboxRepository;
 import com.xiaohelab.guard.server.outbox.service.OutboxService;
+import com.xiaohelab.guard.server.patient.entity.GuardianRelationEntity;
+import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
 import com.xiaohelab.guard.server.patient.repository.GuardianRelationRepository;
+import com.xiaohelab.guard.server.patient.repository.PatientProfileRepository;
 import com.xiaohelab.guard.server.rescue.repository.RescueTaskRepository;
 import com.xiaohelab.guard.server.user.entity.UserEntity;
 import com.xiaohelab.guard.server.user.repository.UserRepository;
@@ -65,6 +71,8 @@ public class AdminUserService {
     private final GuardianRelationRepository guardianRelationRepository;
     private final TagApplyRecordRepository tagApplyRecordRepository;
     private final RescueTaskRepository rescueTaskRepository;
+    private final PatientProfileRepository patientProfileRepository;
+    private final NotificationInboxRepository notificationInboxRepository;
     private final OutboxService outboxService;
     private final AuditLogger auditLogger;
     private final JwtRevocationService jwtRevocationService;
@@ -73,6 +81,8 @@ public class AdminUserService {
                             GuardianRelationRepository guardianRelationRepository,
                             TagApplyRecordRepository tagApplyRecordRepository,
                             RescueTaskRepository rescueTaskRepository,
+                            PatientProfileRepository patientProfileRepository,
+                            NotificationInboxRepository notificationInboxRepository,
                             OutboxService outboxService,
                             AuditLogger auditLogger,
                             JwtRevocationService jwtRevocationService) {
@@ -80,6 +90,8 @@ public class AdminUserService {
         this.guardianRelationRepository = guardianRelationRepository;
         this.tagApplyRecordRepository = tagApplyRecordRepository;
         this.rescueTaskRepository = rescueTaskRepository;
+        this.patientProfileRepository = patientProfileRepository;
+        this.notificationInboxRepository = notificationInboxRepository;
         this.outboxService = outboxService;
         this.auditLogger = auditLogger;
         this.jwtRevocationService = jwtRevocationService;
@@ -271,26 +283,98 @@ public class AdminUserService {
         // 状态前置：仅 ACTIVE 可禁用
         if (!"ACTIVE".equals(u.getStatus())) throw BizException.of(ErrorCode.E_USR_4091);
 
+        // 1. 查询该用户作为 PRIMARY_GUARDIAN 的患者列表
+        List<Long> primaryPatientIds = guardianRelationRepository.findPrimaryActivePatientIds(userId);
+
+        // 2. 对每个患者检查是否存在进行中的寻回任务，执行顺位继承或阻断
+        OffsetDateTime now = OffsetDateTime.now();
+        for (Long patientId : primaryPatientIds) {
+            rescueTaskRepository.findActiveByPatient(patientId).ifPresent(activeTask -> {
+                // 2a. 查找该患者其他在岗监护人（按加入时间升序，取最早的作为继承人）
+                List<GuardianRelationEntity> others =
+                        guardianRelationRepository.findOtherActiveGuardiansByPatient(patientId, userId);
+                if (others.isEmpty()) {
+                    // 仅一名监护人且任务进行中 → 阻断禁用，要求管理员先关闭任务
+                    PatientProfileEntity patient = patientProfileRepository.findById(patientId)
+                            .orElseThrow(() -> BizException.of(ErrorCode.E_USR_4094));
+                    log.warn("[disable] 阻断禁用 userId={} patientId={} name={} 唯一监护人且任务进行中",
+                            userId, patientId, patient.getName());
+                    throw BizException.of(ErrorCode.E_USR_4094);
+                }
+
+                // 2b. 顺位继承：将加入时间最早的 GUARDIAN 晋升为 PRIMARY_GUARDIAN
+                GuardianRelationEntity successor = others.get(0);
+                // 降级原主监护关系（不撤销，保留历史关系，改为普通 GUARDIAN）
+                GuardianRelationEntity oldPrimary = guardianRelationRepository
+                        .findByPatientIdAndRelationRoleAndRelationStatus(patientId, "PRIMARY_GUARDIAN", "ACTIVE")
+                        .orElse(null);
+                if (oldPrimary != null) {
+                    oldPrimary.setRelationRole("GUARDIAN");
+                    guardianRelationRepository.save(oldPrimary);
+                }
+                // 晋升继承人
+                successor.setRelationRole("PRIMARY_GUARDIAN");
+                guardianRelationRepository.save(successor);
+
+                // 2c. 站内通知（同步落库，保证事务内可见）
+                PatientProfileEntity patient = patientProfileRepository.findById(patientId).orElse(null);
+                String patientName = patient != null ? patient.getName() : ("患者#" + patientId);
+                UserEntity successorUser = userRepository.findById(successor.getUserId()).orElse(null);
+                if (successorUser != null) {
+                    NotificationInboxEntity inbox = new NotificationInboxEntity();
+                    inbox.setUserId(successor.getUserId());
+                    inbox.setType("GUARDIAN_PROMOTED");
+                    inbox.setTitle("您已成为主监护人");
+                    inbox.setContent(String.format(
+                            "原主监护人账号因管理原因被停用。您现在是患者【%s】的主监护人，当前寻回任务（编号：%s）正在进行中，请及时关注进展。",
+                            patientName, activeTask.getTaskNo()));
+                    inbox.setLevel("WARNING");
+                    inbox.setRelatedPatientId(patientId);
+                    inbox.setRelatedTaskId(activeTask.getId());
+                    inbox.setRelatedObjectId(String.valueOf(patientId));
+                    inbox.setTraceId(TraceIdUtil.currentTraceId());
+                    notificationInboxRepository.save(inbox);
+
+                    // 2d. Outbox 事件 → 消费方负责发送邮件 + 推送
+                    Map<String, Object> promotedPayload = new HashMap<>();
+                    promotedPayload.put("successor_user_id", String.valueOf(successor.getUserId()));
+                    promotedPayload.put("successor_email", successorUser.getEmail());
+                    promotedPayload.put("successor_nickname", successorUser.getNickname());
+                    promotedPayload.put("patient_id", String.valueOf(patientId));
+                    promotedPayload.put("patient_name", patientName);
+                    promotedPayload.put("task_no", activeTask.getTaskNo());
+                    promotedPayload.put("disabled_user_id", String.valueOf(userId));
+                    promotedPayload.put("occurred_at", now.toString());
+                    outboxService.publish(OutboxTopics.GUARDIAN_PROMOTED,
+                            String.valueOf(patientId), String.valueOf(successor.getUserId()), promotedPayload);
+
+                    log.info("[disable] 顺位继承完成 patientId={} 新主监护 userId={} email={}",
+                            patientId, successor.getUserId(), successorUser.getEmail());
+                }
+            });
+        }
+
+        // 3. 执行 CAS 禁用
         int rows = userRepository.casStatus(userId, "ACTIVE", "DISABLED");
         if (rows == 0) throw BizException.of(ErrorCode.E_USR_4091);
 
-        // 吊销 JWT
+        // 4. 立即吊销 JWT
         jwtRevocationService.revokeAllForUser(userId);
 
-        // Outbox
+        // 5. Outbox：user.disabled（含 primaryPatientIds 供下游感知）
         Map<String, Object> payload = new HashMap<>();
         payload.put("user_id", String.valueOf(userId));
         payload.put("operator_user_id", me.getUserId());
         payload.put("reason", req.getReason());
-        payload.put("primary_patient_ids", guardianRelationRepository.findPrimaryActivePatientIds(userId)
-                .stream().map(String::valueOf).toList());
-        payload.put("occurred_at", OffsetDateTime.now().toString());
+        payload.put("primary_patient_ids", primaryPatientIds.stream().map(String::valueOf).toList());
+        payload.put("occurred_at", now.toString());
         outboxService.publish(OutboxTopics.USER_DISABLED,
                 String.valueOf(userId), String.valueOf(userId), payload);
 
         auditLogger.logSuccess("GOV", "admin.user.disable", String.valueOf(userId),
                 "HIGH", "CONFIRM_2",
-                Map.of("target_user_id", userId, "reason", req.getReason()));
+                Map.of("target_user_id", userId, "reason", req.getReason(),
+                        "guardian_promoted_patients", primaryPatientIds));
     }
 
     // =========================================================

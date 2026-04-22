@@ -37,4 +37,17 @@ public interface GuardianRelationRepository extends JpaRepository<GuardianRelati
     @Query("update GuardianRelationEntity g set g.relationStatus = 'REVOKED', g.revokedAt = CURRENT_TIMESTAMP " +
             "where g.userId = :userId and g.relationRole <> 'PRIMARY_GUARDIAN' and g.relationStatus = 'ACTIVE'")
     int revokeNonPrimaryForUser(@Param("userId") Long userId);
+
+    /**
+     * 查询患者的其他在岗监护人（排除指定 userId），按加入时间升序排列。
+     * <p>用于禁用主监护人时的顺位继承逻辑：取第一条作为新主监护人。</p>
+     */
+    @Query("select g from GuardianRelationEntity g " +
+            "where g.patientId = :patientId " +
+            "  and g.userId <> :excludeUserId " +
+            "  and g.relationStatus = 'ACTIVE' " +
+            "order by g.joinedAt asc")
+    List<GuardianRelationEntity> findOtherActiveGuardiansByPatient(
+            @Param("patientId") Long patientId,
+            @Param("excludeUserId") Long excludeUserId);
 }
