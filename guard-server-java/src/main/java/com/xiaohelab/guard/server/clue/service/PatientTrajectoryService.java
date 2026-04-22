@@ -8,6 +8,7 @@ import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.CoordUtil;
 import com.xiaohelab.guard.server.outbox.service.OutboxService;
+import com.xiaohelab.guard.server.patient.entity.PatientProfileEntity;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
