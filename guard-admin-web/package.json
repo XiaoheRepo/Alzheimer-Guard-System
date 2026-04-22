@@ -33,8 +33,7 @@
     "vue": "^3.5.25",
     "vue-echarts": "^8.0.1",
     "vue-i18n": "^9.14.1",
-    "vue-router": "^4.6.3",
-    "xlsx": "^0.18.5"
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.3",
