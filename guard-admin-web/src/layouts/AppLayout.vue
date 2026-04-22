@@ -129,12 +129,7 @@ const breadcrumb = computed(() => {
         <span v-if="!app.sidebarCollapsed">{{ t('app.name') }}</span>
         <span v-else>CH</span>
       </div>
-      <a-menu
-        theme="dark"
-        mode="inline"
-        :selected-keys="selectedKeys"
-        @click="onMenuClick"
-      >
+      <a-menu theme="dark" mode="inline" :selected-keys="selectedKeys" @click="onMenuClick">
         <a-menu-item v-for="m in menu" :key="m.path">
           <template v-if="m.icon" #icon>
             <component :is="iconMap[m.icon]" />
