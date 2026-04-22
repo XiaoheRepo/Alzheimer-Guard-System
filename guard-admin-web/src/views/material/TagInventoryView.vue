@@ -1,10 +1,15 @@
 <!-- src/views/material/TagInventoryView.vue / P-07a -->
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { getInventorySummary, batchGenerate, type TagInventorySummary } from '@/api/tag'
+import {
+  getInventorySummary,
+  batchGenerate,
+  type TagInventorySummary,
+  type TagInventoryRow,
+} from '@/api/tag'
 import PageHeader from '@/components/common/PageHeader.vue'
 import PermissionButton from '@/components/domain/PermissionButton.vue'
 import type { ApiError } from '@/utils/request'
@@ -20,6 +25,23 @@ const genDlg = reactive({
   quantity: 100,
   submitting: false,
 })
+
+// 按 tag_type 分组求和；KPI 卡片显示总览（QR_CODE + NFC 合计）
+const totals = computed(() => {
+  const acc = { unbound: 0, allocated: 0, bound: 0, suspected_lost: 0, lost: 0, voided: 0 }
+  const rows = summary.value?.summary ?? []
+  for (const r of rows) {
+    acc.unbound += r.unbound ?? 0
+    acc.allocated += r.allocated ?? 0
+    acc.bound += r.bound ?? 0
+    acc.suspected_lost += r.suspected_lost ?? 0
+    acc.lost += r.lost ?? 0
+    acc.voided += r.voided ?? 0
+  }
+  return acc
+})
+
+const rows = computed<TagInventoryRow[]>(() => summary.value?.summary ?? [])
 
 async function load() {
   loading.value = true
@@ -46,7 +68,8 @@ async function onGenSubmit() {
     })
     message.success(t('common.success'))
     genDlg.open = false
-    router.push(`/tags/batch-jobs/${res.job_id}`)
+    if (res.job_id) router.push(`/tags/batch-jobs/${res.job_id}`)
+    else load()
   } catch (e) {
     message.error((e as ApiError)?.message || t('error.UNKNOWN'))
   } finally {
@@ -61,7 +84,7 @@ const kpis = [
   { key: 'suspected_lost', label: t('field.tagState.SUSPECTED_LOST'), color: '#faad14' },
   { key: 'lost', label: t('field.tagState.LOST'), color: '#ff4d4f' },
   { key: 'voided', label: t('field.tagState.VOIDED'), color: '#666' },
-]
+] as const
 </script>
 
 <template>
@@ -80,11 +103,31 @@ const kpis = [
         <a-card>
           <div class="text-muted">{{ k.label }}</div>
           <div class="kpi-value" :style="{ color: k.color }">
-            {{ (summary && (summary[k.key] as number)) ?? 0 }}
+            {{ totals[k.key] ?? 0 }}
           </div>
         </a-card>
       </a-col>
     </a-row>
+
+    <a-card style="margin-top: 16px" :title="t('page.tag.byType')">
+      <a-table
+        :data-source="rows"
+        :pagination="false"
+        :loading="loading"
+        row-key="tag_type"
+        size="middle"
+        :columns="[
+          { title: t('page.tag.gen.type'), dataIndex: 'tag_type', width: 120 },
+          { title: t('field.tagState.total') || 'Total', dataIndex: 'total', width: 100 },
+          { title: t('field.tagState.UNBOUND'), dataIndex: 'unbound', width: 100 },
+          { title: t('field.tagState.ALLOCATED'), dataIndex: 'allocated', width: 100 },
+          { title: t('field.tagState.BOUND'), dataIndex: 'bound', width: 100 },
+          { title: t('field.tagState.SUSPECTED_LOST'), dataIndex: 'suspected_lost', width: 100 },
+          { title: t('field.tagState.LOST'), dataIndex: 'lost', width: 100 },
+          { title: t('field.tagState.VOIDED'), dataIndex: 'voided', width: 100 },
+        ]"
+      />
+    </a-card>
 
     <a-modal
       v-model:open="genDlg.open"

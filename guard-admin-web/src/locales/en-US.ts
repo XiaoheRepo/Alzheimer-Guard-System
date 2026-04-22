@@ -352,6 +352,7 @@ export default {
       },
     },
     tag: {
+      byType: 'Breakdown by Tag Type',
       gen: {
         btn: 'Batch Generate',
         title: 'Batch Generate Tags',

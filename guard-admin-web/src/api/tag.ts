@@ -2,15 +2,20 @@
 // 对齐 API_V2.0.md §3.4（标签库存 / 批量发号）
 import { http } from '@/utils/request'
 
-export interface TagInventorySummary {
-  unbound?: number
-  allocated?: number
-  bound?: number
+export interface TagInventoryRow {
+  tag_type: 'QR_CODE' | 'NFC'
+  total: number
+  unbound: number
+  allocated: number
+  bound: number
   suspected_lost?: number
-  lost?: number
-  voided?: number
-  trend?: { daily?: Array<{ date: string; value: number; series?: string }> }
-  [key: string]: unknown
+  lost: number
+  voided: number
+}
+
+export interface TagInventorySummary {
+  summary: TagInventoryRow[]
+  updated_at: string
 }
 
 export interface BatchJob {

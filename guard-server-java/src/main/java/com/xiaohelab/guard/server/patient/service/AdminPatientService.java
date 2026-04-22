@@ -75,7 +75,8 @@ public class AdminPatientService {
         assertAdmin(me);
         int size = normalizePageSize(pageSize);
         Long cursorId = CursorUtil.decodeId(cursor);
-        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        // 在 Java 侧转小写，避免 Hibernate 6 将 :kw 推断为 bytea 导致 lower(bytea) 错误
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim().toLowerCase();
 
         List<PatientProfileEntity> raw = patientProfileRepository.findForAdmin(
                 kw, status, gender, primaryGuardianUserId, cursorId,

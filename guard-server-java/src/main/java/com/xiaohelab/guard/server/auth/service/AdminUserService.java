@@ -202,7 +202,7 @@ public class AdminUserService {
 
         // 3. 游标翻页
         Long cursorId = CursorUtil.decodeId(cursor);
-        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim().toLowerCase();
 
         // 4. 多取 1 条以判断 has_next
         List<UserEntity> raw = userRepository.findForAdmin(

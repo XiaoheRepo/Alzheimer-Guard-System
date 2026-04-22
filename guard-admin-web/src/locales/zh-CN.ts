@@ -361,6 +361,7 @@ export default {
       },
     },
     tag: {
+      byType: '按标签类型统计',
       gen: {
         btn: '批量发号',
         title: '批量发号',

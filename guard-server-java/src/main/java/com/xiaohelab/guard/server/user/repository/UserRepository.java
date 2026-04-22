@@ -41,9 +41,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
      */
     @Query("select u from UserEntity u " +
             "where (:kw is null or " +
-            "       lower(u.username) like concat('%', lower(:kw), '%') or " +
-            "       lower(coalesce(u.nickname, '')) like concat('%', lower(:kw), '%') or " +
-            "       lower(u.email) like concat('%', lower(:kw), '%') or " +
+            "       lower(u.username) like concat('%', :kw, '%') or " +
+            "       lower(coalesce(u.nickname, '')) like concat('%', :kw, '%') or " +
+            "       lower(u.email) like concat('%', :kw, '%') or " +
             "       coalesce(u.phone, '') like concat('%', :kw, '%')) " +
             "  and u.role in :roles " +
             "  and (:statuses is null or u.status in :statuses) " +

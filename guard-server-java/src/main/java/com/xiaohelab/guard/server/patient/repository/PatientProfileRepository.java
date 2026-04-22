@@ -32,9 +32,9 @@ public interface PatientProfileRepository extends JpaRepository<PatientProfileEn
     @Query("select p from PatientProfileEntity p " +
             "where p.deletedAt is null " +
             "  and (:kw is null or " +
-            "       lower(p.name) like concat('%', lower(:kw), '%') or " +
-            "       lower(p.shortCode) like concat('%', lower(:kw), '%') or " +
-            "       lower(coalesce(p.profileNo, '')) like concat('%', lower(:kw), '%')) " +
+            "       lower(p.name) like concat('%', :kw, '%') or " +
+            "       lower(p.shortCode) like concat('%', :kw, '%') or " +
+            "       lower(coalesce(p.profileNo, '')) like concat('%', :kw, '%')) " +
             "  and (:status is null or p.lostStatus = :status) " +
             "  and (:gender is null or p.gender = :gender) " +
             "  and (:primaryUserId is null or exists (" +
