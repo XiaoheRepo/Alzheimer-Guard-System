@@ -33,12 +33,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final StringRedisTemplate redisTemplate;
+    private final JwtRevocationService jwtRevocationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** 构造注入 Token 解析器与 Redis（用于黑名单校验）。 */
-    public JwtAuthFilter(JwtTokenProvider tokenProvider, StringRedisTemplate redisTemplate) {
+    public JwtAuthFilter(JwtTokenProvider tokenProvider,
+                         StringRedisTemplate redisTemplate,
+                         JwtRevocationService jwtRevocationService) {
         this.tokenProvider = tokenProvider;
         this.redisTemplate = redisTemplate;
+        this.jwtRevocationService = jwtRevocationService;
     }
 
     /**
@@ -67,6 +71,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Long userId = Long.valueOf(c.getSubject());
                 String username = c.get("username", String.class);
                 String role = c.get("role", String.class);
+                // 用户级吊销校验（HC-02）：管理员禁用/注销/改角色后，对应用户的所有 JWT 立即失效
+                long issuedAtSec = c.getIssuedAt() == null ? 0L : c.getIssuedAt().getTime() / 1000L;
+                if (jwtRevocationService.isRevoked(userId, issuedAtSec)) {
+                    writeUnauthorized(response, ErrorCode.E_GOV_4011, "Token 已被管理员吊销,请重新登录");
+                    return;
+                }
                 AuthUser user = new AuthUser(userId, username, role);
                 List<SimpleGrantedAuthority> auths = List.of(new SimpleGrantedAuthority("ROLE_" + role));
                 UsernamePasswordAuthenticationToken auth =
