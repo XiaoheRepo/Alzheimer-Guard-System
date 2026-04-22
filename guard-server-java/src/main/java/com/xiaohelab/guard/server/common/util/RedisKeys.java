@@ -36,4 +36,10 @@ public final class RedisKeys {
     public static String shortCodeCooldown(String code) { return "shortcode:cd:" + code; }
 
     public static String configCache(String key) { return "cfg:" + key; }
+
+    /**
+     * 路人端照片水印代理 Token（HC-07, BR-010）。
+     * 存储原始 OSS URL，TTL 与 entry_token 保持一致，到期后代理端点返回 404。
+     */
+    public static String photoWmToken(String token) { return "photo:wm:" + token; }
 }
