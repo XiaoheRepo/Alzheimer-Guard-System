@@ -4,11 +4,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
-import {
-  getAdminPatient,
-  forceTransferPrimary,
-  type AdminPatientDetail,
-} from '@/api/patient'
+import { getAdminPatient, forceTransferPrimary, type AdminPatientDetail } from '@/api/patient'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusBadge from '@/components/domain/StatusBadge.vue'
 import PermissionButton from '@/components/domain/PermissionButton.vue'
@@ -100,14 +96,24 @@ async function onTransfer() {
         <a-descriptions-item :label="t('page.patient.col.shortCode')">
           {{ data.short_code || '-' }}
         </a-descriptions-item>
-        <a-descriptions-item :label="t('page.patient.col.name')">{{ data.patient_name }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.patient.col.name')">{{
+          data.patient_name
+        }}</a-descriptions-item>
         <a-descriptions-item :label="t('page.patient.col.status')">
           <StatusBadge kind="patientStatus" :value="data.status" />
         </a-descriptions-item>
-        <a-descriptions-item :label="t('page.patient.col.gender')">{{ data.gender || '-' }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.patient.col.age')">{{ data.age ?? '-' }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.patient.col.createdAt')">{{ fmtDateTime(data.created_at) }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.patient.col.tagCount')">{{ data.bound_tag_count ?? 0 }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.patient.col.gender')">{{
+          data.gender || '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.patient.col.age')">{{
+          data.age ?? '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.patient.col.createdAt')">{{
+          fmtDateTime(data.created_at)
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.patient.col.tagCount')">{{
+          data.bound_tag_count ?? 0
+        }}</a-descriptions-item>
       </a-descriptions>
     </a-card>
 
@@ -147,21 +153,13 @@ async function onTransfer() {
           <a-input v-model:value="transferForm.target_user_id" />
         </a-form-item>
         <a-form-item :label="t('page.patient.transfer.reason')" required>
-          <a-textarea
-            v-model:value="transferForm.reason"
-            :rows="4"
-            :maxlength="500"
-            show-count
-          />
+          <a-textarea v-model:value="transferForm.reason" :rows="4" :maxlength="500" show-count />
         </a-form-item>
         <a-form-item :label="t('page.patient.transfer.evidence')">
           <a-input v-model:value="transferForm.evidence_url" />
         </a-form-item>
         <a-form-item :label="t('page.patient.transfer.confirm')" required>
-          <a-input
-            v-model:value="transferForm.confirmText"
-            placeholder="CONFIRM"
-          />
+          <a-input v-model:value="transferForm.confirmText" placeholder="CONFIRM" />
         </a-form-item>
       </a-form>
     </a-modal>

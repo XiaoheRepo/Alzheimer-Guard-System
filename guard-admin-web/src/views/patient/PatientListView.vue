@@ -3,10 +3,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import {
-  listAdminPatients,
-  type AdminPatientListItem,
-} from '@/api/patient'
+import { listAdminPatients, type AdminPatientListItem } from '@/api/patient'
 import type { PatientStatus } from '@/types/enums'
 import PageHeader from '@/components/common/PageHeader.vue'
 import ProTable from '@/components/common/ProTable.vue'
@@ -82,16 +79,30 @@ onMounted(load)
         <a-form layout="inline">
           <a-form-item :label="t('page.patient.col.status')">
             <a-select v-model:value="filter.status" allow-clear style="width: 160px">
-              <a-select-option value="NORMAL">{{ t('field.patientStatus.NORMAL') }}</a-select-option>
-              <a-select-option value="MISSING_PENDING">{{ t('field.patientStatus.MISSING_PENDING') }}</a-select-option>
-              <a-select-option value="MISSING">{{ t('field.patientStatus.MISSING') }}</a-select-option>
+              <a-select-option value="NORMAL">{{
+                t('field.patientStatus.NORMAL')
+              }}</a-select-option>
+              <a-select-option value="MISSING_PENDING">{{
+                t('field.patientStatus.MISSING_PENDING')
+              }}</a-select-option>
+              <a-select-option value="MISSING">{{
+                t('field.patientStatus.MISSING')
+              }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="t('common.keyword')">
             <a-input v-model:value="filter.keyword" allow-clear />
           </a-form-item>
           <a-form-item>
-            <a-button type="primary" @click="() => { pagination.current = 1; load() }">
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  pagination.current = 1
+                  load()
+                }
+              "
+            >
               {{ t('common.search') }}
             </a-button>
           </a-form-item>
