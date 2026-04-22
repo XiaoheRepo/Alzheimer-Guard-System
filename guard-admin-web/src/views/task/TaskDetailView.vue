@@ -39,9 +39,9 @@ async function load() {
     const [s, tr, c] = await Promise.all([
       getTaskSnapshot(taskId.value),
       getLatestTrajectory(taskId.value).catch(() => null),
-      listClues({ task_id: taskId.value, limit: 50 }).catch(
-        () => ({ items: [] as ClueListItem[] }),
-      ),
+      listClues({ task_id: taskId.value, limit: 50 }).catch(() => ({
+        items: [] as ClueListItem[],
+      })),
     ])
     snap.value = s
     traj.value = tr
@@ -95,11 +95,7 @@ async function onCloseSubmit() {
 
 const canOperate = computed(() => {
   const s = snap.value?.status
-  return (
-    auth.isBackofficeAllowed() &&
-    s &&
-    ['CREATED', 'ACTIVE', 'SUSTAINED'].includes(s as string)
-  )
+  return auth.isBackofficeAllowed() && s && ['CREATED', 'ACTIVE', 'SUSTAINED'].includes(s as string)
 })
 </script>
 
@@ -142,9 +138,15 @@ const canOperate = computed(() => {
             ({{ snap.patient_snapshot.short_code }})
           </span>
         </a-descriptions-item>
-        <a-descriptions-item :label="t('page.task.col.source')">{{ snap.source || '-' }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.task.col.createdAt')">{{ fmtDateTime(snap.created_at) }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.task.col.closedAt')">{{ fmtDateTime(snap.closed_at) || '-' }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.task.col.source')">{{
+          snap.source || '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.task.col.createdAt')">{{
+          fmtDateTime(snap.created_at)
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.task.col.closedAt')">{{
+          fmtDateTime(snap.closed_at) || '-'
+        }}</a-descriptions-item>
         <a-descriptions-item :label="t('page.task.closeType')" v-if="snap.close_type">
           {{ snap.close_type }}
         </a-descriptions-item>
@@ -158,13 +160,22 @@ const canOperate = computed(() => {
       <a-tab-pane key="overview" :tab="t('page.task.tab.overview')">
         <a-row :gutter="16">
           <a-col :md="8">
-            <a-statistic :title="t('page.task.clueTotal')" :value="snap?.clue_summary?.total_clue_count ?? 0" />
+            <a-statistic
+              :title="t('page.task.clueTotal')"
+              :value="snap?.clue_summary?.total_clue_count ?? 0"
+            />
           </a-col>
           <a-col :md="8">
-            <a-statistic :title="t('page.task.clueValid')" :value="snap?.clue_summary?.valid_clue_count ?? 0" />
+            <a-statistic
+              :title="t('page.task.clueValid')"
+              :value="snap?.clue_summary?.valid_clue_count ?? 0"
+            />
           </a-col>
           <a-col :md="8">
-            <a-statistic :title="t('page.task.trajPoint')" :value="snap?.trajectory_summary?.point_count ?? 0" />
+            <a-statistic
+              :title="t('page.task.trajPoint')"
+              :value="snap?.trajectory_summary?.point_count ?? 0"
+            />
           </a-col>
         </a-row>
       </a-tab-pane>

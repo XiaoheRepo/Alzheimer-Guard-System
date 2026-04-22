@@ -90,16 +90,34 @@ onMounted(load)
             <a-select v-model:value="filter.status" allow-clear style="width: 180px">
               <a-select-option value="CREATED">{{ t('field.taskStatus.CREATED') }}</a-select-option>
               <a-select-option value="ACTIVE">{{ t('field.taskStatus.ACTIVE') }}</a-select-option>
-              <a-select-option value="SUSTAINED">{{ t('field.taskStatus.SUSTAINED') }}</a-select-option>
-              <a-select-option value="CLOSED_FOUND">{{ t('field.taskStatus.CLOSED_FOUND') }}</a-select-option>
-              <a-select-option value="CLOSED_FALSE_ALARM">{{ t('field.taskStatus.CLOSED_FALSE_ALARM') }}</a-select-option>
+              <a-select-option value="SUSTAINED">{{
+                t('field.taskStatus.SUSTAINED')
+              }}</a-select-option>
+              <a-select-option value="CLOSED_FOUND">{{
+                t('field.taskStatus.CLOSED_FOUND')
+              }}</a-select-option>
+              <a-select-option value="CLOSED_FALSE_ALARM">{{
+                t('field.taskStatus.CLOSED_FALSE_ALARM')
+              }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="t('common.keyword')">
-            <a-input v-model:value="filter.keyword" :placeholder="t('page.task.keywordPH')" allow-clear />
+            <a-input
+              v-model:value="filter.keyword"
+              :placeholder="t('page.task.keywordPH')"
+              allow-clear
+            />
           </a-form-item>
           <a-form-item>
-            <a-button type="primary" @click="() => { pagination.current = 1; load() }">
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  pagination.current = 1
+                  load()
+                }
+              "
+            >
               {{ t('common.search') }}
             </a-button>
             <a-button style="margin-left: 8px" @click="reset">{{ t('common.reset') }}</a-button>

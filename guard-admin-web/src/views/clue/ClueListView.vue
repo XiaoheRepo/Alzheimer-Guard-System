@@ -79,9 +79,15 @@ onMounted(load)
         <a-form layout="inline">
           <a-form-item :label="t('page.clue.col.state')">
             <a-select v-model:value="filter.review_state" allow-clear style="width: 160px">
-              <a-select-option value="PENDING">{{ t('field.clueReviewState.PENDING') }}</a-select-option>
-              <a-select-option value="VALID">{{ t('field.clueReviewState.VALID') }}</a-select-option>
-              <a-select-option value="INVALID">{{ t('field.clueReviewState.INVALID') }}</a-select-option>
+              <a-select-option value="PENDING">{{
+                t('field.clueReviewState.PENDING')
+              }}</a-select-option>
+              <a-select-option value="VALID">{{
+                t('field.clueReviewState.VALID')
+              }}</a-select-option>
+              <a-select-option value="INVALID">{{
+                t('field.clueReviewState.INVALID')
+              }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="t('page.clue.col.risk')">
@@ -95,7 +101,15 @@ onMounted(load)
             <a-input v-model:value="filter.keyword" allow-clear />
           </a-form-item>
           <a-form-item>
-            <a-button type="primary" @click="() => { pagination.current = 1; load() }">
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  pagination.current = 1
+                  load()
+                }
+              "
+            >
               {{ t('common.search') }}
             </a-button>
           </a-form-item>

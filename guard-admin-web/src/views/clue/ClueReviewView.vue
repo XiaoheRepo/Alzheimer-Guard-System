@@ -90,7 +90,15 @@ onMounted(load)
             <a-input v-model:value="filter.keyword" allow-clear />
           </a-form-item>
           <a-form-item>
-            <a-button type="primary" @click="() => { pagination.current = 1; load() }">
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  pagination.current = 1
+                  load()
+                }
+              "
+            >
               {{ t('common.search') }}
             </a-button>
           </a-form-item>
@@ -120,10 +128,6 @@ onMounted(load)
       </template>
     </ProTable>
 
-    <ClueDetailDrawer
-      v-model:open="drawerOpen"
-      :clue="currentClue"
-      @success="load"
-    />
+    <ClueDetailDrawer v-model:open="drawerOpen" :clue="currentClue" @success="load" />
   </div>
 </template>

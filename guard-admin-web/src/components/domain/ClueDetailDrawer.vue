@@ -107,7 +107,9 @@ async function submit() {
       <a-divider>{{ t('page.clue.history') }}</a-divider>
       <a-timeline v-if="clue.review_history?.length">
         <a-timeline-item v-for="(h, i) in clue.review_history" :key="i">
-          <div><strong>{{ h.action }}</strong> · {{ fmtDateTime(h.reviewed_at) }}</div>
+          <div>
+            <strong>{{ h.action }}</strong> · {{ fmtDateTime(h.reviewed_at) }}
+          </div>
           <div class="text-muted">{{ h.reason || '-' }}</div>
         </a-timeline-item>
       </a-timeline>
