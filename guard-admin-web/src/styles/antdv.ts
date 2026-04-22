@@ -32,11 +32,4 @@ export const darkTheme: ThemeConfig = {
   },
 }
 
-export const echartsPalette = [
-  '#F97316',
-  '#0EA5E9',
-  '#22C55E',
-  '#A855F7',
-  '#F59E0B',
-  '#64748B',
-]
+export const echartsPalette = ['#F97316', '#0EA5E9', '#22C55E', '#A855F7', '#F59E0B', '#64748B']
