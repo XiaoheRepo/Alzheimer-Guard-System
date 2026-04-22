@@ -64,7 +64,9 @@ const percent = computed(() => {
           </a-tag>
         </a-descriptions-item>
         <a-descriptions-item :label="t('page.tag.job.total')">{{ job.total }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.tag.job.generated')">{{ job.generated }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.tag.job.generated')">{{
+          job.generated
+        }}</a-descriptions-item>
         <a-descriptions-item :label="t('page.tag.job.createdAt')">
           {{ fmtDateTime(job.created_at) }}
         </a-descriptions-item>

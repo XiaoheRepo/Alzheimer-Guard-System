@@ -77,19 +77,37 @@ onMounted(load)
         <a-form layout="inline">
           <a-form-item :label="t('page.material.col.state')">
             <a-select v-model:value="filter.state" allow-clear style="width: 180px">
-              <a-select-option value="PENDING_AUDIT">{{ t('field.orderState.PENDING_AUDIT') }}</a-select-option>
-              <a-select-option value="PENDING_SHIP">{{ t('field.orderState.PENDING_SHIP') }}</a-select-option>
+              <a-select-option value="PENDING_AUDIT">{{
+                t('field.orderState.PENDING_AUDIT')
+              }}</a-select-option>
+              <a-select-option value="PENDING_SHIP">{{
+                t('field.orderState.PENDING_SHIP')
+              }}</a-select-option>
               <a-select-option value="SHIPPED">{{ t('field.orderState.SHIPPED') }}</a-select-option>
-              <a-select-option value="RECEIVED">{{ t('field.orderState.RECEIVED') }}</a-select-option>
-              <a-select-option value="CANCELLED">{{ t('field.orderState.CANCELLED') }}</a-select-option>
-              <a-select-option value="EXCEPTION">{{ t('field.orderState.EXCEPTION') }}</a-select-option>
+              <a-select-option value="RECEIVED">{{
+                t('field.orderState.RECEIVED')
+              }}</a-select-option>
+              <a-select-option value="CANCELLED">{{
+                t('field.orderState.CANCELLED')
+              }}</a-select-option>
+              <a-select-option value="EXCEPTION">{{
+                t('field.orderState.EXCEPTION')
+              }}</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item :label="t('common.keyword')">
             <a-input v-model:value="filter.keyword" allow-clear />
           </a-form-item>
           <a-form-item>
-            <a-button type="primary" @click="() => { pagination.current = 1; load() }">
+            <a-button
+              type="primary"
+              @click="
+                () => {
+                  pagination.current = 1
+                  load()
+                }
+              "
+            >
               {{ t('common.search') }}
             </a-button>
           </a-form-item>

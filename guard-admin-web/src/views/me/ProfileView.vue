@@ -55,22 +55,31 @@ async function onPwdSubmit() {
 
     <a-card :title="t('page.me.profile.title')">
       <a-descriptions bordered :column="2" size="small">
-        <a-descriptions-item :label="t('page.me.col.username')">{{ auth.user?.username }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.me.col.nickname')">{{ auth.user?.nickname }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.me.col.role')">{{ auth.user?.role }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.me.col.email')">{{ auth.user?.email || '-' }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.me.col.phone')">{{ auth.user?.phone || '-' }}</a-descriptions-item>
-        <a-descriptions-item :label="t('page.me.col.lastLogin')">{{ auth.user?.last_login_at || '-' }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.me.col.username')">{{
+          auth.user?.username
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.me.col.nickname')">{{
+          auth.user?.nickname
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.me.col.role')">{{
+          auth.user?.role
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.me.col.email')">{{
+          auth.user?.email || '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.me.col.phone')">{{
+          auth.user?.phone || '-'
+        }}</a-descriptions-item>
+        <a-descriptions-item :label="t('page.me.col.lastLogin')">{{
+          auth.user?.last_login_at || '-'
+        }}</a-descriptions-item>
       </a-descriptions>
     </a-card>
 
     <a-card :title="t('page.me.pref.title')" style="margin-top: 16px">
       <a-form :label-col="{ span: 4 }" :wrapper-col="{ span: 8 }">
         <a-form-item :label="t('common.locale')">
-          <a-select
-            :value="app.locale"
-            @update:value="(v: AppLocale) => app.setLocale(v)"
-          >
+          <a-select :value="app.locale" @update:value="(v: AppLocale) => app.setLocale(v)">
             <a-select-option value="zh-CN">中文</a-select-option>
             <a-select-option value="en-US">English</a-select-option>
           </a-select>

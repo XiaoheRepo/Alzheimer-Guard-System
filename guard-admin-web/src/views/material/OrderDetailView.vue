@@ -196,10 +196,18 @@ async function onCancel() {
             {{ it.material_type }} × {{ it.quantity }}
           </a-tag>
         </a-descriptions-item>
-        <a-descriptions-item :label="t('page.material.col.receiver')" :span="2" v-if="data.receiver">
+        <a-descriptions-item
+          :label="t('page.material.col.receiver')"
+          :span="2"
+          v-if="data.receiver"
+        >
           {{ data.receiver.name }} · {{ data.receiver.phone }} · {{ data.receiver.address }}
         </a-descriptions-item>
-        <a-descriptions-item :label="t('page.material.col.logistics')" :span="2" v-if="data.logistics?.tracking_no">
+        <a-descriptions-item
+          :label="t('page.material.col.logistics')"
+          :span="2"
+          v-if="data.logistics?.tracking_no"
+        >
           {{ data.logistics.carrier }} · {{ data.logistics.tracking_no }}
           <span v-if="data.logistics.shipped_at" class="text-muted">
             · {{ fmtDateTime(data.logistics.shipped_at) }}

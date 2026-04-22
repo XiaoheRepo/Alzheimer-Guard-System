@@ -85,10 +85,7 @@ const categoryTabs = computed(() => [
         }"
       >
         <template #renderItem="{ item }">
-          <a-list-item
-            :class="{ 'notif-unread': !item.read_at }"
-            @click="onRead(item)"
-          >
+          <a-list-item :class="{ 'notif-unread': !item.read_at }" @click="onRead(item)">
             <a-list-item-meta>
               <template #title>
                 <StatusBadge kind="notificationCategory" :value="item.category" />

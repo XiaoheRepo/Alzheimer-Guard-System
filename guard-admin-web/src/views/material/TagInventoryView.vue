@@ -4,11 +4,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import {
-  getInventorySummary,
-  batchGenerate,
-  type TagInventorySummary,
-} from '@/api/tag'
+import { getInventorySummary, batchGenerate, type TagInventorySummary } from '@/api/tag'
 import PageHeader from '@/components/common/PageHeader.vue'
 import PermissionButton from '@/components/domain/PermissionButton.vue'
 import type { ApiError } from '@/utils/request'
@@ -64,11 +60,7 @@ const kpis = [
     <PageHeader :title="t('menu.tagInventory')">
       <template #extra>
         <a-button :loading="loading" @click="load">{{ t('common.refresh') }}</a-button>
-        <PermissionButton
-          type="primary"
-          :roles="['SUPER_ADMIN']"
-          @click="genDlg.open = true"
-        >
+        <PermissionButton type="primary" :roles="['SUPER_ADMIN']" @click="genDlg.open = true">
           {{ t('page.tag.gen.btn') }}
         </PermissionButton>
       </template>
@@ -95,12 +87,7 @@ const kpis = [
     >
       <a-form layout="vertical">
         <a-form-item :label="t('page.tag.gen.count')" required>
-          <a-input-number
-            v-model:value="genDlg.count"
-            :min="1"
-            :max="10000"
-            style="width: 100%"
-          />
+          <a-input-number v-model:value="genDlg.count" :min="1" :max="10000" style="width: 100%" />
         </a-form-item>
         <a-form-item :label="t('page.tag.gen.remark')">
           <a-input v-model:value="genDlg.remark" :maxlength="200" show-count />
