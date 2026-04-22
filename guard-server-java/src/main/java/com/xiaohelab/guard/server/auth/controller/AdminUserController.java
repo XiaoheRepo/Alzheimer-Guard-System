@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.auth.controller;
 
+import com.xiaohelab.guard.server.auth.dto.AdminCreateRequest;
 import com.xiaohelab.guard.server.auth.dto.AdminUserActionRequest;
 import com.xiaohelab.guard.server.auth.dto.AdminUserDetailResponse;
 import com.xiaohelab.guard.server.auth.dto.AdminUserListItem;
@@ -13,6 +14,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * 管理员用户管理 - HTTP 入口（V2.1 增量）。
@@ -29,9 +32,18 @@ public class AdminUserController {
         this.adminUserService = adminUserService;
     }
 
+    @PostMapping
+    @Idempotent
+    @Operation(summary = "3.6.21 创建管理员账号（仅 SUPER_ADMIN，CONFIRM_2）")
+    public Result<Map<String, Object>> createAdmin(
+            @Valid @RequestBody AdminCreateRequest req,
+            @Parameter(description = "必须传 CONFIRM_2")
+            @RequestHeader(value = "X-Confirm-Level", required = false) String confirmLevel) {
+        return Result.ok(adminUserService.createAdmin(req, confirmLevel));
+    }
+
     @GetMapping
-    @Operation(summary = "3.6.15 用户列表（游标分页）")
-    public Result<CursorResponse<AdminUserListItem>> list(
+    @Operation(summary = "3.6.15 用户列表（游标分页）")    public Result<CursorResponse<AdminUserListItem>> list(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String role,
             @RequestParam(required = false) String status,

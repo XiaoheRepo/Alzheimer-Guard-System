@@ -59,6 +59,7 @@ public final class OutboxTopics {
     public static final String USER_ROLE_CHANGED       = "user.role.changed";
     public static final String USER_DISABLED           = "user.disabled";
     public static final String GUARDIAN_PROMOTED        = "user.guardian.promoted";
+    public static final String ADMIN_CREATED            = "admin.created";
     public static final String USER_ENABLED            = "user.enabled";
     public static final String USER_DEACTIVATED        = "user.deactivated";
     public static final String PATIENT_PRIMARY_GUARDIAN_FORCE_TRANSFERRED

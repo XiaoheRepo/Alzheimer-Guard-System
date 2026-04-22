@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.auth.service;
 
+import com.xiaohelab.guard.server.auth.dto.AdminCreateRequest;
 import com.xiaohelab.guard.server.auth.dto.AdminUserActionRequest;
 import com.xiaohelab.guard.server.auth.dto.AdminUserDetailResponse;
 import com.xiaohelab.guard.server.auth.dto.AdminUserListItem;
@@ -12,6 +13,7 @@ import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.JwtRevocationService;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.CursorUtil;
+import com.xiaohelab.guard.server.common.util.CryptoUtil;
 import com.xiaohelab.guard.server.common.util.DesensitizeUtil;
 import com.xiaohelab.guard.server.common.util.TraceIdUtil;
 import com.xiaohelab.guard.server.gov.service.AuditLogger;
@@ -29,6 +31,7 @@ import com.xiaohelab.guard.server.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,6 +79,7 @@ public class AdminUserService {
     private final OutboxService outboxService;
     private final AuditLogger auditLogger;
     private final JwtRevocationService jwtRevocationService;
+    private final PasswordEncoder passwordEncoder;
 
     public AdminUserService(UserRepository userRepository,
                             GuardianRelationRepository guardianRelationRepository,
@@ -85,7 +89,8 @@ public class AdminUserService {
                             NotificationInboxRepository notificationInboxRepository,
                             OutboxService outboxService,
                             AuditLogger auditLogger,
-                            JwtRevocationService jwtRevocationService) {
+                            JwtRevocationService jwtRevocationService,
+                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.guardianRelationRepository = guardianRelationRepository;
         this.tagApplyRecordRepository = tagApplyRecordRepository;
@@ -95,6 +100,77 @@ public class AdminUserService {
         this.outboxService = outboxService;
         this.auditLogger = auditLogger;
         this.jwtRevocationService = jwtRevocationService;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    // =========================================================
+    // 0. 创建管理员（POST /api/v1/admin/users）—— CRITICAL + CONFIRM_2
+    //    仅 SUPER_ADMIN 可调用；初始密码自动生成，一次性明文返回
+    // =========================================================
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> createAdmin(AdminCreateRequest req, String confirmLevel) {
+        AuthUser me = SecurityUtil.current();
+        // 仅 SUPER_ADMIN 可创建管理员
+        if (!me.isSuperAdmin()) throw BizException.of(ErrorCode.E_AUTH_4031);
+        requireConfirmLevel(confirmLevel, "CONFIRM_2");
+
+        // 1. 唯一性校验
+        if (userRepository.existsByUsername(req.getUsername())) {
+            throw BizException.of(ErrorCode.E_GOV_4091);
+        }
+        if (userRepository.existsByEmail(req.getEmail())) {
+            throw BizException.of(ErrorCode.E_GOV_4092);
+        }
+
+        // 2. 自动生成 16 位初始密码（字母+数字随机）
+        String tempPassword = CryptoUtil.randomToken(8); // 16 hex chars
+
+        // 3. 落库
+        UserEntity u = new UserEntity();
+        u.setUsername(req.getUsername());
+        u.setEmail(req.getEmail());
+        u.setEmailVerified(false);
+        u.setPasswordHash(passwordEncoder.encode(tempPassword));
+        u.setNickname(req.getNickname() != null && !req.getNickname().isBlank()
+                ? req.getNickname() : req.getUsername());
+        u.setRole("ADMIN");
+        u.setStatus("ACTIVE");
+        userRepository.save(u);
+
+        // 4. Outbox → 下游邮件服务发送欢迎邮件 + 初始密码（邮件内含密码，不持久化到 DB）
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("user_id", String.valueOf(u.getId()));
+        payload.put("username", u.getUsername());
+        payload.put("email", u.getEmail());
+        payload.put("nickname", u.getNickname());
+        payload.put("temp_password", tempPassword);   // 消费方用于组装欢迎邮件
+        payload.put("operator_user_id", me.getUserId());
+        payload.put("reason", req.getReason());
+        payload.put("occurred_at", OffsetDateTime.now().toString());
+        outboxService.publish(OutboxTopics.ADMIN_CREATED,
+                String.valueOf(u.getId()), String.valueOf(u.getId()), payload);
+
+        // 5. 审计
+        auditLogger.logSuccess("GOV", "admin.user.create", String.valueOf(u.getId()),
+                "CRITICAL", "CONFIRM_2",
+                Map.of("new_user_id", u.getId(), "username", u.getUsername(),
+                        "email", DesensitizeUtil.email(u.getEmail()), "reason", req.getReason()));
+
+        log.info("[Admin] SUPER_ADMIN {} 创建管理员账号 userId={} username={}",
+                me.getUserId(), u.getId(), u.getUsername());
+
+        // 6. 响应：一次性返回临时密码（前端弹窗展示，不可二次获取）
+        Map<String, Object> result = new HashMap<>();
+        result.put("user_id", String.valueOf(u.getId()));
+        result.put("username", u.getUsername());
+        result.put("email", u.getEmail());
+        result.put("nickname", u.getNickname());
+        result.put("role", "ADMIN");
+        result.put("status", "ACTIVE");
+        result.put("temp_password", tempPassword);
+        result.put("temp_password_note", "此密码仅展示一次，请立即通知管理员本人修改密码");
+        result.put("created_at", u.getCreatedAt());
+        return result;
     }
 
     // =========================================================
