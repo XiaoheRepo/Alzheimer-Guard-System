@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.patient.service;
 
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
@@ -101,7 +102,7 @@ class PatientServiceTest {
 
         assertThatThrownBy(() -> patientService.confirmSafe(7L))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_PRO_4092");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_PRO_4092);
         verify(outboxService, never()).publish(anyString(), anyString(), anyString(), anyMap());
     }
 }

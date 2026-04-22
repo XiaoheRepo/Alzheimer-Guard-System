@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.rescue.service;
 
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
@@ -85,7 +86,7 @@ class RescueTaskServiceTest {
 
         assertThatThrownBy(() -> rescueTaskService.create(req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_TASK_4091");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_TASK_4091);
     }
 
     @Test
@@ -114,7 +115,7 @@ class RescueTaskServiceTest {
 
         assertThatThrownBy(() -> rescueTaskService.close(100L, req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_TASK_4005");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_TASK_4005);
     }
 
     @Test
@@ -127,7 +128,7 @@ class RescueTaskServiceTest {
 
         assertThatThrownBy(() -> rescueTaskService.close(100L, req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_TASK_4093");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_TASK_4093);
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.xiaohelab.guard.server.ai.service;
 
 import com.xiaohelab.guard.server.ai.entity.AiIntentEntity;
 import com.xiaohelab.guard.server.ai.repository.AiIntentRepository;
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
@@ -76,7 +77,7 @@ class AiIntentServiceTest {
 
         assertThatThrownBy(() -> intentService.confirm("INT-2", "APPROVE", null))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_AI_4033");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_AI_4033);
     }
 
     @Test
@@ -88,7 +89,7 @@ class AiIntentServiceTest {
 
         assertThatThrownBy(() -> intentService.confirm("INT-3", "APPROVE", null))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_AI_4091");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_AI_4091);
     }
 
     private AiIntentEntity buildPending(String id, long uid) {

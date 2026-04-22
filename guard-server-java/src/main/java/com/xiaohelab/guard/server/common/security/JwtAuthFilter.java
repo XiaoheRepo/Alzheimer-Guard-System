@@ -35,11 +35,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /** 构造注入 Token 解析器与 Redis（用于黑名单校验）。 */
     public JwtAuthFilter(JwtTokenProvider tokenProvider, StringRedisTemplate redisTemplate) {
         this.tokenProvider = tokenProvider;
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * 核心过滤逻辑：
+     * <ol>
+     *   <li>读取 Authorization 头；无 Bearer Token 直接放行（白名单 URL 自行处理）；</li>
+     *   <li>校验 Redis 黑名单（已 logout 的 Token）；</li>
+     *   <li>解析 Claims，构造 {@link AuthUser} 并注入 {@link SecurityContextHolder}；</li>
+     *   <li>设置 MDC user_id，便于日志追踪。</li>
+     * </ol>
+     * 解析失败或黑名单命中 → 直接写回 401 + {@link ErrorCode#E_GOV_4011}，中断过滤链。
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -71,6 +82,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+    /**
+     * 直接向响应写入统一格式的错误 JSON。
+     * @param response HTTP 响应
+     * @param ec       错误码枚举（决定 HTTP 状态码与业务 code）
+     * @param msg      对用户友好的错误描述
+     */
     private void writeUnauthorized(HttpServletResponse response, ErrorCode ec, String msg) throws IOException {
         response.setStatus(ec.httpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

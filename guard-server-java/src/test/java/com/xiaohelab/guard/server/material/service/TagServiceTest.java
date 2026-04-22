@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.material.service;
 
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
@@ -80,7 +81,7 @@ class TagServiceTest {
 
         assertThatThrownBy(() -> tagService.bind("TAG-002", 7L))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_MAT_4091");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_MAT_4091);
     }
 
     @Test

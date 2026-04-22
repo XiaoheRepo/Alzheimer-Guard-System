@@ -27,10 +27,20 @@ public class WsTicketHandshakeInterceptor implements HandshakeInterceptor {
 
     private final StringRedisTemplate redisTemplate;
 
+    /** 注入 StringRedisTemplate，用于读取/销毁 ticket。 */
     public WsTicketHandshakeInterceptor(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * 在 WebSocket 握手前校验 ticket：
+     * <ul>
+     *   <li>ticket 缺失 → 直接拒绝握手；</li>
+     *   <li>Redis 查不到对应 userId（过期或已消费）→ 拒绝；</li>
+     *   <li>校验通过 → 删除 Redis key（一次性消费），并将 userId / ticket 写入 attributes，供后续 Handler 使用。</li>
+     * </ul>
+     * @return true 放行握手；false 拒绝握手（客户端收到 403）
+     */
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) {
@@ -51,10 +61,16 @@ public class WsTicketHandshakeInterceptor implements HandshakeInterceptor {
         return true;
     }
 
+    /** 握手完成后回调，本实现无需特殊处理。 */
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                 WebSocketHandler wsHandler, Exception exception) { /* no-op */ }
 
+    /**
+     * 从 HTTP 请求中抽取 ticket：
+     * 优先使用 ServletRequest.getParameter（Servlet 容器已解析好）；
+     * 否则回退到手动解析 URI query 字符串。
+     */
     private String extractTicket(ServerHttpRequest request) {
         if (request instanceof ServletServerHttpRequest s) {
             String t = s.getServletRequest().getParameter("ticket");

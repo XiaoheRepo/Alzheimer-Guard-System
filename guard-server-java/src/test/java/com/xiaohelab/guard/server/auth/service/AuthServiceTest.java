@@ -3,6 +3,7 @@ package com.xiaohelab.guard.server.auth.service;
 import com.xiaohelab.guard.server.auth.dto.LoginRequest;
 import com.xiaohelab.guard.server.auth.dto.RegisterRequest;
 import com.xiaohelab.guard.server.auth.dto.TokenResponse;
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.JwtTokenProvider;
 import com.xiaohelab.guard.server.gov.repository.WsTicketRepository;
@@ -58,7 +59,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.register(req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_GOV_4091");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_GOV_4091);
     }
 
     @Test
@@ -70,7 +71,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.register(req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_GOV_4092");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_GOV_4092);
     }
 
     @Test
@@ -102,7 +103,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(req, httpRequest))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_AUTH_4011");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_AUTH_4011);
     }
 
     @Test
@@ -116,7 +117,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(req, httpRequest))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_GOV_4031");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_GOV_4031);
     }
 
     @Test

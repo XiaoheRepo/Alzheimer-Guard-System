@@ -4,6 +4,7 @@ import com.xiaohelab.guard.server.clue.dto.ClueReportRequest;
 import com.xiaohelab.guard.server.clue.dto.ClueReviewRequest;
 import com.xiaohelab.guard.server.clue.entity.ClueRecordEntity;
 import com.xiaohelab.guard.server.clue.repository.ClueRecordRepository;
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
@@ -79,7 +80,7 @@ class ClueServiceTest {
 
         assertThatThrownBy(() -> clueService.review(999L, req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_GOV_4030");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_GOV_4030);
     }
 
     @Test
@@ -98,7 +99,7 @@ class ClueServiceTest {
 
         assertThatThrownBy(() -> clueService.review(10L, req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_CLUE_4221");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_CLUE_4221);
     }
 
     @Test

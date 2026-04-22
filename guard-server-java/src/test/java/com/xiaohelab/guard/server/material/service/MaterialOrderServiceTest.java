@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.material.service;
 
+import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
@@ -75,7 +76,7 @@ class MaterialOrderServiceTest {
 
         assertThatThrownBy(() -> orderService.review(10L, req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_MAT_4030");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_MAT_4030);
     }
 
     @Test
@@ -97,7 +98,7 @@ class MaterialOrderServiceTest {
 
         assertThatThrownBy(() -> orderService.review(10L, req))
                 .isInstanceOf(BizException.class)
-                .hasMessageContaining("E_MAT_4221");
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_MAT_4221);
     }
 
     @Test
