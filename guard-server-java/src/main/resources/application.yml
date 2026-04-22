@@ -78,6 +78,12 @@ guard:
   rate-limit:
     anonymous-per-ip-per-minute: 30
     anonymous-per-device-per-minute: 10
+  cors:
+    # 逗号分隔，或在环境变量 CORS_ALLOWED_ORIGINS 中覆盖
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:5174
+      - ${CORS_EXTRA_ORIGIN:}
     login-per-ip-per-minute: 10
   init:
     super-admin-username: ${SUPER_ADMIN_USERNAME:superadmin}
