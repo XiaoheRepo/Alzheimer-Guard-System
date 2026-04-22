@@ -123,14 +123,20 @@ const chartOption = computed(() => {
           <a-list-item>
             <a-list-item-meta>
               <template #title>
-                <a-tag :color="item.level === 'CRITICAL' ? 'red' : item.level === 'ALERT' ? 'orange' : 'blue'">
+                <a-tag
+                  :color="
+                    item.level === 'CRITICAL' ? 'red' : item.level === 'ALERT' ? 'orange' : 'blue'
+                  "
+                >
                   {{ item.level }}
                 </a-tag>
                 {{ item.message }}
               </template>
               <template #description>
                 {{ fmtDateTime(item.timestamp) }}
-                <span v-if="item.trace_id" class="text-muted">· Trace {{ item.trace_id.slice(0, 12) }}</span>
+                <span v-if="item.trace_id" class="text-muted"
+                  >· Trace {{ item.trace_id.slice(0, 12) }}</span
+                >
               </template>
             </a-list-item-meta>
           </a-list-item>
