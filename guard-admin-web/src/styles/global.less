@@ -1,0 +1,80 @@
+/* src/styles/global.less — 全局样式基座 */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text-1, rgba(0, 0, 0, 0.88));
+  background-color: var(--bg-layout, #f5f7fa);
+}
+
+:root {
+  --color-primary: #f97316;
+  --color-link: #0ea5e9;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --bg-layout: #f5f7fa;
+  --bg-container: #ffffff;
+  --bg-elevated: #ffffff;
+  --text-1: rgba(0, 0, 0, 0.88);
+  --text-2: rgba(0, 0, 0, 0.65);
+  --text-3: rgba(0, 0, 0, 0.45);
+  --border-1: rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme='dark'] {
+  --bg-layout: #141414;
+  --bg-container: #1f1f1f;
+  --bg-elevated: #262626;
+  --text-1: rgba(255, 255, 255, 0.88);
+  --text-2: rgba(255, 255, 255, 0.65);
+  --text-3: rgba(255, 255, 255, 0.45);
+  --border-1: rgba(255, 255, 255, 0.12);
+}
+
+.page-container {
+  padding: 16px 24px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-bar {
+  background: var(--bg-container);
+  padding: 16px 16px 0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-muted {
+  color: var(--text-3);
+}
+
+.text-mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+}
