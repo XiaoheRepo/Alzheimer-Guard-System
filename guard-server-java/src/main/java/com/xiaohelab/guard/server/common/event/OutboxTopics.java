@@ -62,4 +62,10 @@ public final class OutboxTopics {
     public static final String USER_DEACTIVATED        = "user.deactivated";
     public static final String PATIENT_PRIMARY_GUARDIAN_FORCE_TRANSFERRED
             = "patient.primary_guardian.force_transferred";
+
+    // V2.1 基线增量：AI 会话 / 推送令牌
+    public static final String AI_SESSION_ARCHIVED          = "ai.session.archived";
+    public static final String AI_MESSAGE_CANCELLED         = "ai.message.cancelled";
+    public static final String USER_PUSH_TOKEN_REGISTERED   = "user.push_token.registered";
+    public static final String USER_PUSH_TOKEN_REVOKED      = "user.push_token.revoked";
 }

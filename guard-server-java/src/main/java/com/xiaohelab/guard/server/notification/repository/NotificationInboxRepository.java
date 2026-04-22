@@ -25,4 +25,21 @@ public interface NotificationInboxRepository extends JpaRepository<NotificationI
     int markRead(@Param("uid") Long userId,
                  @Param("ids") java.util.Collection<Long> ids,
                  @Param("at") OffsetDateTime at);
+
+    /**
+     * 批量标记已读（V2.1 §3.8.4.1）。
+     * <ul>
+     *   <li>{@code type} 为 null 表示全类型；</li>
+     *   <li>{@code beforeTime} 为 null 表示不限时间上界。</li>
+     * </ul>
+     */
+    @Modifying
+    @Query("update NotificationInboxEntity n set n.readStatus = 'READ', n.readAt = :at " +
+            "where n.userId = :uid and n.readStatus = 'UNREAD' " +
+            "and (:type is null or n.type = :type) " +
+            "and (:beforeTime is null or n.createdAt <= :beforeTime)")
+    int markAllReadForUser(@Param("uid") Long userId,
+                           @Param("type") String type,
+                           @Param("beforeTime") OffsetDateTime beforeTime,
+                           @Param("at") OffsetDateTime at);
 }

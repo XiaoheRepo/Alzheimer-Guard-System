@@ -7,17 +7,27 @@ import com.xiaohelab.guard.server.ai.dto.AiChatRequest;
 import com.xiaohelab.guard.server.ai.dto.AiSessionCreateRequest;
 import com.xiaohelab.guard.server.ai.entity.AiSessionEntity;
 import com.xiaohelab.guard.server.ai.repository.AiSessionRepository;
+import com.xiaohelab.guard.server.common.dto.CursorResponse;
 import com.xiaohelab.guard.server.common.error.ErrorCode;
+import com.xiaohelab.guard.server.common.event.OutboxTopics;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.BusinessNoUtil;
+import com.xiaohelab.guard.server.common.util.CursorUtil;
+import com.xiaohelab.guard.server.common.util.RedisKeys;
+import com.xiaohelab.guard.server.gov.service.AuditLogger;
+import com.xiaohelab.guard.server.outbox.service.OutboxService;
 import com.xiaohelab.guard.server.patient.service.GuardianAuthorizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,13 +47,22 @@ public class AiSessionService {
     private final AiSessionRepository sessionRepository;
     private final GuardianAuthorizationService authorizationService;
     private final AiQuotaService quotaService;
+    private final OutboxService outboxService;
+    private final AuditLogger auditLogger;
+    private final StringRedisTemplate redis;
 
     public AiSessionService(AiSessionRepository sessionRepository,
                             GuardianAuthorizationService authorizationService,
-                            AiQuotaService quotaService) {
+                            AiQuotaService quotaService,
+                            OutboxService outboxService,
+                            AuditLogger auditLogger,
+                            StringRedisTemplate redis) {
         this.sessionRepository = sessionRepository;
         this.authorizationService = authorizationService;
         this.quotaService = quotaService;
+        this.outboxService = outboxService;
+        this.auditLogger = auditLogger;
+        this.redis = redis;
     }
 
     /**
@@ -165,5 +184,162 @@ public class AiSessionService {
     private String buildStubReply(String prompt, AiSessionEntity s) {
         return "[毕设桩回复] 针对患者 ID=" + s.getPatientId() + " 您的问题：" + prompt
                 + "\n建议：保持冷静、优先查看患者常规轨迹点、联系监护成员协同寻回。";
+    }
+
+    // ============================================================
+    // V2.1 §3.8.1 基线增量：list / archive / messages / cancel
+    // ============================================================
+
+    /**
+     * 会话列表（V2.1 §3.8.1.1）。Cursor 分页（按 id 倒序）。
+     */
+    public CursorResponse<Map<String, Object>> list(Long patientId, Long taskId,
+                                                    String status, String cursor, int pageSize) {
+        AuthUser user = SecurityUtil.current();
+        int size = Math.max(1, Math.min(pageSize, 50));
+        Long cursorId = CursorUtil.decodeId(cursor);
+        Page<AiSessionEntity> p = sessionRepository.findForList(
+                user.getUserId(), patientId, taskId, status, cursorId,
+                PageRequest.of(0, size));
+        List<AiSessionEntity> rows = p.getContent();
+        List<Map<String, Object>> items = new ArrayList<>(rows.size());
+        for (AiSessionEntity s : rows) items.add(toSummary(s));
+        boolean hasNext = rows.size() >= size;
+        String nextCursor = hasNext ? CursorUtil.encode(rows.get(rows.size() - 1).getId()) : null;
+        return CursorResponse.of(items, size, nextCursor, hasNext);
+    }
+
+    /**
+     * 归档会话（V2.1 §3.8.1.3）。
+     * <ul>
+     *   <li>幂等：已 ARCHIVED 则直接返回当前快照；</li>
+     *   <li>CAS：依赖 {@code @Version} 乐观锁，冲突抛 {@code E_AI_4091}；</li>
+     *   <li>Outbox：发布 {@link OutboxTopics#AI_SESSION_ARCHIVED}。</li>
+     * </ul>
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AiSessionEntity archive(String sessionId) {
+        AuthUser user = SecurityUtil.current();
+        AiSessionEntity s = sessionRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> BizException.of(ErrorCode.E_AI_4041));
+        // 1. 访问控制：仅所有者（或管理员）可归档
+        if (!user.isAdmin() && !s.getUserId().equals(user.getUserId())) {
+            throw BizException.of(ErrorCode.E_AI_4030);
+        }
+        if ("ARCHIVED".equals(s.getStatus())) {
+            // 2. 幂等：已归档直接返回，避免重复 Outbox
+            return s;
+        }
+        s.setStatus("ARCHIVED");
+        s.setArchivedAt(OffsetDateTime.now());
+        try {
+            s = sessionRepository.save(s);
+        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+            throw BizException.of(ErrorCode.E_AI_4091, "会话并发冲突,请重试");
+        }
+        outboxService.publish(OutboxTopics.AI_SESSION_ARCHIVED,
+                s.getSessionId(), s.getSessionId(),
+                Map.of("session_id", s.getSessionId(),
+                        "user_id", s.getUserId(),
+                        "patient_id", s.getPatientId(),
+                        "archived_at", s.getArchivedAt()));
+        auditLogger.logSuccess("AI", "ai.session.archive", s.getSessionId(),
+                "LOW", "CONFIRM_1", Map.of("patient_id", s.getPatientId()));
+        log.info("[AI] session archived session_id={} user_id={}", s.getSessionId(), s.getUserId());
+        return s;
+    }
+
+    /**
+     * 会话消息历史（V2.1 §3.8.1.4）。按消息自增序号 cursor 分页（messages JSONB 数组内的 seq 位）。
+     * <p>方向支持 {@code BACKWARD}（默认）/{@code FORWARD}。</p>
+     */
+    public CursorResponse<Map<String, Object>> getMessages(String sessionId, String cursor,
+                                                           String direction, int pageSize) {
+        AuthUser user = SecurityUtil.current();
+        AiSessionEntity s = sessionRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> BizException.of(ErrorCode.E_AI_4041));
+        if (!user.isAdmin() && !s.getUserId().equals(user.getUserId())) {
+            throw BizException.of(ErrorCode.E_AI_4030);
+        }
+        int size = Math.max(1, Math.min(pageSize, 100));
+        boolean backward = !"FORWARD".equalsIgnoreCase(direction);
+        List<Map<String, Object>> all = deserializeMessages(s.getMessages());
+        // 为每条消息注入 seq（从 1 开始）
+        for (int i = 0; i < all.size(); i++) {
+            Map<String, Object> m = new HashMap<>(all.get(i));
+            m.putIfAbsent("seq", i + 1);
+            m.putIfAbsent("message_id", "m_" + s.getSessionId() + "_" + (i + 1));
+            all.set(i, m);
+        }
+        Long cursorSeq = CursorUtil.decodeId(cursor);
+        List<Map<String, Object>> view = new ArrayList<>();
+        if (backward) {
+            // 从尾部向前
+            int end = (cursorSeq == null) ? all.size() : Math.min(cursorSeq.intValue() - 1, all.size());
+            int start = Math.max(0, end - size);
+            for (int i = end - 1; i >= start; i--) view.add(all.get(i));
+            boolean hasNext = start > 0;
+            String next = hasNext ? CursorUtil.encode((long) (start + 1)) : null;
+            return CursorResponse.of(view, size, next, hasNext);
+        } else {
+            int start = (cursorSeq == null) ? 0 : Math.max(0, cursorSeq.intValue());
+            int end = Math.min(start + size, all.size());
+            for (int i = start; i < end; i++) view.add(all.get(i));
+            boolean hasNext = end < all.size();
+            String next = hasNext ? CursorUtil.encode((long) end) : null;
+            return CursorResponse.of(view, size, next, hasNext);
+        }
+    }
+
+    /**
+     * 取消正在进行的消息生成（V2.1 §3.8.1.5）。
+     * <p>Redis 标记 {@code ai:cancel:{sid}:{mid}} 通知流式 worker；幂等。</p>
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> cancelMessage(String sessionId, String messageId) {
+        AuthUser user = SecurityUtil.current();
+        AiSessionEntity s = sessionRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> BizException.of(ErrorCode.E_AI_4041));
+        if (!user.isAdmin() && !s.getUserId().equals(user.getUserId())) {
+            throw BizException.of(ErrorCode.E_AI_4030);
+        }
+        String key = RedisKeys.aiCancel(sessionId, messageId);
+        redis.opsForValue().set(key, "1", Duration.ofMinutes(5));
+        outboxService.publish(OutboxTopics.AI_MESSAGE_CANCELLED,
+                sessionId, sessionId,
+                Map.of("session_id", sessionId, "message_id", messageId,
+                        "user_id", s.getUserId(), "cancelled_at", OffsetDateTime.now()));
+        log.info("[AI] cancel message sid={} mid={}", sessionId, messageId);
+        return Map.of("session_id", sessionId, "message_id", messageId,
+                "cancelled_at", OffsetDateTime.now());
+    }
+
+    private Map<String, Object> toSummary(AiSessionEntity s) {
+        List<Map<String, Object>> msgs = deserializeMessages(s.getMessages());
+        String title = null;
+        Object lastAt = null;
+        for (Map<String, Object> m : msgs) {
+            if (title == null && "user".equals(m.get("role"))) {
+                Object c = m.get("content");
+                if (c != null) {
+                    String str = c.toString();
+                    title = str.length() > 24 ? str.substring(0, 24) + "…" : str;
+                }
+            }
+            lastAt = m.get("at");
+        }
+        Map<String, Object> out = new HashMap<>();
+        out.put("session_id", s.getSessionId());
+        out.put("patient_id", s.getPatientId());
+        out.put("task_id", s.getTaskId());
+        out.put("status", s.getStatus());
+        out.put("title", title == null ? "未命名会话" : title);
+        out.put("message_count", msgs.size());
+        out.put("total_tokens", s.getTotalTokens());
+        out.put("model_name", s.getModelName());
+        out.put("last_message_at", lastAt);
+        out.put("created_at", s.getCreatedAt());
+        out.put("archived_at", s.getArchivedAt());
+        return out;
     }
 }

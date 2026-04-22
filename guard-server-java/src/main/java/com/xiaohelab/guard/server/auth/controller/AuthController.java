@@ -4,11 +4,15 @@ import com.xiaohelab.guard.server.auth.dto.*;
 import com.xiaohelab.guard.server.auth.service.AuthService;
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.dto.Result;
+import com.xiaohelab.guard.server.common.security.AuthUser;
+import com.xiaohelab.guard.server.common.security.SecurityUtil;
+import com.xiaohelab.guard.server.pushtoken.service.UserPushTokenService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 /**
@@ -22,10 +26,12 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserPushTokenService pushTokenService;
 
     /** 构造注入 {@link AuthService}。 */
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserPushTokenService pushTokenService) {
         this.authService = authService;
+        this.pushTokenService = pushTokenService;
     }
 
     /**
@@ -76,13 +82,28 @@ public class AuthController {
     }
 
     /**
-     * 退出登录。将当前 Bearer Token 写入 Redis 黑名单直至其原始 exp。
-     * @param auth Authorization 头，可空（空时幂等返回成功）
+     * 退出登录（V2.1 §3.8.7.1）。
+     * <p>将 access token 加入 Redis 黑名单；若请求体提供 {@code refresh_token}，一并拉黑；
+     * 若提供 {@code push_token_id}，联动注销推送令牌。幂等。</p>
+     *
+     * @param auth Authorization 头（可空；为空时仍幂等返回成功）
+     * @param body 可选登出负载
      */
     @PostMapping("/logout")
-    public Result<Void> logout(@RequestHeader(value = "Authorization", required = false) String auth) {
-        authService.logout(auth);
-        return Result.ok();
+    @Idempotent
+    public Result<Map<String, Object>> logout(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @RequestBody(required = false) LogoutRequest body) {
+        String refreshToken = body == null ? null : body.getRefreshToken();
+        OffsetDateTime revokedAt = authService.logout(auth, refreshToken);
+        // 联动注销推送令牌（需登录上下文；未登录时 SecurityUtil.currentOrNull 返回 null 即跳过）
+        if (body != null && body.getPushTokenId() != null) {
+            AuthUser u = SecurityUtil.currentOrNull();
+            if (u != null) {
+                pushTokenService.revokeByIdForUser(u.getUserId(), body.getPushTokenId());
+            }
+        }
+        return Result.ok(Map.of("revoked_at", revokedAt));
     }
 
     /**

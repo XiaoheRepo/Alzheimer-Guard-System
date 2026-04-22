@@ -3,6 +3,7 @@ package com.xiaohelab.guard.server.notification.controller;
 import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
+import com.xiaohelab.guard.server.common.annotation.Idempotent;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.notification.entity.NotificationInboxEntity;
@@ -57,5 +58,34 @@ public class NotificationController {
         if (ids == null || ids.isEmpty()) throw BizException.of(ErrorCode.E_REQ_4220);
         int updated = inboxRepository.markRead(user.getUserId(), ids, OffsetDateTime.now());
         return Result.ok(Map.of("updated", updated));
+    }
+
+    /**
+     * 全部已读（V2.1 §3.8.4.1）。
+     * <p>入参：{@code type}（可选）、{@code before_time}（可选 ISO-8601）。</p>
+     * <p>返回：{@code {affected_count, read_at}}。受 {@link Idempotent} 保护，HC-04 幂等。</p>
+     */
+    @PostMapping("/read-all")
+    @Idempotent
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Map<String, Object>> readAll(@RequestBody(required = false) Map<String, Object> body) {
+        AuthUser user = SecurityUtil.current();
+        String type = null;
+        OffsetDateTime before = null;
+        if (body != null) {
+            Object t = body.get("type");
+            if (t instanceof String s && !s.isBlank()) type = s;
+            Object bt = body.get("before_time");
+            if (bt instanceof String bs && !bs.isBlank()) {
+                try {
+                    before = OffsetDateTime.parse(bs);
+                } catch (Exception ex) {
+                    throw BizException.of(ErrorCode.E_REQ_4220, "before_time 非 ISO-8601");
+                }
+            }
+        }
+        OffsetDateTime now = OffsetDateTime.now();
+        int affected = inboxRepository.markAllReadForUser(user.getUserId(), type, before, now);
+        return Result.ok(Map.of("affected_count", affected, "read_at", now));
     }
 }

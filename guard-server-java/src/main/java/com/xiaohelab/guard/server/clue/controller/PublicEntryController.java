@@ -7,7 +7,6 @@ import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.util.BusinessNoUtil;
-import com.xiaohelab.guard.server.common.util.PhotoWatermarkService;
 import com.xiaohelab.guard.server.common.util.RedisKeys;
 import com.xiaohelab.guard.server.material.entity.TagAssetEntity;
 import com.xiaohelab.guard.server.material.repository.TagAssetRepository;
@@ -41,7 +40,6 @@ public class PublicEntryController {
     private final TagAssetRepository tagRepository;
     private final ClueService clueService;
     private final StringRedisTemplate redis;
-    private final PhotoWatermarkService watermarkService;
 
     @Value("${guard.entry-token.ttl-seconds:600}")
     private long entryTokenTtl;
@@ -49,13 +47,11 @@ public class PublicEntryController {
     public PublicEntryController(PatientProfileRepository patientRepository,
                                  TagAssetRepository tagRepository,
                                  ClueService clueService,
-                                 StringRedisTemplate redis,
-                                 PhotoWatermarkService watermarkService) {
+                                 StringRedisTemplate redis) {
         this.patientRepository = patientRepository;
         this.tagRepository = tagRepository;
         this.clueService = clueService;
         this.redis = redis;
-        this.watermarkService = watermarkService;
     }
 
     @GetMapping("/r/{resourceToken}")

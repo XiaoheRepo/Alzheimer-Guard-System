@@ -148,8 +148,29 @@ public class AuthService {
 
     /** 注销（将 token 加入 Redis 黑名单）。 */
     public void logout(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return;
-        String token = authHeader.substring(7).trim();
+        logout(authHeader, null);
+    }
+
+    /**
+     * 登出（V2.1 §3.8.7.1 扩展）：可同时吊销 refresh_token。
+     * <p>幂等：token 已过期或为空时直接返回；返回当前服务端时间作为 revoked_at。</p>
+     *
+     * @param authHeader   Bearer access token 头
+     * @param refreshToken 可选 refresh_token（一并拉黑）
+     * @return 本次吊销的服务端时间
+     */
+    public OffsetDateTime logout(String authHeader, String refreshToken) {
+        OffsetDateTime revokedAt = OffsetDateTime.now();
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            blacklistToken(authHeader.substring(7).trim());
+        }
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            blacklistToken(refreshToken.trim());
+        }
+        return revokedAt;
+    }
+
+    private void blacklistToken(String token) {
         try {
             Claims c = tokenProvider.parse(token);
             long ttl = (c.getExpiration().getTime() - System.currentTimeMillis()) / 1000L;
@@ -158,7 +179,7 @@ public class AuthService {
                         "1", Duration.ofSeconds(ttl));
             }
         } catch (Exception ignore) {
-            // 已失效令牌，无需处理
+            // 已失效令牌，幂等忽略
         }
     }
 

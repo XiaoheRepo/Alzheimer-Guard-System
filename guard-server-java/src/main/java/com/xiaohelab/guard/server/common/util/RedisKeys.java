@@ -42,4 +42,22 @@ public final class RedisKeys {
      * 存储原始 OSS URL，TTL 与 entry_token 保持一致，到期后代理端点返回 404。
      */
     public static String photoWmToken(String token) { return "photo:wm:" + token; }
+
+    /** 滑块/CAPTCHA 一次性 Token（V2.1 §3.8.2.2，TTL 5 min，SETNX NX 防重放）。 */
+    public static String captchaToken(String token) { return "captcha:token:" + token; }
+
+    /** AI 消息取消信号（V2.1 §3.8.1.5，给流式 worker 的协作标记，TTL 5 min）。 */
+    public static String aiCancel(String sessionId, String messageId) {
+        return "ai:cancel:" + sessionId + ":" + messageId;
+    }
+
+    /** 公开域限流（V2.1 §3.8.2/4291，按 IP+短码，1 min 窗口）。 */
+    public static String publicRateLimit(String scene, String key) {
+        return "ratelimit:public:" + scene + ":" + key + ":m1";
+    }
+
+    /** 推送令牌设备唯一校验（可选：注册时的分布式锁）。 */
+    public static String pushTokenLock(Long userId, String deviceId) {
+        return "lock:push:" + userId + ":" + deviceId;
+    }
 }
