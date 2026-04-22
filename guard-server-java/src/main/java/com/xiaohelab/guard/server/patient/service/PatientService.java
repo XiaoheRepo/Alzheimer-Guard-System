@@ -207,6 +207,83 @@ public class PatientService {
         return toResponse(p);
     }
 
+    /**
+     * 3.3.3 更新外观特征（API §3.3.3）。
+     * <p>触发 profile.appearance.updated，供任务快照投影刷新。</p>
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public PatientResponse updateAppearance(Long patientId, AppearanceUpdateRequest req) {
+        AuthUser user = SecurityUtil.current();
+        PatientProfileEntity p = authorizationService.assertGuardian(user, patientId);
+        boolean changed = false;
+        if (req.getHeightCm() != null) { p.setAppearanceHeightCm(req.getHeightCm()); changed = true; }
+        if (req.getWeightKg() != null) { p.setAppearanceWeightKg(req.getWeightKg()); changed = true; }
+        if (req.getClothing() != null) { p.setAppearanceClothing(req.getClothing()); changed = true; }
+        if (req.getFeatures() != null) { p.setAppearanceFeatures(req.getFeatures()); changed = true; }
+        if (!changed) return toResponse(p);
+        p.setProfileVersion(p.getProfileVersion() + 1);
+        patientRepository.save(p);
+        outboxService.publish(OutboxTopics.PROFILE_UPDATED, String.valueOf(p.getId()),
+                String.valueOf(p.getId()),
+                Map.of("patient_id", p.getId(),
+                        "profile_version", p.getProfileVersion(),
+                        "scope", "appearance"));
+        log.info("[Patient] appearance updated patientId={} by={}", p.getId(), user.getUserId());
+        return toResponse(p);
+    }
+
+    /**
+     * 3.3.5 走失 / 安全确认（API §3.3.5）。
+     * <ul>
+     *   <li>action=CONFIRM_SAFE：MISSING_PENDING → NORMAL</li>
+     *   <li>action=CONFIRM_MISSING：MISSING_PENDING → MISSING，并发布
+     *       {@link OutboxTopics#PATIENT_MISSING_PENDING} 事件，供 AUTO_UPGRADE 任务创建流水线消费</li>
+     * </ul>
+     * @return Map 含 patient_id / lost_status / 可能的 task 信息（由后台流水填充）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> missingPendingConfirm(Long patientId, MissingPendingConfirmRequest req) {
+        AuthUser user = SecurityUtil.current();
+        PatientProfileEntity p = authorizationService.assertGuardian(user, patientId);
+        // 1. 仅 MISSING_PENDING 状态可确认
+        if (!"MISSING_PENDING".equals(p.getLostStatus())) {
+            throw BizException.of(ErrorCode.E_PRO_4092);
+        }
+        String action = req.getAction();
+        if ("CONFIRM_SAFE".equals(action)) {
+            p.setLostStatus("NORMAL");
+        } else if ("CONFIRM_MISSING".equals(action)) {
+            p.setLostStatus("MISSING");
+        } else {
+            throw BizException.of(ErrorCode.E_PRO_4015);
+        }
+        p.setLostStatusEventTime(OffsetDateTime.now());
+        p.setProfileVersion(p.getProfileVersion() + 1);
+        patientRepository.save(p);
+
+        // 2. 发布事件
+        if ("CONFIRM_SAFE".equals(action)) {
+            outboxService.publish(OutboxTopics.PATIENT_CONFIRMED_SAFE, String.valueOf(p.getId()),
+                    String.valueOf(p.getId()), Map.of("patient_id", p.getId(),
+                            "user_id", user.getUserId(), "remark", req.getRemark() == null ? "" : req.getRemark()));
+        } else {
+            outboxService.publish(OutboxTopics.PATIENT_MISSING_PENDING, String.valueOf(p.getId()),
+                    String.valueOf(p.getId()), Map.of("patient_id", p.getId(),
+                            "confirmed_by", user.getUserId(),
+                            "source", "FAMILY_CONFIRM",
+                            "remark", req.getRemark() == null ? "" : req.getRemark()));
+        }
+        log.info("[Patient] missingPending confirm patientId={} action={} by={}",
+                p.getId(), action, user.getUserId());
+        return Map.of(
+                "patient_id", String.valueOf(p.getId()),
+                "lost_status", p.getLostStatus(),
+                "action", action,
+                "profile_version", p.getProfileVersion(),
+                "event_time", p.getLostStatusEventTime()
+        );
+    }
+
     private String generateUniqueShortCode() {
         for (int i = 0; i < 10; i++) {
             String code = BusinessNoUtil.shortCode();

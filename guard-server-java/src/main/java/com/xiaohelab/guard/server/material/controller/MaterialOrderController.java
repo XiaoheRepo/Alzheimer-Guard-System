@@ -1,6 +1,7 @@
 package com.xiaohelab.guard.server.material.controller;
 
 import com.xiaohelab.guard.server.common.annotation.Idempotent;
+import com.xiaohelab.guard.server.common.dto.PagedResponse;
 import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.material.dto.OrderCreateRequest;
 import com.xiaohelab.guard.server.material.dto.OrderResolveExceptionRequest;
@@ -39,12 +40,16 @@ public class MaterialOrderController {
     }
 
     @GetMapping
-    public Result<Page<TagApplyRecordEntity>> list(@RequestParam(defaultValue = "0") int page,
-                                                   @RequestParam(defaultValue = "20") int size) {
-        return Result.ok(orderService.listMine(page, size));
+    public Result<PagedResponse<TagApplyRecordEntity>> list(
+            @RequestParam(name = "page_no", defaultValue = "1") int pageNo,
+            @RequestParam(name = "page_size", defaultValue = "20") int pageSize) {
+        int idx = Math.max(pageNo, 1) - 1;
+        int size = Math.min(Math.max(pageSize, 1), 100);
+        Page<TagApplyRecordEntity> page = orderService.listMine(idx, size);
+        return Result.ok(PagedResponse.fromPage(page, pageNo, pageSize));
     }
 
-    @PostMapping("/{orderId}/review")
+    @PostMapping({"/{orderId}/approve", "/{orderId}/review"})
     @Idempotent
     public Result<TagApplyRecordEntity> review(@PathVariable Long orderId,
                                                @Valid @RequestBody OrderReviewRequest req) {
