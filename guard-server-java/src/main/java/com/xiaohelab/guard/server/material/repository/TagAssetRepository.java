@@ -23,4 +23,8 @@ public interface TagAssetRepository extends JpaRepository<TagAssetEntity, Long> 
     @Query(value = "SELECT * FROM tag_asset WHERE status = 'UNBOUND' AND tag_type = :tagType " +
             "ORDER BY id ASC LIMIT :limit FOR UPDATE SKIP LOCKED", nativeQuery = true)
     List<TagAssetEntity> claimUnbound(@Param("tagType") String tagType, @Param("limit") int limit);
+
+    /** 库存聚合：返回 [tag_type, status, count] 行。 */
+    @Query("SELECT t.tagType, t.status, COUNT(t) FROM TagAssetEntity t GROUP BY t.tagType, t.status")
+    List<Object[]> aggInventoryByTypeAndStatus();
 }
