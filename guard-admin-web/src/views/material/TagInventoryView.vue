@@ -14,7 +14,12 @@ const router = useRouter()
 
 const summary = ref<TagInventorySummary | null>(null)
 const loading = ref(false)
-const genDlg = reactive({ open: false, count: 100, remark: '', submitting: false })
+const genDlg = reactive({
+  open: false,
+  tag_type: 'QR_CODE' as 'QR_CODE' | 'NFC',
+  quantity: 100,
+  submitting: false,
+})
 
 async function load() {
   loading.value = true
@@ -28,13 +33,17 @@ async function load() {
 onMounted(load)
 
 async function onGenSubmit() {
-  if (!genDlg.count || genDlg.count < 1 || genDlg.count > 10000) {
+  if (!genDlg.quantity || genDlg.quantity < 1 || genDlg.quantity > 10000) {
     message.warning(t('page.tag.gen.countRange'))
     return
   }
   genDlg.submitting = true
   try {
-    const res = await batchGenerate({ count: genDlg.count, remark: genDlg.remark || undefined })
+    const res = await batchGenerate({
+      tag_type: genDlg.tag_type,
+      quantity: genDlg.quantity,
+      request_time: new Date().toISOString(),
+    })
     message.success(t('common.success'))
     genDlg.open = false
     router.push(`/tags/batch-jobs/${res.job_id}`)
@@ -86,11 +95,19 @@ const kpis = [
       @ok="onGenSubmit"
     >
       <a-form layout="vertical">
-        <a-form-item :label="t('page.tag.gen.count')" required>
-          <a-input-number v-model:value="genDlg.count" :min="1" :max="10000" style="width: 100%" />
+        <a-form-item :label="t('page.tag.gen.type')" required>
+          <a-radio-group v-model:value="genDlg.tag_type">
+            <a-radio value="QR_CODE">QR_CODE</a-radio>
+            <a-radio value="NFC">NFC</a-radio>
+          </a-radio-group>
         </a-form-item>
-        <a-form-item :label="t('page.tag.gen.remark')">
-          <a-input v-model:value="genDlg.remark" :maxlength="200" show-count />
+        <a-form-item :label="t('page.tag.gen.count')" required>
+          <a-input-number
+            v-model:value="genDlg.quantity"
+            :min="1"
+            :max="10000"
+            style="width: 100%"
+          />
         </a-form-item>
       </a-form>
     </a-modal>

@@ -364,6 +364,7 @@ export default {
       gen: {
         btn: '批量发号',
         title: '批量发号',
+        type: '标签类型',
         count: '数量',
         remark: '备注',
         countRange: '数量需在 1–10000 之间',

@@ -30,12 +30,14 @@ export function getInventorySummary(): Promise<TagInventorySummary> {
   return http.get<TagInventorySummary>('/api/v1/tags/inventory/summary')
 }
 
-/** POST /api/v1/tags/batch-generate */
+/** POST /api/v1/tags/batch-generate — API_V2.0.md §3.4.8 */
 export function batchGenerate(body: {
-  count: number
-  remark?: string
-}): Promise<{ job_id: string }> {
-  return http.post<{ job_id: string }>('/api/v1/tags/batch-generate', body)
+  tag_type: 'QR_CODE' | 'NFC'
+  quantity: number
+  batch_key_id?: string
+  request_time: string
+}): Promise<{ job_id: string; status?: string; quantity?: number; created_at?: string }> {
+  return http.post('/api/v1/tags/batch-generate', body)
 }
 
 /** GET /api/v1/tags/batch-generate/jobs/{job_id} */

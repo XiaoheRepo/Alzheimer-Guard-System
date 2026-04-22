@@ -74,7 +74,7 @@ guard:
     ttl-seconds: 30
   public-entry-base-url: ${PUBLIC_ENTRY_BASE_URL:https://app.example.com}
   outbox:
-    polling-interval-ms: 1000
+    polling-interval-ms: 5000
     batch-size: 50
     max-retry: 5
     dead-threshold: 10

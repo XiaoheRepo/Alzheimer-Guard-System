@@ -355,9 +355,10 @@ export default {
       gen: {
         btn: 'Batch Generate',
         title: 'Batch Generate Tags',
-        count: 'Count',
+        type: 'Tag Type',
+        count: 'Quantity',
         remark: 'Remark',
-        countRange: 'Count must be between 1 and 10000',
+        countRange: 'Quantity must be between 1 and 10000',
       },
       job: {
         title: 'Batch Job',

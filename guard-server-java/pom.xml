@@ -82,12 +82,7 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
-        <!-- MQ -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-        </dependency>
-
+        <!-- MQ：BDD §3.3 ADR-006 — 事件总线使用 Redis Streams，不引入 Kafka -->
         <!-- Observability -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
