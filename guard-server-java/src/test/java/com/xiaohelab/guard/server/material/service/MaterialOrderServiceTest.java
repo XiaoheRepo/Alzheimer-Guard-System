@@ -4,6 +4,7 @@ import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.security.AuthUser;
 import com.xiaohelab.guard.server.common.security.SecurityUtil;
+import com.xiaohelab.guard.server.gov.service.AuditLogger;
 import com.xiaohelab.guard.server.material.dto.OrderCreateRequest;
 import com.xiaohelab.guard.server.material.dto.OrderReviewRequest;
 import com.xiaohelab.guard.server.material.entity.TagApplyRecordEntity;
@@ -38,6 +39,7 @@ class MaterialOrderServiceTest {
     @Mock TagAssetRepository tagRepository;
     @Mock GuardianAuthorizationService authorizationService;
     @Mock OutboxService outboxService;
+    @Mock AuditLogger auditLogger;
     @InjectMocks MaterialOrderService orderService;
 
     private MockedStatic<SecurityUtil> secMock;
