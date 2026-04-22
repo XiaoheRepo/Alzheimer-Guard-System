@@ -3,7 +3,16 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-type Kind = 'taskStatus' | 'clueReviewState' | 'orderState' | 'tagState' | 'patientStatus' | 'userStatus' | 'riskLevel' | 'userRole' | 'notificationCategory'
+type Kind =
+  | 'taskStatus'
+  | 'clueReviewState'
+  | 'orderState'
+  | 'tagState'
+  | 'patientStatus'
+  | 'userStatus'
+  | 'riskLevel'
+  | 'userRole'
+  | 'notificationCategory'
 
 const props = defineProps<{ kind: Kind; value?: string | null }>()
 const { t } = useI18n()

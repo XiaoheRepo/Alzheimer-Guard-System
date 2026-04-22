@@ -37,13 +37,7 @@ async function onCopy() {
 <template>
   <span class="copyable">
     <span class="text-mono ellipsis" :title="text || ''">{{ display }}</span>
-    <a-button
-      v-if="text"
-      type="link"
-      size="small"
-      :aria-label="t('common.copy')"
-      @click="onCopy"
-    >
+    <a-button v-if="text" type="link" size="small" :aria-label="t('common.copy')" @click="onCopy">
       <template #icon><CopyOutlined /></template>
     </a-button>
   </span>
