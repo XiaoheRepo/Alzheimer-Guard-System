@@ -24,8 +24,7 @@ export function configureRequest(h: InternalHandlers): void {
   Object.assign(handlers, h)
 }
 
-const BASE_URL: string =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+const BASE_URL: string = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
 
 export const request: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -119,10 +118,7 @@ function handleBizError(
 request.interceptors.response.use(
   (resp) => {
     const parsed = safeParse(resp.data)
-    const traceId =
-      (resp.headers['x-trace-id'] as string) ||
-      (parsed?.trace_id as string) ||
-      ''
+    const traceId = (resp.headers['x-trace-id'] as string) || (parsed?.trace_id as string) || ''
     if (parsed && parsed.code === 'ok') {
       return parsed.data as unknown
     }
