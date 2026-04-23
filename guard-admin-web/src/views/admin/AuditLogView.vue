@@ -36,7 +36,7 @@ const columns = computed(() => [
   { title: t('page.log.col.operator'), key: 'operator', width: 160 },
   { title: t('page.log.col.action'), dataIndex: 'action', width: 200 },
   { title: t('page.log.col.result'), key: 'result', width: 110 },
-  { title: t('page.log.col.riskLevel'), dataIndex: 'risk_level', width: 100 },
+  { title: t('page.log.col.riskLevel'), key: 'risk_level', width: 110 },
   { title: t('page.log.col.traceId'), key: 'trace_id', width: 160 },
   { title: t('common.operation'), key: 'detail', width: 100, fixed: 'right' },
 ])
@@ -176,6 +176,11 @@ onMounted(load)
         <template v-else-if="column.key === 'result'">
           <a-tag :color="record.result === 'SUCCESS' ? 'success' : 'error'">
             {{ record.result }}
+          </a-tag>
+        </template>
+        <template v-else-if="column.key === 'risk_level'">
+          <a-tag :color="{ LOW: 'default', MEDIUM: 'warning', HIGH: 'orange', CRITICAL: 'error' }[record.risk_level] ?? 'default'">
+            {{ record.risk_level }}
           </a-tag>
         </template>
         <template v-else-if="column.key === 'trace_id'">

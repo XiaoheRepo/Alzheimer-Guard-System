@@ -273,10 +273,14 @@ public class AdminUserService {
                                           String confirmLevel) {
         AuthUser me = SecurityUtil.current();
         assertAdmin(me);
-        assertNotSelf(me, userId);
+        // 规则 4：仅在角色变更时禁止操作自身，纯资料修改（昵称/邮箱/手机）允许自编辑
         UserEntity u = loadAndAssertVisible(userId, me);
 
         boolean hasRoleChange = req.getRole() != null && !req.getRole().equals(u.getRole());
+        // 规则 4：角色变更不可作用于自身
+        if (hasRoleChange) {
+            assertNotSelf(me, userId);
+        }
         // 规则 5：role 仅 SUPER_ADMIN 可改
         if (hasRoleChange && !me.isSuperAdmin()) {
             throw BizException.of(ErrorCode.E_USR_4035);
@@ -565,10 +569,12 @@ public class AdminUserService {
         if (me.getUserId().equals(targetUserId)) throw BizException.of(ErrorCode.E_USR_4034);
     }
 
-    /** 规则 2：加载并校验可见性；不可见一律返回 404（不泄露账号存在性）。 */
+    /** 规则 2：加载并校验可见性；不可见一律返回 404（不泄露账号存在性）。自身账号始终可见。 */
     private UserEntity loadAndAssertVisible(Long userId, AuthUser me) {
         UserEntity u = userRepository.findById(userId)
                 .orElseThrow(() -> BizException.of(ErrorCode.E_USR_4041));
+        // 自身账号始终允许加载（自编辑场景）
+        if (me.getUserId().equals(userId)) return u;
         if (!me.isSuperAdmin() && !"FAMILY".equals(u.getRole())) {
             // ADMIN 不可见 ADMIN/SUPER_ADMIN：按 4041 返回避免枚举
             throw BizException.of(ErrorCode.E_USR_4041);
