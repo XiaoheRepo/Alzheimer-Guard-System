@@ -28,6 +28,10 @@ public class CursorResponse<T> {
         return new CursorResponse<>(items, pageSize, nextCursor, hasNext);
     }
 
+    public static <T> CursorResponse<T> empty() {
+        return new CursorResponse<>(List.of(), 0, null, false);
+    }
+
     public List<T> getItems() { return items; }
     public void setItems(List<T> items) { this.items = items; }
     public int getPageSize() { return pageSize; }

@@ -50,6 +50,13 @@ export default {
     range7d: 'Last 7d',
     range14d: 'Last 14d',
     range30d: 'Last 30d',
+    locale: 'Language',
+    theme: 'Theme',
+    accentColor: 'Accent Color',
+    accentOrange: 'Brand Orange',
+    accentBlue: 'Sky Blue',
+    editProfile: 'Edit Profile',
+    changePassword: 'Change Password',
   },
   app: {
     name: 'Code Home',

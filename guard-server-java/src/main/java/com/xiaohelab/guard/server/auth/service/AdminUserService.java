@@ -189,14 +189,12 @@ public class AdminUserService {
         assertAdmin(me);
         int size = normalizePageSize(pageSize);
 
-        // 1. 角色可视范围（规则 2）
+        // 1. 角色可视范围由 JWT 决定，与前端参数无关（规则 2）
         Set<String> visibleRoles = me.isSuperAdmin()
                 ? Set.of("FAMILY", "ADMIN", "SUPER_ADMIN")
                 : Set.of("FAMILY");
-        if (role != null && !role.isBlank()) {
-            if (!visibleRoles.contains(role)) {
-                throw BizException.of(ErrorCode.E_AUTH_4031);
-            }
+        // role 仅作为 UI 筛选项，在可见范围内进一步过滤；越权请求静默收窄而非报错
+        if (role != null && !role.isBlank() && visibleRoles.contains(role)) {
             visibleRoles = Set.of(role);
         }
 
@@ -458,7 +456,7 @@ public class AdminUserService {
 
         auditLogger.logSuccess("GOV", "admin.user.disable", String.valueOf(userId),
                 "HIGH", "CONFIRM_2",
-                Map.of("target_user_id", userId, "reason", req.getReason(),
+                buildAuditDetail("target_user_id", userId, "reason", req.getReason(),
                         "guardian_promoted_patients", primaryPatientIds));
     }
 
@@ -488,7 +486,7 @@ public class AdminUserService {
 
         auditLogger.logSuccess("GOV", "admin.user.enable", String.valueOf(userId),
                 "MEDIUM", "CONFIRM_1",
-                Map.of("target_user_id", userId, "reason", req.getReason()));
+                buildAuditDetail("target_user_id", userId, "reason", req.getReason()));
     }
 
     // =========================================================
@@ -567,6 +565,17 @@ public class AdminUserService {
     // ===============================================
 
     /** 规则 1：仅 ADMIN / SUPER_ADMIN 可访问。 */
+    /** 构建审计 detail，安全处理 null value（Map.of 不允许 null）。 */
+    private static Map<String, Object> buildAuditDetail(Object... kvPairs) {
+        Map<String, Object> m = new HashMap<>();
+        for (int i = 0; i + 1 < kvPairs.length; i += 2) {
+            if (kvPairs[i] != null && kvPairs[i + 1] != null) {
+                m.put(String.valueOf(kvPairs[i]), kvPairs[i + 1]);
+            }
+        }
+        return m;
+    }
+
     private void assertAdmin(AuthUser me) {
         if (!me.isAdmin()) throw BizException.of(ErrorCode.E_AUTH_4031);
     }
@@ -583,8 +592,8 @@ public class AdminUserService {
         // 自身账号始终允许加载（自编辑场景）
         if (me.getUserId().equals(userId)) return u;
         if (!me.isSuperAdmin() && !"FAMILY".equals(u.getRole())) {
-            // ADMIN 不可见 ADMIN/SUPER_ADMIN：按 4041 返回避免枚举
-            throw BizException.of(ErrorCode.E_USR_4041);
+            // §3.6.16：ADMIN 访问非 FAMILY 账号返回 E_USR_4032（403）
+            throw BizException.of(ErrorCode.E_USR_4032);
         }
         return u;
     }

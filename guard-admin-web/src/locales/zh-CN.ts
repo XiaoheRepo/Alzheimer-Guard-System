@@ -59,6 +59,13 @@ export default {
     backHome: '回到首页',
     backToLogin: '返回登录',
     themeLight2: '亮色',
+    locale: '语言',
+    theme: '主题',
+    accentColor: '主色调',
+    accentOrange: '品牌橙',
+    accentBlue: '天空蓝',
+    editProfile: '编辑资料',
+    changePassword: '修改密码',
   },
   app: {
     name: '码上回家',
