@@ -118,6 +118,7 @@ onMounted(load)
           :roles="['SUPER_ADMIN']"
           type="primary"
           :loading="exporting"
+          :disabled="exporting"
           @click="onExport"
         >
           {{ t('page.log.export') }}

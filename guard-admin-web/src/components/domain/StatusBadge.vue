@@ -48,7 +48,7 @@ const colorMap: Record<string, string> = {
   NORMAL: 'green',
   MISSING_PENDING: 'gold',
   MISSING: 'red',
-  // userStatus
+  // userStatus (通用 fallback)
   DISABLED: 'gold',
   DEACTIVATED: 'default',
   // riskLevel
@@ -65,7 +65,16 @@ const colorMap: Record<string, string> = {
   BIZ: 'orange',
 }
 
-const color = computed(() => colorMap[props.value ?? ''] || 'default')
+// kind 级别覆盖：key = "kind.VALUE"，优先级高于全局 colorMap
+const kindColorMap: Record<string, string> = {
+  'userStatus.ACTIVE': 'success',
+  'userStatus.DISABLED': 'warning',
+  'userStatus.DEACTIVATED': 'default',
+}
+
+const color = computed(
+  () => kindColorMap[`${props.kind}.${props.value}`] ?? colorMap[props.value ?? ''] ?? 'default',
+)
 const label = computed(() => {
   if (!props.value) return '-'
   const key = `field.${props.kind}.${props.value}`

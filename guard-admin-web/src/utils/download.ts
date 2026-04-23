@@ -4,8 +4,8 @@ export function downloadBlob(blob: Blob, filename: string) {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
-  document.body.appendChild(a)
+  a.style.display = 'none'
+  // 不 append 到 body，直接 click，避免部分浏览器因 DOM 变动触发两次下载
   a.click()
-  document.body.removeChild(a)
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
