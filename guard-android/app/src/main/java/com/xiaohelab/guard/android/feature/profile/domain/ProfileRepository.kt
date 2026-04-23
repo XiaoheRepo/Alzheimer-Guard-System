@@ -2,6 +2,7 @@ package com.xiaohelab.guard.android.feature.profile.domain
 
 import com.xiaohelab.guard.android.core.common.DomainException
 import com.xiaohelab.guard.android.core.common.MhResult
+import com.xiaohelab.guard.android.core.common.map
 import com.xiaohelab.guard.android.core.network.handleEnvelope
 import com.xiaohelab.guard.android.feature.profile.data.AppearanceDto
 import com.xiaohelab.guard.android.feature.profile.data.FenceDto

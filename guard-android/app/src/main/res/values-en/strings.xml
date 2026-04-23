@@ -155,8 +155,53 @@
     <string name="error_E_PRO_4030">No access to this patient profile</string>
     <string name="error_E_PRO_4031">Primary guardian action only</string>
     <string name="error_E_PRO_4032">Cannot remove primary guardian</string>
-    <string name="error_E_PRO_4033">Not a guardian, action denied</string>
+    <string name="error_E_PRO_4033">Not the target recipient, cannot confirm</string>
+    <string name="error_E_PRO_4034">Only the initiator can revoke this transfer</string>
+    <string name="error_E_PRO_4035">Only the primary guardian can perform this action</string>
+    <string name="error_E_PRO_4041">Patient profile not found or archived</string>
+    <string name="error_E_PRO_4042">Invitee user not found</string>
+    <string name="error_E_PRO_4043">Invitation not found or status changed</string>
+    <string name="error_E_PRO_4044">Target user is not an active guardian</string>
+    <string name="error_E_PRO_4045">Transfer request not found</string>
+    <string name="error_E_PRO_4046">Guardianship relation not found</string>
     <string name="error_E_PRO_4091">Data has been updated, please refresh</string>
+    <string name="error_E_PRO_4092">State transition not allowed, please refresh</string>
+    <string name="error_E_PRO_4094">Already a guardian or invitation already sent</string>
+    <string name="error_E_PRO_4095">A pending transfer is awaiting confirmation</string>
+    <string name="error_E_PRO_4096">Invitation status changed, please refresh</string>
+    <string name="error_E_PRO_4097">Transfer request expired or completed</string>
+    <string name="error_E_PRO_4098">Transfer request can no longer be cancelled</string>
+    <string name="error_E_PRO_4099">Cannot remove yourself; recipient must be active</string>
+    <string name="error_E_PRO_4221">Geofence requires both center point and radius</string>
+
+    <!-- Gateway / common -->
+    <string name="error_E_REQ_4001">Invalid idempotency key format</string>
+    <string name="error_E_REQ_4002">Invalid request trace id</string>
+    <string name="error_E_REQ_4003">Forged request header detected, request rejected</string>
+    <string name="error_E_REQ_4150">Request body must be JSON</string>
+    <string name="error_E_REQ_4220">Request parameter validation failed</string>
+    <string name="error_E_REQ_4221">Device clock is too far off, please sync time and retry</string>
+    <string name="error_E_REQ_4291">Too many requests, please retry in %1$d seconds</string>
+
+    <!-- Gov extras -->
+    <string name="error_E_GOV_4004">Invalid device fingerprint format</string>
+    <string name="error_E_GOV_4012">WebSocket ticket invalid or expired, please refresh</string>
+    <string name="error_E_GOV_4038">Captcha verification failed, please retry</string>
+    <string name="error_E_GOV_4101">Email verification link expired, please request a new one</string>
+    <string name="error_E_GOV_4131">Uploaded file exceeds size limit</string>
+
+    <!-- User domain -->
+    <string name="error_E_USR_4001">Old and new password must be different</string>
+    <string name="error_E_USR_4002">New password does not meet strength policy</string>
+    <string name="error_E_USR_4032">Admin can only operate on FAMILY accounts</string>
+    <string name="error_E_USR_4033">Account is protected and cannot be disabled / removed / demoted</string>
+    <string name="error_E_USR_4034">Cannot perform this high-risk action on yourself</string>
+    <string name="error_E_USR_4035">Only super admin can change role</string>
+    <string name="error_E_USR_4041">Target user not found</string>
+    <string name="error_E_USR_4091">Account state does not allow this action</string>
+    <string name="error_E_USR_4092">Account is still a primary guardian, transfer first</string>
+    <string name="error_E_USR_4093">Account still has open tasks / orders, cannot deactivate</string>
+    <string name="error_E_USR_4094">You are the only guardian and an active rescue task exists. Close the task first.</string>
     <string name="error_unknown">Unknown error (%1$s)</string>
 
     <!-- Additional keys used by M0/M1/M2 screens -->

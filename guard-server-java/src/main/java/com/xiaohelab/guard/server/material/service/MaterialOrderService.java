@@ -91,7 +91,7 @@ public class MaterialOrderService {
      * @param orderId 工单主键
      * @param req     审核请求（action=APPROVE/REJECT）
      * @throws BizException E_MAT_4030 非管理员；E_MAT_4041 工单不存在；
-     *                      E_MAT_4091 状态非 PENDING_AUDIT；E_MAT_4221 标签库存不足
+     *                      E_MAT_4091 状态非 PENDING_AUDIT；E_MAT_4093 标签库存不足
      */
     @Transactional(rollbackFor = Exception.class)
     public TagApplyRecordEntity review(Long orderId, OrderReviewRequest req) {
@@ -106,7 +106,8 @@ public class MaterialOrderService {
             // 分配标签（FOR UPDATE SKIP LOCKED）
             List<TagAssetEntity> tags = tagRepository.claimUnbound(o.getTagType(), o.getQuantity());
             if (tags.size() < o.getQuantity()) {
-                throw BizException.of(ErrorCode.E_MAT_4221);
+                throw BizException.of(ErrorCode.E_MAT_4093,
+                        "标签库存不足，当前可用=" + tags.size() + "，需要=" + o.getQuantity());
             }
             OffsetDateTime now = OffsetDateTime.now();
             for (TagAssetEntity t : tags) {

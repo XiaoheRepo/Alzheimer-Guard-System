@@ -155,8 +155,53 @@
     <string name="error_E_PRO_4030">无权访问该患者档案</string>
     <string name="error_E_PRO_4031">仅主监护可执行此操作</string>
     <string name="error_E_PRO_4032">不可移除主监护</string>
-    <string name="error_E_PRO_4033">非监护人，无权操作</string>
+    <string name="error_E_PRO_4033">非目标受方，无权确认</string>
+    <string name="error_E_PRO_4034">仅发起人可撤销本次转移</string>
+    <string name="error_E_PRO_4035">仅主监护可发起该操作</string>
+    <string name="error_E_PRO_4041">患者档案不存在或已归档</string>
+    <string name="error_E_PRO_4042">被邀请人不存在</string>
+    <string name="error_E_PRO_4043">邀请不存在或状态已变化</string>
+    <string name="error_E_PRO_4044">目标用户非活跃监护成员</string>
+    <string name="error_E_PRO_4045">转移请求不存在</string>
+    <string name="error_E_PRO_4046">监护关系不存在</string>
     <string name="error_E_PRO_4091">数据已被他人更新，请刷新后重试</string>
+    <string name="error_E_PRO_4092">状态不允许该跳转，请刷新后查看最新状态</string>
+    <string name="error_E_PRO_4094">对方已是该患者的监护人或已发送邀请</string>
+    <string name="error_E_PRO_4095">已有一条待受方确认的转移请求</string>
+    <string name="error_E_PRO_4096">邀请状态已变化，请刷新</string>
+    <string name="error_E_PRO_4097">转移请求已过期或已完成</string>
+    <string name="error_E_PRO_4098">转移请求当前状态不可撤销</string>
+    <string name="error_E_PRO_4099">不可移除自身；受方需为活跃状态</string>
+    <string name="error_E_PRO_4221">启用电子围栏需提供中心点与半径</string>
+
+    <!-- Gateway / common -->
+    <string name="error_E_REQ_4001">幂等键格式不合法</string>
+    <string name="error_E_REQ_4002">请求跟踪 ID 不合法</string>
+    <string name="error_E_REQ_4003">检测到伪造请求头，已拒绝</string>
+    <string name="error_E_REQ_4150">请求体格式需为 JSON</string>
+    <string name="error_E_REQ_4220">请求参数校验失败</string>
+    <string name="error_E_REQ_4221">设备时钟与服务器偏差过大，请同步时间后重试</string>
+    <string name="error_E_REQ_4291">操作过于频繁，请 %1$d 秒后再试</string>
+
+    <!-- Gov extras -->
+    <string name="error_E_GOV_4004">设备指纹格式不合法</string>
+    <string name="error_E_GOV_4012">WebSocket 凭证无效或已过期，请刷新重试</string>
+    <string name="error_E_GOV_4038">验证码校验失败，请重新获取</string>
+    <string name="error_E_GOV_4101">邮箱验证链接已过期，请重新申请</string>
+    <string name="error_E_GOV_4131">上传文件超过允许上限</string>
+
+    <!-- User domain -->
+    <string name="error_E_USR_4001">新旧密码不能相同</string>
+    <string name="error_E_USR_4002">新密码不满足强度要求</string>
+    <string name="error_E_USR_4032">管理员仅可操作家属账号</string>
+    <string name="error_E_USR_4033">该账号受保护，不可被禁用 / 注销 / 降级</string>
+    <string name="error_E_USR_4034">不可对自己执行该高危操作</string>
+    <string name="error_E_USR_4035">仅超级管理员可修改角色</string>
+    <string name="error_E_USR_4041">目标用户不存在</string>
+    <string name="error_E_USR_4091">账号当前状态不允许该操作</string>
+    <string name="error_E_USR_4092">账号仍为主监护，请先转移后再注销</string>
+    <string name="error_E_USR_4093">账号仍有未结任务 / 工单，不可注销</string>
+    <string name="error_E_USR_4094">该患者仅你一名监护且存在进行中寻回任务，请先关闭任务后再禁用账号</string>
     <string name="error_unknown">发生未知错误（%1$s）</string>
 
     <!-- ==== Additional keys used by M0/M1/M2 screens ==== -->

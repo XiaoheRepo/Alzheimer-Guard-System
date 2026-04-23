@@ -99,7 +99,7 @@ class MaterialOrderServiceTest {
 
         assertThatThrownBy(() -> orderService.review(10L, req))
                 .isInstanceOf(BizException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_MAT_4221);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_MAT_4093);
     }
 
     @Test

@@ -145,6 +145,7 @@ public enum ErrorCode {
     E_MAT_4042(HttpStatus.NOT_FOUND, "E_MAT_4042", "标签不存在"),
     E_MAT_4044(HttpStatus.NOT_FOUND, "E_MAT_4044", "tag_code 不存在"),
     E_MAT_4091(HttpStatus.CONFLICT, "E_MAT_4091", "工单状态不允许流转"),
+    E_MAT_4093(HttpStatus.CONFLICT, "E_MAT_4093", "标签库存不足"),
     E_MAT_4094(HttpStatus.CONFLICT, "E_MAT_4094", "工单状态冲突,无法取消"),
     E_MAT_4096(HttpStatus.CONFLICT, "E_MAT_4096", "标签三方一致性校验失败"),
     E_MAT_4098(HttpStatus.CONFLICT, "E_MAT_4098", "标签状态不满足 LOST 前置条件"),

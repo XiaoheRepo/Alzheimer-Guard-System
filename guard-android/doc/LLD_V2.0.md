@@ -2779,7 +2779,7 @@ EXCEPTION HANDLING:
 | 标签不可用 | status != UNBOUND（发货时） | 422 | `E_MAT_4222` | — |
 | 绑定时标签非 ALLOCATED | status != ALLOCATED | 422 | `E_MAT_4223` | — |
 | 工单不存在 | order_id 无效 | 404 | `E_MAT_4042` | — |
-| 库存不足 | UNBOUND < 申领 quantity | 422 | `E_MAT_4224` | 建议管理员先发号补充库存 |
+| 库存不足 | 审批 APPROVE 时 `UNBOUND` 池中可用标签数 < `quantity` | 409 | `E_MAT_4093` | 提示管理员先经 §3.4.8 批量发号补充库存后重试 |
 | 批量发号超限 | quantity > 10000 | 422 | `E_MAT_4225` | — |
 | tag.bound 工单自动签收失败 | 乐观锁冲突 | — | — | 事件重试（幂等保护），最多 3 次后进入 DEAD |
 
