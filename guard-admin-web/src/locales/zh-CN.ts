@@ -498,6 +498,15 @@ export default {
       enable: { title: '启用用户', btn: '启用' },
       delete: { title: '删除用户', content: '删除用户 {name}？此操作不可恢复，请谨慎执行。' },
       roleEditOnlySuper: '仅 SUPER_ADMIN 可修改角色',
+      create: {
+        btn: '新增管理员',
+        title: '新增管理员账号',
+        usernamePlaceholder: '英文、数字、下划线，4-32位',
+        reason: '创建理由',
+        reasonPlaceholder: '请输入创建该账号的理由（5-200字）',
+        tempPwdTitle: '账号创建成功 — 初始密码（仅展示一次）',
+        tempPwd: '初始密码',
+      },
       col: {
         username: '用户名',
         nickname: '昵称',

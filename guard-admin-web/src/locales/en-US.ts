@@ -491,6 +491,15 @@ export default {
       enable: { title: 'Enable User', btn: 'Enable' },
       delete: { title: 'Delete User', content: 'Delete {name}? This cannot be undone.' },
       roleEditOnlySuper: 'Only SUPER_ADMIN can edit roles',
+      create: {
+        btn: 'New Admin',
+        title: 'Create Admin Account',
+        usernamePlaceholder: 'Letters, digits, underscore, 4-32 chars',
+        reason: 'Reason',
+        reasonPlaceholder: 'Explain why this account is being created (5-200 chars)',
+        tempPwdTitle: 'Account Created — Initial Password (shown once)',
+        tempPwd: 'Initial Password',
+      },
       col: {
         username: 'Username',
         nickname: 'Nickname',

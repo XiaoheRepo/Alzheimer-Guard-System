@@ -84,6 +84,28 @@ export interface AdminUserListItem {
   created_at?: string
 }
 
+/** POST /api/v1/admin/users — 创建管理员（仅 SUPER_ADMIN，CONFIRM_2） */
+export function createAdmin(body: {
+  username: string
+  email: string
+  nickname?: string
+  reason: string
+}): Promise<{
+  user_id: string
+  username: string
+  email: string
+  nickname: string
+  role: string
+  status: string
+  temp_password: string
+  temp_password_note: string
+  created_at: string
+}> {
+  return http.post('/api/v1/admin/users', body, {
+    headers: { 'X-Confirm-Level': 'CONFIRM_2' },
+  })
+}
+
 /** GET /api/v1/admin/users */
 export function listAdminUsers(
   params: Record<string, unknown>,
@@ -100,8 +122,11 @@ export function getAdminUser(userId: string): Promise<AdminUserListItem> {
 export function updateAdminUser(
   userId: string,
   body: { nickname?: string; email?: string; phone?: string; role?: Role },
+  confirmLevel?: string,
 ): Promise<AdminUserListItem> {
-  return http.put<AdminUserListItem>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, body)
+  return http.put<AdminUserListItem>(`/api/v1/admin/users/${encodeURIComponent(userId)}`, body, {
+    headers: confirmLevel ? { 'X-Confirm-Level': confirmLevel } : {},
+  })
 }
 
 /** POST /api/v1/admin/users/{user_id}/disable */

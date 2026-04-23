@@ -9,6 +9,7 @@ import {
   disableAdminUser,
   enableAdminUser,
   deleteAdminUser,
+  createAdmin,
   type AdminUserListItem,
 } from '@/api/admin'
 import type { Role, UserStatus } from '@/types/common'
@@ -44,6 +45,22 @@ const editDlg = reactive({
   phone: '',
   role: 'ADMIN' as Role,
   submitting: false,
+})
+
+const createDlg = reactive({
+  open: false,
+  username: '',
+  email: '',
+  nickname: '',
+  reason: '',
+  submitting: false,
+})
+
+const tempPwdDlg = reactive({
+  open: false,
+  username: '',
+  tempPassword: '',
+  note: '',
 })
 
 const columns = [
@@ -88,13 +105,18 @@ function openEdit(u: AdminUserListItem) {
 async function onSave() {
   if (!editDlg.user) return
   editDlg.submitting = true
+  const roleChanged = editDlg.role !== editDlg.user.role
   try {
-    await updateAdminUser(editDlg.user.user_id, {
-      nickname: editDlg.nickname,
-      email: editDlg.email,
-      phone: editDlg.phone,
-      role: editDlg.role,
-    })
+    await updateAdminUser(
+      editDlg.user.user_id,
+      {
+        nickname: editDlg.nickname,
+        email: editDlg.email,
+        phone: editDlg.phone,
+        role: editDlg.role,
+      },
+      roleChanged ? 'CONFIRM_2' : undefined,
+    )
     message.success(t('common.success'))
     editDlg.open = false
     await load()
@@ -102,6 +124,29 @@ async function onSave() {
     message.error((e as ApiError)?.message || t('error.UNKNOWN'))
   } finally {
     editDlg.submitting = false
+  }
+}
+
+async function onCreate() {
+  createDlg.submitting = true
+  try {
+    const res = await createAdmin({
+      username: createDlg.username,
+      email: createDlg.email,
+      nickname: createDlg.nickname || undefined,
+      reason: createDlg.reason,
+    })
+    createDlg.open = false
+    Object.assign(createDlg, { username: '', email: '', nickname: '', reason: '' })
+    tempPwdDlg.username = res.username
+    tempPwdDlg.tempPassword = res.temp_password
+    tempPwdDlg.note = res.temp_password_note
+    tempPwdDlg.open = true
+    await load()
+  } catch (e) {
+    message.error((e as ApiError)?.message || t('error.UNKNOWN'))
+  } finally {
+    createDlg.submitting = false
   }
 }
 
@@ -209,6 +254,11 @@ function prevPage() {
           <a-form-item>
             <a-button type="primary" @click="doSearch">{{ t('common.search') }}</a-button>
           </a-form-item>
+          <a-form-item v-if="auth.isSuperAdmin">
+            <a-button type="primary" @click="createDlg.open = true">
+              + {{ t('page.user.create.btn') }}
+            </a-button>
+          </a-form-item>
         </a-form>
       </template>
 
@@ -310,6 +360,59 @@ function prevPage() {
           </div>
         </a-form-item>
       </a-form>
+    </a-modal>
+    <!-- 新增管理员弹窗（仅 SUPER_ADMIN 可用） -->
+    <a-modal
+      v-model:open="createDlg.open"
+      :title="t('page.user.create.title')"
+      :confirm-loading="createDlg.submitting"
+      :ok-text="t('common.submit')"
+      :cancel-text="t('common.cancel')"
+      @ok="onCreate"
+    >
+      <a-form layout="vertical">
+        <a-form-item :label="t('page.user.col.username')" required>
+          <a-input
+            v-model:value="createDlg.username"
+            :placeholder="t('page.user.create.usernamePlaceholder')"
+          />
+        </a-form-item>
+        <a-form-item :label="t('page.user.col.email')" required>
+          <a-input v-model:value="createDlg.email" placeholder="admin@org.com" />
+        </a-form-item>
+        <a-form-item :label="t('page.user.col.nickname')">
+          <a-input v-model:value="createDlg.nickname" />
+        </a-form-item>
+        <a-form-item :label="t('page.user.create.reason')" required>
+          <a-textarea
+            v-model:value="createDlg.reason"
+            :rows="3"
+            :placeholder="t('page.user.create.reasonPlaceholder')"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 初始密码一次性展示弹窗 -->
+    <a-modal
+      v-model:open="tempPwdDlg.open"
+      :title="t('page.user.create.tempPwdTitle')"
+      :footer="null"
+    >
+      <a-alert type="warning" :message="tempPwdDlg.note" show-icon style="margin-bottom: 16px" />
+      <a-descriptions :column="1" bordered>
+        <a-descriptions-item :label="t('page.user.col.username')">
+          <CopyableText :text="tempPwdDlg.username" />
+        </a-descriptions-item>
+        <a-descriptions-item :label="t('page.user.create.tempPwd')">
+          <CopyableText :text="tempPwdDlg.tempPassword" />
+        </a-descriptions-item>
+      </a-descriptions>
+      <div style="margin-top: 16px; text-align: right">
+        <a-button type="primary" @click="tempPwdDlg.open = false">{{
+          t('common.confirm')
+        }}</a-button>
+      </div>
     </a-modal>
   </div>
 </template>
