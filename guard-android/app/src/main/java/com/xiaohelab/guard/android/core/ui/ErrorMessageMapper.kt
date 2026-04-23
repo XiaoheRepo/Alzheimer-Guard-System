@@ -18,7 +18,11 @@ object ErrorMessageMapper {
                 else -> context.getString(resId)
             }
         } else {
-            context.getString(R.string.error_unknown, e.code)
+            if (e.code == DomainException.CODE_PROTOCOL && e.message != null) {
+                context.getString(R.string.error_unknown, "${e.code}: ${e.message}")
+            } else {
+                context.getString(R.string.error_unknown, e.code)
+            }
         }
     }
 
