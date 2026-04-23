@@ -500,6 +500,10 @@ public class AdminUserService {
         assertAdmin(me);
         assertNotSelf(me, userId);
         requireConfirmLevel(confirmLevel, "CONFIRM_3");
+        // 注销操作 reason 必须 ≥ 10 字符
+        if (req.getReason() == null || req.getReason().trim().length() < 10) {
+            throw BizException.of(ErrorCode.E_PARAM_4000, "注销操作需填写至少 10 字符的行政理由");
+        }
         UserEntity u = loadAndAssertVisible(userId, me);
 
         // 规则 3：SUPER_ADMIN 不可注销
