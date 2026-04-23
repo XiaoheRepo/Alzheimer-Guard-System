@@ -1167,7 +1167,7 @@ defineProps<{ option: echarts.EChartsOption; height?: number | string; loading?:
 
 | 触发 | 动作 | API | 成功 | 失败 | 权限 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 点击「登录」 | 校验 → POST | `POST /api/v1/auth/login` | 持久化 token（remember=true 时 localStorage，否则 sessionStorage）→ 跳转 `redirect` 或 `/dashboard` | `E_AUTH_4001` 用户名或密码错误；`E_AUTH_4091` 账号锁定；`E_REQ_4291` 限流（展示倒计时） | 公开 |
+| 点击「登录」 | 校验 → POST | `POST /api/v1/auth/login` | 持久化 token（remember=true 时 localStorage，否则 sessionStorage）→ 跳转 `redirect` 或 `/dashboard` | `E_AUTH_4011` 用户名或密码错误；`E_REQ_4291` 限流（展示 `Retry-After` 倒计时）；`E_GOV_4031` 账号已封禁 | 公开 |
 | 点击「忘记密码」 | 打开抽屉 | `POST /api/v1/auth/password-reset/request` | 提示"重置链接已发送至邮箱"（HC-06 无短信） | 通用错误提示 | 公开 |
 | 重置确认页（通过邮件链接 `/reset-password?token=...`） | 提交新密码 | `POST /api/v1/auth/password-reset/confirm` | 跳登录 | `E_AUTH_4002` token 过期 | 公开 |
 | 刷新 token（拦截器内自动） | — | `POST /api/v1/auth/token/refresh` | 静默替换 access token | 失败时登出 | — |
@@ -1177,7 +1177,7 @@ defineProps<{ option: echarts.EChartsOption; height?: number | string; loading?:
 | 项 | 规则 |
 | :--- | :--- |
 | 空/错/载态 | 加载按钮内嵌 loading；全站错误由 `notification.error` 承载 |
-| 失败计数 | 连续 5 次失败后按钮锁 60s，文案"请稍后再试"（由服务端 `E_AUTH_4091` 驱动） |
+| 失败计数 | 客户端本地计数：连续 5 次 `E_AUTH_4011` 后按钮锁 60s，文案"请稍后再试"；服务端限流统一走 `E_REQ_4291` + `Retry-After` |
 | 可访问性 | 用户名与密码 `aria-label`；支持 Enter 提交；密码显示按钮 `aria-pressed` |
 | i18n keys | `page.auth.login.*`、`page.auth.reset.*`、`error.E_AUTH_*` |
 | 安全 | 密码输入禁用 `autocomplete="off"` ⚠错（应为 `current-password`）以便密码管理器；表单提交后不写入任何日志与 Sentry breadcrumb |
@@ -1763,8 +1763,8 @@ defineProps<{ option: echarts.EChartsOption; height?: number | string; loading?:
 
 | 错误码 | UI |
 | :--- | :--- |
-| `E_GOV_4091` | 值类型不匹配，表单字段级错误 |
-| `E_GOV_4092` | 值越界；`form.setFields` 标红 |
+| `E_REQ_4001` | 必填字段缺失，表单字段级错误 |
+| `E_REQ_4002` | 值类型不匹配 / 值越界，`form.setFields` 标红 |
 | `E_AUTH_4031` | admin 点"编辑"本已双层禁用；保留作为网关防御 |
 
 ---
@@ -1854,8 +1854,8 @@ defineProps<{ option: echarts.EChartsOption; height?: number | string; loading?:
 
 | 错误码 | 含义 | UI |
 | :--- | :--- | :--- |
-| `E_GOV_4093` | 分区内已有进行中重放 | 行置灰 + tooltip + 5s 后自动刷新 |
-| `E_GOV_4094` | 事件已被消费/已归档 | 刷新列表，行淡出 |
+| `E_GOV_4096` | Outbox 事件状态不允许重放（已归档 / 已消费） | 刷新列表，行淡出 |
+| `E_GOV_4098` | 同分区内已有进行中重放 | 行置灰 + tooltip + 5s 后自动刷新 |
 | `E_AUTH_4031` | 非 super_admin | 前端已屏蔽入口；兜底提示 |
 
 #### 14.P-11.5 实时事件
@@ -1892,7 +1892,7 @@ defineProps<{ option: echarts.EChartsOption; height?: number | string; loading?:
 | 错误码 | UI |
 | :--- | :--- |
 | `E_AUTH_4001` | `old_password` 错误；表单字段级 |
-| `E_AUTH_4003` | 新密码不满足策略；字段级并展示策略说明 |
+| `E_USR_4002` | 新密码不满足强度策略；字段级并展示策略说明 |
 
 ---
 
@@ -2295,7 +2295,7 @@ page.admin.patient.dialog.forceTransfer.title/target/reason/evidence/confirm/war
 | `E_AUTH_4001` | `error.E_AUTH_4001`（凭据错误） | 表单字段级 |
 | `E_AUTH_4011` | `error.E_AUTH_4011`（未登录） | 跳 `/login` |
 | `E_AUTH_4031` | `error.E_AUTH_4031`（越权） | `Modal.warning` |
-| `E_AUTH_4091` | `error.E_AUTH_4091`（账号锁定） | 按钮禁用 + 倒计时 |
+| `E_GOV_4031` | `error.E_GOV_4031`（账号封禁） | `Modal.error` + 跳 `/login` |
 
 ### 16.2 领域错误（TASK/CLUE/MAT/AUTH/GOV）
 
@@ -2307,14 +2307,17 @@ page.admin.patient.dialog.forceTransfer.title/target/reason/evidence/confirm/war
 | `E_CLUE_4091` | 线索非 PENDING_REVIEW | 刷新列表；按钮禁用 |
 | `E_CLUE_4092` | 已被其他管理员处理 | 刷新行；`message.info` |
 | `E_MAT_4091` | 工单状态机非法跃迁 | 按钮禁用 + tooltip |
-| `E_MAT_4092` | 物流单号重复 | 表单字段级 |
-| `E_MAT_4093` | 库存不足 | `notification.error` + 引导批量发号 |
-| `E_MAT_4094` | 批量发号超限 | 表单级 |
-| `E_MAT_4095` | 同批次进行中 | 按钮禁用 |
-| `E_GOV_4091` | 配置值类型错 | 字段级 |
-| `E_GOV_4092` | 配置越界 | 字段级 |
-| `E_GOV_4093` | 死信分区冲突（同分区有重放中） | 行置灰 + 自动刷新 |
-| `E_GOV_4094` | 死信已归档 | 行淡出 |
+| `E_MAT_4092` | 工单状态非法，无法自动收敛 | `notification.error` + 刷新 |
+| `E_MAT_4094` | 工单状态冲突，无法取消 | 按钮禁用 + 刷新 |
+| `E_MAT_4095` | 工单取消审核驳回 | `notification.warning` |
+| `E_MAT_4096` | 标签三方一致性校验失败 | `Modal.error` + 刷新 |
+| `E_MAT_4225` | 批量发号超限（>10000） | 表单级 |
+| `E_REQ_4002` | 配置值类型错 / 越界 | 字段级 |
+| `E_GOV_4091` | 用户名已存在 | 字段级（注册 / 新增用户）|
+| `E_GOV_4092` | 邮箱已存在 | 字段级 |
+| `E_GOV_4094` | 导出超限（>10000 条）| `Modal.warning`，提示缩短时间范围 |
+| `E_GOV_4096` | Outbox 事件状态不允许重放 | 刷新列表，行淡出 |
+| `E_GOV_4098` | 同分区有更早未修复 DEAD 事件 | 行置灰 + 自动刷新 |
 | `error.UNKNOWN` | 未知错误兜底 | `message.error` + Trace-Id |
 
 ### 16.3 `error.ts` 语言包示例
@@ -2328,12 +2331,12 @@ export default {
   E_AUTH_4001: '用户名或密码错误',
   E_AUTH_4011: '登录已过期，请重新登录',
   E_AUTH_4031: '您没有权限执行此操作',
-  E_AUTH_4091: '账号已临时锁定，请 {seconds}s 后重试',
+  E_GOV_4031: '账号已被封禁，请联系管理员',
   E_TASK_4091: '任务状态不允许该操作',
   E_CLUE_4091: '该线索已被处理',
   E_MAT_4091: '工单状态不允许该操作',
   E_MAT_4092: '物流单号已存在',
-  E_GOV_4093: '该分区已有正在进行的重放',
+  E_GOV_4098: '同分区有更早未修复 DEAD 事件，请先处理',
   // ...
 };
 ```

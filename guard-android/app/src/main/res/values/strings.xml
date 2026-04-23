@@ -138,8 +138,6 @@
     <string name="error_E_AUTH_4011">用户名或密码错误</string>
     <string name="error_E_AUTH_4012">该账号不支持家属端登录，请使用 Web 管理端</string>
     <string name="error_E_AUTH_4013">原密码错误</string>
-    <string name="error_E_AUTH_4091">用户名已被占用</string>
-    <string name="error_E_AUTH_4092">该邮箱已被占用</string>
     <string name="error_E_GOV_4011">会话已过期，请重新登录</string>
     <string name="error_E_GOV_4030">当前角色无权访问</string>
     <string name="error_E_GOV_4031">账号已被封禁</string>

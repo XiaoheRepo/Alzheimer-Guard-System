@@ -2118,7 +2118,7 @@ feature-splash ──▶ feature-auth ──▶ feature-home
   { "code": "ok", "data": { "user_id": "usr_…", "created_at": "2025-01-01T00:00:00Z" } }
   ```
 
-- **失败**：`E_AUTH_4091` 用户名占用、`E_AUTH_4092` 邮箱占用、`E_AUTH_4003` 邮箱格式错。
+- **失败**：`E_GOV_4091` 用户名已存在、`E_GOV_4092` 邮箱已存在、`E_USR_4005` 邮箱 / 手机号 / 昵称格式非法、`E_USR_4095` 手机号已存在。
 - **成功**：跳 `AuthLogin` 并自动填充用户名。
 - **i18n keys**：`screen.auth.register.title`, `form.auth.email.label`, `form.auth.display_name.label`, `btn.auth.register.submit`
 
@@ -3281,12 +3281,13 @@ AI 域包含五种界面产出：
 | :--- | :--- | :--- | :--- |
 | `E_AUTH_4001` | `error.E_AUTH_4001` | T | 用户名格式不合法 |
 | `E_AUTH_4002` | `error.E_AUTH_4002` | T | 密码格式不合法 |
-| `E_AUTH_4003` | `error.E_AUTH_4003` | T | 邮箱格式不合法 |
+| `E_USR_4005` | `error.E_USR_4005` | T | 邮箱 / 手机号 / 昵称格式不合法 |
 | `E_AUTH_4011` | `error.E_AUTH_4011` | T | 用户名或密码错误 |
 | `E_AUTH_4012` | `error.E_AUTH_4012` | D + J(AuthLogin) | 重置 token 失效 |
-| `E_AUTH_4013` | `error.E_AUTH_4013` | T | 旧密码错 |
-| `E_AUTH_4091` | `error.E_AUTH_4091` | T | 用户名已占用 |
-| `E_AUTH_4092` | `error.E_AUTH_4092` | T | 邮箱已占用 |
+| `E_USR_4011` | `error.E_USR_4011` | T | 旧密码错 |
+| `E_GOV_4091` | `error.E_GOV_4091` | T | 用户名已占用 |
+| `E_GOV_4092` | `error.E_GOV_4092` | T | 邮箱已占用 |
+| `E_USR_4095` | `error.E_USR_4095` | T | 手机号已存在 |
 | `E_GOV_4011` | `error.E_GOV_4011` | D + J(AuthLogin) | 会话过期 |
 | `E_GOV_4030` | `error.E_GOV_4030` | D | 权限不足 |
 | `E_GOV_4031` | `error.E_GOV_4031` | D + J(AuthLogin) | 账号已封禁 |

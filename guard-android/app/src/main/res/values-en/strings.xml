@@ -138,8 +138,6 @@
     <string name="error_E_AUTH_4011">Incorrect username or password</string>
     <string name="error_E_AUTH_4012">This account is not supported on the family app. Please use the web admin portal.</string>
     <string name="error_E_AUTH_4013">Incorrect current password</string>
-    <string name="error_E_AUTH_4091">Username already taken</string>
-    <string name="error_E_AUTH_4092">Email already registered</string>
     <string name="error_E_GOV_4011">Session expired, please sign in again</string>
     <string name="error_E_GOV_4030">Access denied for current role</string>
     <string name="error_E_GOV_4031">Account has been banned</string>
