@@ -214,7 +214,9 @@ async function onEnableSubmit() {
   if (!enableDlg.target) return
   enableDlg.submitting = true
   try {
-    await enableAdminUser(enableDlg.target.user_id, { reason: enableDlg.reason.trim() || undefined })
+    await enableAdminUser(enableDlg.target.user_id, {
+      reason: enableDlg.reason.trim() || undefined,
+    })
     message.success(t('common.success'))
     enableDlg.open = false
     await load()
