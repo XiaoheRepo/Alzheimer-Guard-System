@@ -8,7 +8,7 @@ import com.xiaohelab.guard.android.feature.auth.data.UserProfileDto
  */
 interface AuthRepository {
     suspend fun login(username: String, password: String): MhResult<UserProfileDto>
-    suspend fun register(username: String, email: String, password: String, nickname: String?): MhResult<Unit>
+    suspend fun register(username: String, email: String, phone: String, password: String, nickname: String?): MhResult<Unit>
     suspend fun logout(): MhResult<Unit>
     suspend fun requestPasswordReset(email: String, locale: String?): MhResult<Unit>
     suspend fun confirmPasswordReset(token: String, newPassword: String): MhResult<Unit>

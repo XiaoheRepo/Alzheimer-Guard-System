@@ -56,8 +56,8 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun register(username: String, email: String, password: String, nickname: String?): MhResult<Unit> {
-        val r = handleEnvelope { api.register(RegisterRequest(username, email, password, nickname)) }
+    override suspend fun register(username: String, email: String, phone: String, password: String, nickname: String?): MhResult<Unit> {
+        val r = handleEnvelope { api.register(RegisterRequest(username, email, phone, password, nickname)) }
         return when (r) {
             is MhResult.Success -> MhResult.Success(Unit, r.trace)
             is MhResult.Failure -> r

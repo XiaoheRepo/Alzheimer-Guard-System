@@ -68,6 +68,8 @@ data class RegisterUiState(
     val step: RegisterStep = RegisterStep.IDENTITY,
     val username: String = "",
     val nickname: String = "",
+    /** API V2.0 §3.6.1: 家属注册必填，中国大陆手机号。 */
+    val phone: String = "",
     val email: String = "",
     val password: String = "",
     val passwordConfirm: String = "",
@@ -84,14 +86,22 @@ class RegisterViewModel @Inject constructor(private val useCase: RegisterUseCase
 
     fun onUsername(v: String) = _s.update { it.copy(username = v, error = null, localError = null) }
     fun onNickname(v: String) = _s.update { it.copy(nickname = v, error = null, localError = null) }
+    fun onPhone(v: String) = _s.update { it.copy(phone = v.filter { ch -> ch.isDigit() }.take(11), error = null, localError = null) }
     fun onEmail(v: String) = _s.update { it.copy(email = v, error = null, localError = null) }
     fun onPassword(v: String) = _s.update { it.copy(password = v, error = null, localError = null) }
     fun onPasswordConfirm(v: String) = _s.update { it.copy(passwordConfirm = v, error = null, localError = null) }
 
+    /** 对齐服务端正则 `^1[3-9]\d{9}$`。 */
+    private fun isPhoneValid(p: String): Boolean = p.matches(Regex("^1[3-9]\\d{9}$"))
+
     /** Advance from step 1 (IDENTITY) to step 2 (CREDENTIALS) with client-side validation. */
-    fun nextStep(passwordsMismatchMsg: String) {
+    fun nextStep(passwordsMismatchMsg: String, invalidPhoneMsg: String) {
         val s = _s.value
         if (s.username.isBlank()) return
+        if (!isPhoneValid(s.phone)) {
+            _s.update { it.copy(localError = invalidPhoneMsg) }
+            return
+        }
         _s.update { it.copy(step = RegisterStep.CREDENTIALS, localError = null) }
     }
 
@@ -102,14 +112,14 @@ class RegisterViewModel @Inject constructor(private val useCase: RegisterUseCase
 
     fun submit(passwordsMismatchMsg: String) {
         val s = _s.value
-        if (s.loading || s.email.isBlank() || s.password.isBlank()) return
+        if (s.loading || s.email.isBlank() || s.password.isBlank() || !isPhoneValid(s.phone)) return
         if (s.password != s.passwordConfirm) {
             _s.update { it.copy(localError = passwordsMismatchMsg) }
             return
         }
         _s.update { it.copy(loading = true, error = null, localError = null) }
         viewModelScope.launch {
-            when (val r = useCase(s.username, s.email, s.password, s.nickname.ifBlank { null })) {
+            when (val r = useCase(s.username, s.email, s.phone, s.password, s.nickname.ifBlank { null })) {
                 is MhResult.Success -> _s.update { it.copy(loading = false, step = RegisterStep.EMAIL_SENT) }
                 is MhResult.Failure -> _s.update { it.copy(loading = false, error = r.error) }
             }
@@ -126,6 +136,7 @@ fun RegisterScreen(
     val state by vm.state.collectAsState()
     val ctx = LocalContext.current
     val passwordsMismatchMsg = stringResource(R.string.auth_register_passwords_mismatch)
+    val invalidPhoneMsg = stringResource(R.string.auth_register_phone_invalid)
 
     Scaffold(topBar = {
         TopAppBar(
@@ -168,7 +179,7 @@ fun RegisterScreen(
                 label = "register_step",
             ) { step ->
                 when (step) {
-                    RegisterStep.IDENTITY -> StepIdentity(state, vm, passwordsMismatchMsg)
+                    RegisterStep.IDENTITY -> StepIdentity(state, vm, ctx, invalidPhoneMsg)
                     RegisterStep.CREDENTIALS -> StepCredentials(state, vm, ctx, passwordsMismatchMsg)
                     RegisterStep.EMAIL_SENT -> StepEmailSent(state.email, onDone)
                 }
@@ -181,7 +192,8 @@ fun RegisterScreen(
 private fun StepIdentity(
     state: RegisterUiState,
     vm: RegisterViewModel,
-    passwordsMismatchMsg: String,
+    ctx: android.content.Context,
+    invalidPhoneMsg: String,
 ) {
     Column(
         modifier = Modifier
@@ -211,13 +223,27 @@ private fun StepIdentity(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
+        // 手机号（API V2.0 §3.6.1 必填）
+        OutlinedTextField(
+            value = state.phone,
+            onValueChange = vm::onPhone,
+            label = { Text(stringResource(R.string.auth_field_phone)) },
+            supportingText = { Text(stringResource(R.string.auth_field_phone_hint)) },
+            singleLine = true,
+            isError = state.localError == invalidPhoneMsg,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        // 本地校验错误提示（如手机号格式错）
+        val errorText = state.localError ?: state.error?.let { ErrorMessageMapper.message(ctx, it) }
+        errorText?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         Spacer(Modifier.height(8.dp))
         MhPrimaryButton(
             text = stringResource(R.string.common_next),
             contentDesc = stringResource(R.string.common_next),
-            onClick = { vm.nextStep(passwordsMismatchMsg) },
+            onClick = { vm.nextStep(invalidPhoneMsg, invalidPhoneMsg) },
             modifier = Modifier.fillMaxWidth(),
-            enabled = state.username.isNotBlank(),
+            enabled = state.username.isNotBlank() && state.phone.length == 11,
         )
     }
 }

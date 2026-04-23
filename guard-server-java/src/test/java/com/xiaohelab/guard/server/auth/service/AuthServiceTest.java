@@ -55,7 +55,7 @@ class AuthServiceTest {
     void register_should_reject_duplicate_username() {
         when(userRepository.existsByUsername("alice")).thenReturn(true);
         RegisterRequest req = new RegisterRequest();
-        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPassword("Aa123456!");
+        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPhone("13800000001"); req.setPassword("Aa123456!");
 
         assertThatThrownBy(() -> authService.register(req))
                 .isInstanceOf(BizException.class)
@@ -67,7 +67,7 @@ class AuthServiceTest {
         when(userRepository.existsByUsername("alice")).thenReturn(false);
         when(userRepository.existsByEmail("a@b.c")).thenReturn(true);
         RegisterRequest req = new RegisterRequest();
-        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPassword("Aa123456!");
+        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPhone("13800000001"); req.setPassword("Aa123456!");
 
         assertThatThrownBy(() -> authService.register(req))
                 .isInstanceOf(BizException.class)
@@ -75,16 +75,30 @@ class AuthServiceTest {
     }
 
     @Test
+    void register_should_reject_duplicate_phone() {
+        when(userRepository.existsByUsername("alice")).thenReturn(false);
+        when(userRepository.existsByEmail("a@b.c")).thenReturn(false);
+        when(userRepository.existsByPhone("13800000001")).thenReturn(true);
+        RegisterRequest req = new RegisterRequest();
+        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPhone("13800000001"); req.setPassword("Aa123456!");
+
+        assertThatThrownBy(() -> authService.register(req))
+                .isInstanceOf(BizException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.E_USR_4095);
+    }
+
+    @Test
     void register_should_persist_and_hash_password() {
         when(userRepository.existsByUsername("alice")).thenReturn(false);
         when(userRepository.existsByEmail("a@b.c")).thenReturn(false);
+        when(userRepository.existsByPhone("13800000001")).thenReturn(false);
         when(passwordEncoder.encode("Aa123456!")).thenReturn("$2a$hashed");
         when(userRepository.save(any())).thenAnswer(inv -> {
             UserEntity u = inv.getArgument(0); u.setId(1L); return u;
         });
 
         RegisterRequest req = new RegisterRequest();
-        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPassword("Aa123456!");
+        req.setUsername("alice"); req.setEmail("a@b.c"); req.setPhone("13800000001"); req.setPassword("Aa123456!");
         var r = authService.register(req);
 
         assertThat(r.getUsername()).isEqualTo("alice");

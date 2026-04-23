@@ -11,8 +11,8 @@ class LoginUseCase @Inject constructor(private val repo: AuthRepository) {
 }
 
 class RegisterUseCase @Inject constructor(private val repo: AuthRepository) {
-    suspend operator fun invoke(username: String, email: String, password: String, nickname: String?): MhResult<Unit> =
-        repo.register(username.trim(), email.trim(), password, nickname?.trim())
+    suspend operator fun invoke(username: String, email: String, phone: String, password: String, nickname: String?): MhResult<Unit> =
+        repo.register(username.trim(), email.trim(), phone.trim(), password, nickname?.trim())
 }
 
 class LogoutUseCase @Inject constructor(private val repo: AuthRepository) {

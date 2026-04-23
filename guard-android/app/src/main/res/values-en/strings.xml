@@ -28,6 +28,9 @@
     <string name="auth_field_password">Password</string>
     <string name="auth_field_email">Email</string>
     <string name="auth_field_nickname">Nickname (optional)</string>
+    <string name="auth_field_phone">Phone number</string>
+    <string name="auth_field_phone_hint">Chinese mainland mobile number, required for emergencies</string>
+    <string name="auth_register_phone_invalid">Invalid phone number. Please enter an 11-digit Chinese mainland mobile number.</string>
     <string name="auth_field_new_password">New password</string>
     <string name="auth_login_submit">Sign in</string>
     <string name="auth_go_register">No account? Register now</string>
@@ -143,6 +146,8 @@
     <string name="error_E_GOV_4032">Account not activated, please verify your email</string>
     <string name="error_E_GOV_4091">Username already taken</string>
     <string name="error_E_GOV_4092">Email already registered</string>
+    <string name="error_E_USR_4005">Invalid email / phone / nickname format</string>
+    <string name="error_E_USR_4095">Phone number already registered</string>
     <string name="error_E_GOV_4102">Password reset link has expired, please request a new one</string>
     <string name="error_E_GOV_4291">Too many requests, please retry in %1$d seconds</string>
     <string name="error_E_GOV_4292">Cooldown in progress</string>

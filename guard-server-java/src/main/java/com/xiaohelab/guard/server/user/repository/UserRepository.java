@@ -26,6 +26,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByPhone(String phone);
+
     List<UserEntity> findByUsernameContainingIgnoreCase(String keyword);
 
     // ================= V2.1 管理员治理 =================

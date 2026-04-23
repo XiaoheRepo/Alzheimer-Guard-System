@@ -61,6 +61,7 @@ public enum ErrorCode {
     E_USR_4092(HttpStatus.CONFLICT, "E_USR_4092", "目标仍为患者主监护,禁止注销"),
     E_USR_4093(HttpStatus.CONFLICT, "E_USR_4093", "目标仍有未终态任务/工单,禁止注销"),
     E_USR_4094(HttpStatus.CONFLICT, "E_USR_4094", "该患者仅有一名在岗监护人且存在进行中的寻回任务，请先关闭任务再禁用账号"),
+    E_USR_4095(HttpStatus.CONFLICT, "E_USR_4095", "手机号已存在"),
 
     // ===== TASK =====
     E_TASK_4001(HttpStatus.BAD_REQUEST, "E_TASK_4001", "source 枚举不合法"),

@@ -67,17 +67,21 @@ public class AuthService {
     /** 注册新用户。 */
     @Transactional(rollbackFor = Exception.class)
     public UserInfoResponse register(RegisterRequest req) {
-        // 1. 用户名 / 邮箱唯一性校验
+        // 1. 用户名 / 邮箱 / 手机号唯一性校验
         if (userRepository.existsByUsername(req.getUsername())) {
             throw BizException.of(ErrorCode.E_GOV_4091);
         }
         if (userRepository.existsByEmail(req.getEmail())) {
             throw BizException.of(ErrorCode.E_GOV_4092);
         }
+        if (userRepository.existsByPhone(req.getPhone())) {
+            throw BizException.of(ErrorCode.E_USR_4095);
+        }
         // 2. 落库
         UserEntity u = new UserEntity();
         u.setUsername(req.getUsername());
         u.setEmail(req.getEmail());
+        u.setPhone(req.getPhone());
         u.setEmailVerified(false);
         u.setPasswordHash(passwordEncoder.encode(req.getPassword()));
         u.setNickname(req.getNickname() != null ? req.getNickname() : req.getUsername());

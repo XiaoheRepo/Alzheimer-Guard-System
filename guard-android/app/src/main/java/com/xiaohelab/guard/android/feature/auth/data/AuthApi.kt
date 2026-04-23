@@ -42,6 +42,8 @@ interface AuthApi {
 data class RegisterRequest(
     val username: String,
     val email: String,
+    /** API V2.0 §3.6.1: 家属注册必填，中国大陆手机号。 */
+    val phone: String,
     val password: String,
     val nickname: String? = null,
     val role: String = "FAMILY",

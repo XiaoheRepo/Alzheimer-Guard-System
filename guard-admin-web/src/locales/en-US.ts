@@ -714,5 +714,6 @@ export default {
     E_USR_4034: 'Cannot disable self',
     E_USR_4092: 'Pending transactions, cannot delete',
     E_USR_4093: 'Primary guardianship not transferred',
+    E_USR_4095: 'Phone number already registered',
   },
 }
