@@ -151,10 +151,13 @@ public class AdminUserService {
                 String.valueOf(u.getId()), String.valueOf(u.getId()), payload);
 
         // 5. 审计
+        Map<String, Object> auditDetail = new HashMap<>();
+        auditDetail.put("new_user_id", u.getId());
+        auditDetail.put("username", u.getUsername());
+        auditDetail.put("email", DesensitizeUtil.email(u.getEmail()));
+        auditDetail.put("reason", req.getReason());
         auditLogger.logSuccess("GOV", "admin.user.create", String.valueOf(u.getId()),
-                "CRITICAL", "CONFIRM_2",
-                Map.of("new_user_id", u.getId(), "username", u.getUsername(),
-                        "email", DesensitizeUtil.email(u.getEmail()), "reason", req.getReason()));
+                "CRITICAL", "CONFIRM_2", auditDetail);
 
         log.info("[Admin] SUPER_ADMIN {} 创建管理员账号 userId={} username={}",
                 me.getUserId(), u.getId(), u.getUsername());
