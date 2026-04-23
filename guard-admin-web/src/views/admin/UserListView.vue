@@ -212,11 +212,13 @@ function openEnable(u: AdminUserListItem) {
 
 async function onEnableSubmit() {
   if (!enableDlg.target) return
+  if (enableDlg.reason.trim().length < 5) {
+    message.warning(t('page.user.enable.reasonMin'))
+    return
+  }
   enableDlg.submitting = true
   try {
-    await enableAdminUser(enableDlg.target.user_id, {
-      reason: enableDlg.reason.trim() || undefined,
-    })
+    await enableAdminUser(enableDlg.target.user_id, { reason: enableDlg.reason.trim() })
     message.success(t('common.success'))
     enableDlg.open = false
     await load()
@@ -459,7 +461,7 @@ function prevPage() {
     >
       <p>{{ t('page.user.enable.content', { name: enableDlg.target?.username }) }}</p>
       <a-form layout="vertical" style="margin-top: 12px">
-        <a-form-item :label="t('page.user.enable.reason')">
+        <a-form-item :label="t('page.user.enable.reason')" required>
           <a-textarea
             v-model:value="enableDlg.reason"
             :rows="3"
@@ -467,6 +469,7 @@ function prevPage() {
             :maxlength="256"
             show-count
           />
+          <div class="text-muted" style="font-size: 12px">{{ t('page.user.enable.reasonMin') }}</div>
         </a-form-item>
       </a-form>
     </a-modal>
