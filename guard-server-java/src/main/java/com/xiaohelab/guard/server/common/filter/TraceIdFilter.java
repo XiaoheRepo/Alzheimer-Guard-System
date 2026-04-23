@@ -40,9 +40,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
             TraceIdUtil.setTraceId(traceId);
             TraceIdUtil.setRequestId(requestId);
             response.setHeader(HEADER_TRACE_ID, traceId);
-            if (requestId != null && !requestId.isBlank()) {
-                response.setHeader(HEADER_REQUEST_ID, requestId);
-            }
+            response.setHeader(HEADER_REQUEST_ID, requestId);
             chain.doFilter(request, response);
         } finally {
             TraceIdUtil.clear();
