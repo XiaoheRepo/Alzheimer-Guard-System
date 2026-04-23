@@ -6,7 +6,6 @@ import com.xiaohelab.guard.android.core.common.DomainException
 import com.xiaohelab.guard.android.core.common.MhResult
 import com.xiaohelab.guard.android.core.network.TokenRefresher
 import com.xiaohelab.guard.android.core.network.handleEnvelope
-import com.xiaohelab.guard.android.core.network.handleEnvelopeUnit
 import com.xiaohelab.guard.android.feature.auth.domain.AuthRepository
 import kotlinx.datetime.Clock
 import javax.inject.Inject
@@ -23,12 +22,22 @@ class AuthRepositoryImpl @Inject constructor(
         return when (result) {
             is MhResult.Success -> {
                 val body = result.data
+                // Some server builds omit the user object; call /users/me as fallback.
+                val userProfile: UserProfileDto = if (body.user != null) {
+                    body.user
+                } else {
+                    val meResult = handleEnvelope { api.getMe("Bearer ${body.accessToken}") }
+                    when (meResult) {
+                        is MhResult.Success -> meResult.data
+                        is MhResult.Failure -> return meResult
+                    }
+                }
                 // HC-Auth: 家属端仅接受 FAMILY 角色，否则拒绝登录。
-                if (body.user.role != AuthSession.ROLE_FAMILY) {
+                if (userProfile.role != AuthSession.ROLE_FAMILY) {
                     tokenStore.clear()
                     MhResult.Failure(DomainException(
                         code = "E_AUTH_4012",
-                        message = "Role ${body.user.role} not allowed on family app",
+                        message = "Role ${userProfile.role} not allowed on family app",
                         traceId = result.trace,
                         httpStatus = 403,
                     ))
@@ -36,11 +45,11 @@ class AuthRepositoryImpl @Inject constructor(
                     tokenStore.save(AuthSession(
                         accessToken = body.accessToken,
                         refreshToken = body.refreshToken,
-                        userId = body.user.userId,
-                        role = body.user.role,
+                        userId = userProfile.userId,
+                        role = userProfile.role,
                         expiresAtEpochSeconds = System.currentTimeMillis() / 1000 + body.expiresIn,
                     ))
-                    MhResult.Success(body.user, result.trace)
+                    MhResult.Success(userProfile, result.trace)
                 }
             }
             is MhResult.Failure -> result

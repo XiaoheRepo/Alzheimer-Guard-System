@@ -5,6 +5,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
@@ -29,6 +31,10 @@ interface AuthApi {
 
     @POST("/api/v1/auth/password-reset/confirm")
     suspend fun confirmPasswordReset(@Body body: PasswordResetConfirm): Response<ApiEnvelope<Unit>>
+
+    /** API V2.0 §3.6.6: 获取当前登录用户信息. auth is "Bearer <access_token>". */
+    @GET("/api/v1/users/me")
+    suspend fun getMe(@Header("Authorization") auth: String): Response<ApiEnvelope<UserProfileDto>>
 }
 
 @Serializable
@@ -44,8 +50,10 @@ data class RegisterRequest(
 data class RegisterResponseDto(
     @SerialName("user_id") val userId: String,
     val username: String,
-    val email: String,
-    val role: String,
+    // Server returns email_verification_sent per API §3.6.1; extra fields below are optional.
+    @SerialName("email_verification_sent") val emailVerificationSent: Boolean? = null,
+    val email: String? = null,
+    val role: String? = null,
     val nickname: String? = null,
 )
 
@@ -71,7 +79,8 @@ data class LoginResponseDto(
     @SerialName("refresh_token") val refreshToken: String,
     @SerialName("token_type") val tokenType: String = "Bearer",
     @SerialName("expires_in") val expiresIn: Long,
-    val user: UserProfileDto,
+    // Optional: some server builds omit the user object; we call /users/me in that case.
+    val user: UserProfileDto? = null,
 )
 
 @Serializable
