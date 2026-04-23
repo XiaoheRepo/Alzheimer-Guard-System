@@ -23,10 +23,10 @@ export function useWs() {
   async function connect() {
     if (stopped) return
     try {
-      const { ticket } = await getWsTicket()
+      const { ws_ticket } = await getWsTicket()
       const wsBase = import.meta.env.VITE_WS_BASE_URL
       if (!wsBase) return
-      ws = new WebSocket(`${wsBase}?ticket=${encodeURIComponent(ticket)}`)
+      ws = new WebSocket(`${wsBase}?ticket=${encodeURIComponent(ws_ticket)}`)
       ws.addEventListener('open', () => {
         connected.value = true
         reconnectDelay = 1000

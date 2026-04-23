@@ -72,23 +72,21 @@ public class AdminUserController {
     @PostMapping("/{userId}/disable")
     @Idempotent
     @Operation(summary = "3.6.18 禁用用户（需 CONFIRM_2）")
-    public Result<Void> disable(
+    public Result<Map<String, Object>> disable(
             @PathVariable Long userId,
             @Valid @RequestBody AdminUserActionRequest req,
             @RequestHeader(value = "X-Confirm-Level", required = false) String confirmLevel) {
-        adminUserService.disable(userId, req, confirmLevel);
-        return Result.ok();
+        return Result.ok(adminUserService.disable(userId, req, confirmLevel));
     }
 
     @PostMapping("/{userId}/enable")
     @Idempotent
     @Operation(summary = "3.6.19 启用用户（需 CONFIRM_1）")
-    public Result<Void> enable(
+    public Result<Map<String, Object>> enable(
             @PathVariable Long userId,
             @Valid @RequestBody AdminUserActionRequest req,
             @RequestHeader(value = "X-Confirm-Level", required = false) String confirmLevel) {
-        adminUserService.enable(userId, req, confirmLevel);
-        return Result.ok();
+        return Result.ok(adminUserService.enable(userId, req, confirmLevel));
     }
 
     @DeleteMapping("/{userId}")

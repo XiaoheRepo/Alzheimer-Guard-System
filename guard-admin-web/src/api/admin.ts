@@ -17,11 +17,11 @@ export interface SysConfigItem {
   updated_by?: string
 }
 
-/** GET /api/v1/admin/configs */
+/** GET /api/v1/admin/configs — API_V2.0.md §3.6.9，响应 { items: [...] } （非分页） */
 export function listConfigs(
   params?: Record<string, unknown>,
-): Promise<OffsetPage<SysConfigItem> | { items: SysConfigItem[] }> {
-  return http.get<OffsetPage<SysConfigItem>>('/api/v1/admin/configs', { params })
+): Promise<{ items: SysConfigItem[] }> {
+  return http.get<{ items: SysConfigItem[] }>('/api/v1/admin/configs', { params })
 }
 
 /** PUT /api/v1/admin/configs/{config_key} */
@@ -129,12 +129,20 @@ export function updateAdminUser(
   })
 }
 
+/** 启禁用响应体（API_V2.0.md §3.6.18 / §3.6.19） */
+export interface AdminUserStatusChange {
+  user_id: string
+  status: UserStatus
+  disabled_at?: string
+  enabled_at?: string
+}
+
 /** POST /api/v1/admin/users/{user_id}/disable */
 export function disableAdminUser(
   userId: string,
   body: { reason: string },
-): Promise<AdminUserListItem> {
-  return http.post<AdminUserListItem>(
+): Promise<AdminUserStatusChange> {
+  return http.post<AdminUserStatusChange>(
     `/api/v1/admin/users/${encodeURIComponent(userId)}/disable`,
     body,
     { headers: { 'X-Confirm-Level': 'CONFIRM_2' } },
@@ -145,8 +153,8 @@ export function disableAdminUser(
 export function enableAdminUser(
   userId: string,
   body?: { reason?: string },
-): Promise<AdminUserListItem> {
-  return http.post<AdminUserListItem>(
+): Promise<AdminUserStatusChange> {
+  return http.post<AdminUserStatusChange>(
     `/api/v1/admin/users/${encodeURIComponent(userId)}/enable`,
     body || {},
     { headers: { 'X-Confirm-Level': 'CONFIRM_1' } },
@@ -196,7 +204,7 @@ export function replayDeadEvent(
 }
 
 /** -------- WebSocket ticket -------- */
-/** POST /api/v1/ws/ticket */
-export function getWsTicket(): Promise<{ ticket: string; expires_in: number }> {
-  return http.post<{ ticket: string; expires_in: number }>('/api/v1/ws/ticket')
+/** POST /api/v1/ws/ticket — API_V2.0.md §4.1.1，响应字段为 ws_ticket */
+export function getWsTicket(): Promise<{ ws_ticket: string; expires_in: number }> {
+  return http.post<{ ws_ticket: string; expires_in: number }>('/api/v1/ws/ticket')
 }

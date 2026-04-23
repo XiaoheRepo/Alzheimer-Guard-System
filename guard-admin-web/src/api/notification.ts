@@ -11,7 +11,16 @@ export function getInbox(params?: Record<string, unknown>): Promise<InboxRespons
   return http.get<InboxResponse>('/api/v1/notifications/inbox', { params })
 }
 
+/** 标记通知已读响应（API_V2.0.md §3.6.12） */
+export interface MarkReadResponse {
+  notification_id: string
+  read_status: 'READ'
+  read_at: string
+}
+
 /** POST /api/v1/notifications/{notification_id}/read */
-export function markRead(notificationId: string): Promise<null> {
-  return http.post<null>(`/api/v1/notifications/${encodeURIComponent(notificationId)}/read`)
+export function markRead(notificationId: string): Promise<MarkReadResponse> {
+  return http.post<MarkReadResponse>(
+    `/api/v1/notifications/${encodeURIComponent(notificationId)}/read`,
+  )
 }

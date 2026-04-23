@@ -4,6 +4,7 @@ import com.xiaohelab.guard.server.common.dto.CursorResponse;
 import com.xiaohelab.guard.server.common.dto.Result;
 import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
+import com.xiaohelab.guard.server.common.security.SecurityUtil;
 import com.xiaohelab.guard.server.common.util.CursorUtil;
 import com.xiaohelab.guard.server.gov.entity.SysLogEntity;
 import com.xiaohelab.guard.server.gov.repository.SysLogRepository;
@@ -58,6 +59,8 @@ public class AuditLogExportController {
             @RequestParam(name = "risk_level", required = false) String riskLevel,
             @RequestParam(required = false) String cursor,
             @RequestParam(name = "page_size", defaultValue = "50") int pageSize) {
+
+        if (!SecurityUtil.current().isAdmin()) throw BizException.of(ErrorCode.E_AUTH_4031);
 
         if (pageSize < 1 || pageSize > 200) pageSize = 50;
         Long cursorId = (cursor == null || cursor.isBlank()) ? null : CursorUtil.decodeId(cursor);

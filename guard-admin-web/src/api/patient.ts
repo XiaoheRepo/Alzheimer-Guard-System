@@ -57,12 +57,21 @@ export function getAdminPatient(patientId: string): Promise<AdminPatientDetail> 
   return http.get<AdminPatientDetail>(`/api/v1/admin/patients/${encodeURIComponent(patientId)}`)
 }
 
+/** 强制转移主监护响应（API_V2.0.md §3.3.17） */
+export interface ForceTransferPrimaryResponse {
+  patient_id: string
+  previous_primary_user_id: string
+  new_primary_user_id: string
+  transferred_at: string
+  audit_log_id?: string
+}
+
 /** POST /api/v1/admin/patients/{patient_id}/guardians/force-transfer */
 export function forceTransferPrimary(
   patientId: string,
   body: { target_user_id: string; reason: string; evidence_url?: string },
-): Promise<AdminPatientDetail> {
-  return http.post<AdminPatientDetail>(
+): Promise<ForceTransferPrimaryResponse> {
+  return http.post<ForceTransferPrimaryResponse>(
     `/api/v1/admin/patients/${encodeURIComponent(patientId)}/guardians/force-transfer`,
     body,
     { headers: { 'X-Confirm-Level': 'CONFIRM_3' } },

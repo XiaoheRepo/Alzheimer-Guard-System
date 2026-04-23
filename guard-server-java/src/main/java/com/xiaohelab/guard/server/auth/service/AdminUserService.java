@@ -354,7 +354,7 @@ public class AdminUserService {
     // 4. 禁用（POST /api/v1/admin/users/{id}/disable）—— HIGH + CONFIRM_2
     // =========================================================
     @Transactional(rollbackFor = Exception.class)
-    public void disable(Long userId, AdminUserActionRequest req, String confirmLevel) {
+    public Map<String, Object> disable(Long userId, AdminUserActionRequest req, String confirmLevel) {
         AuthUser me = SecurityUtil.current();
         assertAdmin(me);
         assertNotSelf(me, userId);
@@ -458,13 +458,20 @@ public class AdminUserService {
                 "HIGH", "CONFIRM_2",
                 buildAuditDetail("target_user_id", userId, "reason", req.getReason(),
                         "guardian_promoted_patients", primaryPatientIds));
+
+        // API §3.6.18 响应体
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("user_id", String.valueOf(userId));
+        resp.put("status", "DISABLED");
+        resp.put("disabled_at", now.toString());
+        return resp;
     }
 
     // =========================================================
     // 5. 启用（POST /api/v1/admin/users/{id}/enable）—— MEDIUM + CONFIRM_1
     // =========================================================
     @Transactional(rollbackFor = Exception.class)
-    public void enable(Long userId, AdminUserActionRequest req, String confirmLevel) {
+    public Map<String, Object> enable(Long userId, AdminUserActionRequest req, String confirmLevel) {
         AuthUser me = SecurityUtil.current();
         assertAdmin(me);
         assertNotSelf(me, userId);
@@ -476,17 +483,25 @@ public class AdminUserService {
         int rows = userRepository.casStatus(userId, "DISABLED", "ACTIVE");
         if (rows == 0) throw BizException.of(ErrorCode.E_USR_4091);
 
+        OffsetDateTime enabledAt = OffsetDateTime.now();
         Map<String, Object> payload = new HashMap<>();
         payload.put("user_id", String.valueOf(userId));
         payload.put("operator_user_id", me.getUserId());
         payload.put("reason", req.getReason());
-        payload.put("occurred_at", OffsetDateTime.now().toString());
+        payload.put("occurred_at", enabledAt.toString());
         outboxService.publish(OutboxTopics.USER_ENABLED,
                 String.valueOf(userId), String.valueOf(userId), payload);
 
         auditLogger.logSuccess("GOV", "admin.user.enable", String.valueOf(userId),
                 "MEDIUM", "CONFIRM_1",
                 buildAuditDetail("target_user_id", userId, "reason", req.getReason()));
+
+        // API §3.6.19 响应体
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("user_id", String.valueOf(userId));
+        resp.put("status", "ACTIVE");
+        resp.put("enabled_at", enabledAt.toString());
+        return resp;
     }
 
     // =========================================================

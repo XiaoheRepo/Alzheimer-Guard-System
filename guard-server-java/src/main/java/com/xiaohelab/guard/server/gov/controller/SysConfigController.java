@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Map;
 
 /** 系统配置后台（Admin）：CRUD + 批量查询。 */
@@ -29,9 +28,9 @@ public class SysConfigController {
     }
 
     @GetMapping
-    public Result<List<SysConfigEntity>> list() {
+    public Result<Map<String, Object>> list() {
         assertAdmin();
-        return Result.ok(configRepository.findAll());
+        return Result.ok(Map.of("items", configRepository.findAll()));
     }
 
     @GetMapping("/{key}")
