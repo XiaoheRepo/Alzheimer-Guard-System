@@ -1,3 +1,136 @@
 <resources>
-    <string name="app_name">guard-android</string>
+    <!-- HC-Brand: 系统名「码上回家」(MH = MaHome) -->
+    <string name="app_name">码上回家</string>
+
+    <!-- ==== Common ==== -->
+    <string name="common_confirm">确认</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_submit">提交</string>
+    <string name="common_save">保存</string>
+    <string name="common_retry">重试</string>
+    <string name="common_back">返回</string>
+    <string name="common_loading">加载中…</string>
+    <string name="common_empty">暂无数据</string>
+    <string name="common_network_error">网络异常，请检查连接</string>
+    <string name="common_trace_label">错误追踪：%1$s</string>
+
+    <!-- ==== Navigation Tabs ==== -->
+    <string name="nav_home">首页</string>
+    <string name="nav_patient">档案</string>
+    <string name="nav_notification">消息</string>
+    <string name="nav_me">我的</string>
+
+    <!-- ==== Auth (MH-AUTH-*) ==== -->
+    <string name="auth_login_title">登录</string>
+    <string name="auth_login_subtitle">欢迎回到码上回家</string>
+    <string name="auth_field_username">用户名</string>
+    <string name="auth_field_password">密码</string>
+    <string name="auth_field_email">邮箱</string>
+    <string name="auth_field_nickname">昵称（可选）</string>
+    <string name="auth_field_new_password">新密码</string>
+    <string name="auth_login_submit">登录</string>
+    <string name="auth_go_register">还没有账号？立即注册</string>
+    <string name="auth_go_forgot">忘记密码</string>
+    <string name="auth_register_title">注册</string>
+    <string name="auth_register_submit">创建账号</string>
+    <string name="auth_register_hint_email">注册完成后会发送邮箱验证链接，请及时查收</string>
+    <string name="auth_reset_request_title">忘记密码</string>
+    <string name="auth_reset_request_desc">我们将向该邮箱发送重置链接（不使用短信）</string>
+    <string name="auth_reset_request_submit">发送重置链接</string>
+    <string name="auth_reset_sent">若该邮箱已注册，我们已发送重置链接</string>
+    <string name="auth_reset_confirm_title">重置密码</string>
+    <string name="auth_reset_confirm_token">重置令牌</string>
+    <string name="auth_reset_confirm_submit">完成重置</string>
+    <string name="auth_role_family_only">该账号不支持家属端登录，请使用 Web 管理端</string>
+    <string name="auth_logout">退出登录</string>
+
+    <!-- ==== Me / Settings (MH-ME-*) ==== -->
+    <string name="me_title">我的</string>
+    <string name="me_not_logged_in">尚未登录</string>
+    <string name="me_avatar_cd">用户头像</string>
+    <string name="me_item_settings">设置</string>
+    <string name="settings_title">设置</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_language_system">跟随系统</string>
+    <string name="settings_language_zh">简体中文</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_large_text">大字易读模式</string>
+    <string name="settings_large_text_desc">正文 20sp 起、按钮 56dp、对比度 WCAG AA</string>
+
+    <!-- ==== Profile / Patient (MH-PAT-*) ==== -->
+    <string name="patient_list_title">我的家人</string>
+    <string name="patient_list_empty">尚未建立患者档案</string>
+    <string name="patient_create">新建档案</string>
+    <string name="patient_detail_title">档案详情</string>
+    <string name="patient_edit_title">编辑档案</string>
+    <string name="patient_field_name">姓名</string>
+    <string name="patient_field_gender">性别</string>
+    <string name="patient_field_gender_male">男</string>
+    <string name="patient_field_gender_female">女</string>
+    <string name="patient_field_gender_unknown">未知</string>
+    <string name="patient_field_birthday">出生日期</string>
+    <string name="patient_field_chronic">慢性病</string>
+    <string name="patient_field_medication">用药</string>
+    <string name="patient_field_allergy">过敏</string>
+    <string name="patient_field_emergency_phone">紧急联系电话</string>
+    <string name="patient_field_avatar_url">头像地址</string>
+    <string name="patient_field_long_text">档案长文本（AI 向量化）</string>
+    <string name="patient_section_appearance">外观特征</string>
+    <string name="patient_field_height">身高（cm）</string>
+    <string name="patient_field_weight">体重（kg）</string>
+    <string name="patient_field_clothing">常穿衣物</string>
+    <string name="patient_field_features">显著特征</string>
+    <string name="patient_section_fence">电子围栏</string>
+    <string name="patient_field_fence_enabled">启用围栏</string>
+    <string name="patient_field_fence_center">围栏中心（lat, lng）</string>
+    <string name="patient_field_fence_radius">围栏半径（米）</string>
+    <string name="patient_status_normal">正常</string>
+    <string name="patient_status_missing">走失中</string>
+    <string name="patient_status_missing_pending">疑似走失</string>
+    <string name="patient_archive">归档档案</string>
+    <string name="patient_archive_reason">归档原因（10-256 字）</string>
+    <string name="patient_guardians">监护人</string>
+    <string name="patient_tags">标签</string>
+    <string name="patient_pending_invitations">待处理邀请</string>
+
+    <!-- ==== Guardian (MH-GUA-*) ==== -->
+    <string name="guardian_invite_title">邀请监护人</string>
+    <string name="guardian_invite_target_user">被邀请人用户 ID</string>
+    <string name="guardian_invite_reason">邀请说明（可选）</string>
+    <string name="guardian_invite_submit">发送邀请</string>
+    <string name="guardian_respond_accept">接受</string>
+    <string name="guardian_respond_reject">拒绝</string>
+    <string name="guardian_respond_reject_reason">拒绝原因（5-256 字）</string>
+    <string name="guardian_transfer_title">转移主监护</string>
+    <string name="guardian_transfer_target">受让人用户 ID</string>
+    <string name="guardian_transfer_expire">有效期（秒，默认 604800）</string>
+    <string name="guardian_transfer_submit">发起转移</string>
+
+    <!-- ==== Error map (§24) ==== -->
+    <string name="error_E_AUTH_4001">用户名格式不合法</string>
+    <string name="error_E_AUTH_4002">密码格式不合法</string>
+    <string name="error_E_AUTH_4011">用户名或密码错误</string>
+    <string name="error_E_AUTH_4012">重置令牌已失效，请重新发起</string>
+    <string name="error_E_AUTH_4013">原密码错误</string>
+    <string name="error_E_AUTH_4091">用户名已被占用</string>
+    <string name="error_E_AUTH_4092">该邮箱已被占用</string>
+    <string name="error_E_GOV_4011">会话已过期，请重新登录</string>
+    <string name="error_E_GOV_4030">当前角色无权访问</string>
+    <string name="error_E_GOV_4031">账号已被封禁</string>
+    <string name="error_E_GOV_4032">账号未激活，请先完成邮箱验证</string>
+    <string name="error_E_GOV_4291">访问过于频繁，请 %1$d 秒后再试</string>
+    <string name="error_E_GOV_4292">冷却中，请稍候</string>
+    <string name="error_E_GOV_5001">服务繁忙，请稍后重试</string>
+    <string name="error_E_REQ_4001">请求参数校验失败</string>
+    <string name="error_E_REQ_4003">客户端版本或代理异常，请升级 App</string>
+    <string name="error_E_PRO_4030">无权访问该患者档案</string>
+    <string name="error_E_PRO_4031">仅主监护可执行此操作</string>
+    <string name="error_E_PRO_4032">不可移除主监护</string>
+    <string name="error_E_PRO_4033">非监护人，无权操作</string>
+    <string name="error_E_PRO_4091">数据已被他人更新，请刷新后重试</string>
+    <string name="error_unknown">发生未知错误（%1$s）</string>
 </resources>

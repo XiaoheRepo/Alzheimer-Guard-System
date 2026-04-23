@@ -24,6 +24,14 @@ timber = "5.0.1"
 coil = "2.7.0"
 hiltNavigationCompose = "1.2.0"
 retrofit2KotlinxSerialization = "1.0.0"
+appcompat = "1.7.0"
+kotlinxDatetime = "0.6.1"
+mockwebserver = "4.12.0"
+mockk = "1.13.13"
+turbine = "1.1.0"
+coroutinesTest = "1.10.1"
+leakcanary = "2.14"
+mockitoKotlin = "5.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -69,6 +77,18 @@ hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version 
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 # Image loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+# AppCompat for locale switching (AppCompatDelegate.setApplicationLocales)
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+# Date/time
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+# OkHttp SSE (reserved for AI domain)
+okhttp-sse = { group = "com.squareup.okhttp3", name = "okhttp-sse", version.ref = "okhttp" }
+# Test libs
+okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
