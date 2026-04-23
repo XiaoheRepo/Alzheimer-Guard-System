@@ -28,4 +28,13 @@ public interface OutboxLogRepository extends JpaRepository<OutboxLogEntity, Long
     int markSent(@Param("id") Long id, @Param("phase") String phase, @Param("at") OffsetDateTime at);
 
     Page<OutboxLogEntity> findByPhaseOrderByUpdatedAtDesc(String phase, Pageable pageable);
+
+    /** API_V2.0.md §3.6.8 — cursor-based DEAD 事件列表，cursor 为上一页最后一条的 id（字符串）。 */
+    @Query(value = "SELECT * FROM sys_outbox_log " +
+            " WHERE phase IN ('DEAD','RETRY') " +
+            "   AND (CAST(:cursor AS bigint) IS NULL OR id < CAST(:cursor AS bigint)) " +
+            " ORDER BY id DESC LIMIT :limit",
+            nativeQuery = true)
+    List<OutboxLogEntity> findDeadCursor(@Param("cursor") Long cursor,
+                                         @Param("limit") int limit);
 }

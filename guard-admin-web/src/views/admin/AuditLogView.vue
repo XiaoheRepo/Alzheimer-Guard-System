@@ -142,7 +142,7 @@ onMounted(load)
               <a-select-option value="PROFILE">PROFILE</a-select-option>
               <a-select-option value="MAT">MAT</a-select-option>
               <a-select-option value="AI">AI</a-select-option>
-              <a-select-option value="GOVERNANCE">GOVERNANCE</a-select-option>
+              <a-select-option value="GOV">GOV</a-select-option>
               <a-select-option value="NOTIFICATION">NOTIFICATION</a-select-option>
             </a-select>
           </a-form-item>
@@ -206,17 +206,27 @@ onMounted(load)
           <a-descriptions-item :label="t('page.log.col.time')">{{
             fmtDateTime(current.created_at)
           }}</a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.module')">{{ current.module }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.module')">{{
+            current.module
+          }}</a-descriptions-item>
           <a-descriptions-item :label="t('page.log.col.operator')">
             {{ current.operator_username || current.operator_user_id || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.action')">{{ current.action }}</a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.result')">{{ current.result }}</a-descriptions-item>
-          <a-descriptions-item :label="t('page.log.col.riskLevel')">{{ current.risk_level }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.action')">{{
+            current.action
+          }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.result')">{{
+            current.result
+          }}</a-descriptions-item>
+          <a-descriptions-item :label="t('page.log.col.riskLevel')">{{
+            current.risk_level
+          }}</a-descriptions-item>
           <a-descriptions-item :label="t('page.log.col.traceId')">
             <CopyableText :text="current.trace_id" />
           </a-descriptions-item>
-          <a-descriptions-item v-if="current.ip" :label="t('page.log.col.ip')">{{ current.ip }}</a-descriptions-item>
+          <a-descriptions-item v-if="current.ip" :label="t('page.log.col.ip')">{{
+            current.ip
+          }}</a-descriptions-item>
           <a-descriptions-item v-if="current.detail" :label="t('page.log.col.detail')">
             <pre class="code-block">{{ current.detail }}</pre>
           </a-descriptions-item>
