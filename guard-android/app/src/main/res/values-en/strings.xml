@@ -137,10 +137,8 @@
     <!-- Additional keys used by M0/M1/M2 screens -->
     <string name="auth_go_reset">Forgot password</string>
     <string name="auth_reset_request_hint">We will send a reset link to this email (HC-06: no SMS)</string>
-    <string name="auth_reset_request_submit">Send reset link</string>
     <string name="auth_reset_confirm_hint">Enter the reset token from your email and a new password</string>
     <string name="auth_field_reset_token">Reset token</string>
-    <string name="auth_reset_confirm_submit">Reset password</string>
     <string name="me_settings">Settings</string>
     <string name="me_logout">Sign out</string>
     <string name="settings_large_text_hint">Body ≥ 20sp, buttons 56dp, WCAG AA contrast</string>

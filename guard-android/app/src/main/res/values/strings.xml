@@ -137,10 +137,8 @@
     <!-- ==== Additional keys used by M0/M1/M2 screens ==== -->
     <string name="auth_go_reset">忘记密码</string>
     <string name="auth_reset_request_hint">我们将向该邮箱发送重置链接（HC-06 不使用短信）</string>
-    <string name="auth_reset_request_submit">发送重置链接</string>
     <string name="auth_reset_confirm_hint">请输入邮件中的重置令牌和新密码</string>
     <string name="auth_field_reset_token">重置令牌</string>
-    <string name="auth_reset_confirm_submit">完成重置</string>
     <string name="me_settings">设置</string>
     <string name="me_logout">退出登录</string>
     <string name="settings_large_text_hint">正文 20sp 起、按钮 56dp、对比度 WCAG AA</string>
