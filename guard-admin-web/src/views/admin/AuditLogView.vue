@@ -179,7 +179,13 @@ onMounted(load)
           </a-tag>
         </template>
         <template v-else-if="column.key === 'risk_level'">
-          <a-tag :color="{ LOW: 'default', MEDIUM: 'warning', HIGH: 'orange', CRITICAL: 'error' }[record.risk_level] ?? 'default'">
+          <a-tag
+            :color="
+              { LOW: 'default', MEDIUM: 'warning', HIGH: 'orange', CRITICAL: 'error' }[
+                record.risk_level
+              ] ?? 'default'
+            "
+          >
             {{ record.risk_level }}
           </a-tag>
         </template>

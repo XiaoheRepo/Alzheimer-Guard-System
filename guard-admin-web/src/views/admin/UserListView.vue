@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { message, Modal } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import {
   listAdminUsers,
   updateAdminUser,
@@ -52,6 +52,20 @@ const createDlg = reactive({
   username: '',
   email: '',
   nickname: '',
+  reason: '',
+  submitting: false,
+})
+
+const disableDlg = reactive({
+  open: false,
+  target: null as AdminUserListItem | null,
+  reason: '',
+  submitting: false,
+})
+
+const deleteDlg = reactive({
+  open: false,
+  target: null as AdminUserListItem | null,
   reason: '',
   submitting: false,
 })
@@ -128,6 +142,14 @@ async function onSave() {
 }
 
 async function onCreate() {
+  if (!createDlg.username.trim() || !createDlg.email.trim()) {
+    message.warning(t('common.fillRequired'))
+    return
+  }
+  if (createDlg.reason.trim().length < 10) {
+    message.warning(t('page.user.create.reasonMin'))
+    return
+  }
   createDlg.submitting = true
   try {
     const res = await createAdmin({
@@ -150,22 +172,29 @@ async function onCreate() {
   }
 }
 
-async function onDisable(u: AdminUserListItem) {
-  Modal.confirm({
-    title: t('page.user.disable.title'),
-    content: t('page.user.disable.content', { name: u.username }),
-    okText: t('common.confirm'),
-    cancelText: t('common.cancel'),
-    onOk: async () => {
-      try {
-        await disableAdminUser(u.user_id, { reason: 'admin disable' })
-        message.success(t('common.success'))
-        await load()
-      } catch (e) {
-        message.error((e as ApiError)?.message || t('error.UNKNOWN'))
-      }
-    },
-  })
+function openDisable(u: AdminUserListItem) {
+  disableDlg.target = u
+  disableDlg.reason = ''
+  disableDlg.open = true
+}
+
+async function onDisableSubmit() {
+  if (disableDlg.reason.trim().length < 10) {
+    message.warning(t('page.user.disable.reasonMin'))
+    return
+  }
+  if (!disableDlg.target) return
+  disableDlg.submitting = true
+  try {
+    await disableAdminUser(disableDlg.target.user_id, { reason: disableDlg.reason.trim() })
+    message.success(t('common.success'))
+    disableDlg.open = false
+    await load()
+  } catch (e) {
+    message.error((e as ApiError)?.message || t('error.UNKNOWN'))
+  } finally {
+    disableDlg.submitting = false
+  }
 }
 
 async function onEnable(u: AdminUserListItem) {
@@ -178,23 +207,29 @@ async function onEnable(u: AdminUserListItem) {
   }
 }
 
-async function onDelete(u: AdminUserListItem) {
-  Modal.confirm({
-    title: t('page.user.delete.title'),
-    content: t('page.user.delete.content', { name: u.username }),
-    okType: 'danger',
-    okText: t('common.confirm'),
-    cancelText: t('common.cancel'),
-    onOk: async () => {
-      try {
-        await deleteAdminUser(u.user_id, { reason: 'admin delete' })
-        message.success(t('common.success'))
-        await load()
-      } catch (e) {
-        message.error((e as ApiError)?.message || t('error.UNKNOWN'))
-      }
-    },
-  })
+function openDelete(u: AdminUserListItem) {
+  deleteDlg.target = u
+  deleteDlg.reason = ''
+  deleteDlg.open = true
+}
+
+async function onDeleteSubmit() {
+  if (deleteDlg.reason.trim().length < 20) {
+    message.warning(t('page.user.delete.reasonMin'))
+    return
+  }
+  if (!deleteDlg.target) return
+  deleteDlg.submitting = true
+  try {
+    await deleteAdminUser(deleteDlg.target.user_id, { reason: deleteDlg.reason.trim() })
+    message.success(t('common.success'))
+    deleteDlg.open = false
+    await load()
+  } catch (e) {
+    message.error((e as ApiError)?.message || t('error.UNKNOWN'))
+  } finally {
+    deleteDlg.submitting = false
+  }
 }
 
 function doSearch() {
@@ -295,7 +330,7 @@ function prevPage() {
               type="link"
               size="small"
               :roles="['SUPER_ADMIN']"
-              @click="onDisable(record)"
+              @click="openDisable(record)"
               >{{ t('page.user.disable.btn') }}</PermissionButton
             >
             <PermissionButton
@@ -311,7 +346,7 @@ function prevPage() {
               type="link"
               size="small"
               :roles="['SUPER_ADMIN']"
-              @click="onDelete(record)"
+              @click="openDelete(record)"
               >{{ t('common.delete') }}</PermissionButton
             >
           </a-space>
@@ -389,6 +424,65 @@ function prevPage() {
             :rows="3"
             :placeholder="t('page.user.create.reasonPlaceholder')"
           />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 禁用确认弹窗 -->
+    <a-modal
+      v-model:open="disableDlg.open"
+      :title="t('page.user.disable.title')"
+      :confirm-loading="disableDlg.submitting"
+      :ok-text="t('common.confirm')"
+      :cancel-text="t('common.cancel')"
+      ok-type="danger"
+      @ok="onDisableSubmit"
+    >
+      <p>{{ t('page.user.disable.content', { name: disableDlg.target?.username }) }}</p>
+      <a-form layout="vertical" style="margin-top: 12px">
+        <a-form-item :label="t('page.user.disable.reason')" required>
+          <a-textarea
+            v-model:value="disableDlg.reason"
+            :rows="3"
+            :placeholder="t('page.user.disable.reasonPlaceholder')"
+            :maxlength="256"
+            show-count
+          />
+          <div class="text-muted" style="font-size: 12px">
+            {{ t('page.user.disable.reasonMin') }}
+          </div>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 删除确认弹窗 -->
+    <a-modal
+      v-model:open="deleteDlg.open"
+      :title="t('page.user.delete.title')"
+      :confirm-loading="deleteDlg.submitting"
+      :ok-text="t('common.confirm')"
+      :cancel-text="t('common.cancel')"
+      ok-type="danger"
+      @ok="onDeleteSubmit"
+    >
+      <a-alert
+        type="error"
+        :message="t('page.user.delete.content', { name: deleteDlg.target?.username })"
+        show-icon
+        style="margin-bottom: 12px"
+      />
+      <a-form layout="vertical">
+        <a-form-item :label="t('page.user.delete.reason')" required>
+          <a-textarea
+            v-model:value="deleteDlg.reason"
+            :rows="3"
+            :placeholder="t('page.user.delete.reasonPlaceholder')"
+            :maxlength="256"
+            show-count
+          />
+          <div class="text-muted" style="font-size: 12px">
+            {{ t('page.user.delete.reasonMin') }}
+          </div>
         </a-form-item>
       </a-form>
     </a-modal>

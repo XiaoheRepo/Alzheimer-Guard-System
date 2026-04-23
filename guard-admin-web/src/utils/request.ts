@@ -2,7 +2,7 @@
 // 统一 Axios 封装（WAHB §9 / HC-03/04/08）
 
 import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios'
-import { message, Modal, notification } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import { i18n } from '@/locales'
 import { shortId } from '@/utils/uuid'
 
@@ -96,17 +96,11 @@ function handleBizError(
   if (status === 401 || code === 'E_AUTH_4011' || code === 'E_GOV_4011') {
     handlers.onUnauthorized?.()
   } else if (status === 403 || code === 'E_AUTH_4031') {
-    Modal.warning({
-      title: i18n.global.t('error.forbidden') as string,
-      content: `${msg}\nTrace: ${traceId}`,
-    })
+    message.error(msg)
   } else if (status === 429 || code === 'E_REQ_4291') {
-    notification.warning({
-      message: i18n.global.t('error.rateLimited') as string,
-      description: msg,
-    })
+    message.warning(msg)
   } else if (!code.startsWith('E_HTTP_NET')) {
-    message.error(`${msg} (Trace: ${String(traceId).slice(0, 12)})`)
+    message.error(msg)
   } else {
     message.error(i18n.global.t('error.network') as string)
   }

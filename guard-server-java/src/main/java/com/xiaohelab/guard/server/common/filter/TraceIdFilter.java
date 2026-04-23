@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * HC-04 全链路追踪 Filter：注入/透传 trace_id 与 request_id 到 MDC 与响应头。
@@ -30,6 +31,10 @@ public class TraceIdFilter extends OncePerRequestFilter {
             traceId = TraceIdUtil.newTraceId();
         }
         String requestId = request.getHeader(HEADER_REQUEST_ID);
+        // 客户端未传时自动生成，保证每条审计日志都有 request_id
+        if (requestId == null || requestId.isBlank()) {
+            requestId = "req_" + UUID.randomUUID().toString().replace("-", "");
+        }
 
         try {
             TraceIdUtil.setTraceId(traceId);
