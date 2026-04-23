@@ -502,7 +502,7 @@ export default {
         reasonPlaceholder: '请输入禁用该账号的理由（10字以上）',
         reasonMin: '至少10字',
       },
-      enable: { title: '启用用户', btn: '启用' },
+      enable: { title: '启用用户', btn: '启用', content: '确认启用 {name}？', reason: '启用理由', reasonPlaceholder: '可选，最多 256 字' },
       delete: {
         title: '删除用户',
         content: '删除用户 {name}？此操作不可恢复，请谨慎执行。',

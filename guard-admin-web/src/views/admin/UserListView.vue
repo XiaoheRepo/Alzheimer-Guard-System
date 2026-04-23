@@ -70,6 +70,13 @@ const deleteDlg = reactive({
   submitting: false,
 })
 
+const enableDlg = reactive({
+  open: false,
+  target: null as AdminUserListItem | null,
+  reason: '',
+  submitting: false,
+})
+
 const tempPwdDlg = reactive({
   open: false,
   username: '',
@@ -197,13 +204,24 @@ async function onDisableSubmit() {
   }
 }
 
-async function onEnable(u: AdminUserListItem) {
+function openEnable(u: AdminUserListItem) {
+  enableDlg.target = u
+  enableDlg.reason = ''
+  enableDlg.open = true
+}
+
+async function onEnableSubmit() {
+  if (!enableDlg.target) return
+  enableDlg.submitting = true
   try {
-    await enableAdminUser(u.user_id)
+    await enableAdminUser(enableDlg.target.user_id, { reason: enableDlg.reason.trim() || undefined })
     message.success(t('common.success'))
+    enableDlg.open = false
     await load()
   } catch (e) {
     message.error((e as ApiError)?.message || t('error.UNKNOWN'))
+  } finally {
+    enableDlg.submitting = false
   }
 }
 
@@ -338,7 +356,7 @@ function prevPage() {
               type="link"
               size="small"
               :roles="['SUPER_ADMIN']"
-              @click="onEnable(record)"
+              @click="openEnable(record)"
               >{{ t('page.user.enable.btn') }}</PermissionButton
             >
             <PermissionButton
@@ -423,6 +441,29 @@ function prevPage() {
             v-model:value="createDlg.reason"
             :rows="3"
             :placeholder="t('page.user.create.reasonPlaceholder')"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 启用确认弹窗 -->
+    <a-modal
+      v-model:open="enableDlg.open"
+      :title="t('page.user.enable.title')"
+      :confirm-loading="enableDlg.submitting"
+      :ok-text="t('common.confirm')"
+      :cancel-text="t('common.cancel')"
+      @ok="onEnableSubmit"
+    >
+      <p>{{ t('page.user.enable.content', { name: enableDlg.target?.username }) }}</p>
+      <a-form layout="vertical" style="margin-top: 12px">
+        <a-form-item :label="t('page.user.enable.reason')">
+          <a-textarea
+            v-model:value="enableDlg.reason"
+            :rows="3"
+            :placeholder="t('page.user.enable.reasonPlaceholder')"
+            :maxlength="256"
+            show-count
           />
         </a-form-item>
       </a-form>

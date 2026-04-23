@@ -495,7 +495,7 @@ export default {
         reasonPlaceholder: 'Explain why (min 10 chars)',
         reasonMin: 'Min 10 characters',
       },
-      enable: { title: 'Enable User', btn: 'Enable' },
+      enable: { title: 'Enable User', btn: 'Enable', content: 'Enable {name}?', reason: 'Reason (optional)', reasonPlaceholder: 'Optional, max 256 chars' },
       delete: {
         title: 'Delete User',
         content: 'Delete {name}? This cannot be undone.',
