@@ -9,6 +9,7 @@
     <string name="common_save">Save</string>
     <string name="common_retry">Retry</string>
     <string name="common_back">Back</string>
+    <string name="common_next">Next</string>
     <string name="common_loading">Loading…</string>
     <string name="common_empty">No data</string>
     <string name="common_network_error">Network error, please check your connection</string>
@@ -34,6 +35,24 @@
     <string name="auth_register_title">Register</string>
     <string name="auth_register_submit">Create account</string>
     <string name="auth_register_hint_email">A verification link will be sent to your email after registration</string>
+    <!-- Two-step registration -->
+    <string name="auth_register_step1_title">Step 1 / 2: Account info</string>
+    <string name="auth_register_step1_hint">Choose your username and nickname (nickname optional)</string>
+    <string name="auth_register_step2_title">Step 2 / 2: Email &amp; password</string>
+    <string name="auth_register_step2_hint">Password must contain upper &amp; lowercase letters and digits, 8–128 characters</string>
+    <string name="auth_field_username_hint">4–64 chars, letters, digits and underscore only</string>
+    <string name="auth_field_nickname_hint">Up to 64 chars, optional</string>
+    <string name="auth_field_email_hint">An activation link will be sent to this email</string>
+    <string name="auth_field_password_hint">8–128 chars, must include upper &amp; lowercase letters and digits</string>
+    <string name="auth_field_password_confirm">Confirm password</string>
+    <string name="auth_register_passwords_mismatch">Passwords do not match, please re-enter</string>
+    <string name="auth_show_password">Show password</string>
+    <string name="auth_hide_password">Hide password</string>
+    <string name="auth_go_login">Go to sign in</string>
+    <!-- Email sent screen -->
+    <string name="auth_register_email_sent_title">Verification email sent</string>
+    <string name="auth_register_email_sent_body">We sent an activation link to %1$s. Please check your email and click the link to activate your account.</string>
+    <string name="auth_register_email_sent_hint">The link expires in 30 minutes. You can sign in once activated.</string>
     <string name="auth_reset_request_title">Forgot password</string>
     <string name="auth_reset_request_desc">We will email you a reset link (no SMS)</string>
     <string name="auth_reset_request_submit">Send reset link</string>
@@ -122,6 +141,9 @@
     <string name="error_E_GOV_4030">Access denied for current role</string>
     <string name="error_E_GOV_4031">Account has been banned</string>
     <string name="error_E_GOV_4032">Account not activated, please verify your email</string>
+    <string name="error_E_GOV_4091">Username already taken</string>
+    <string name="error_E_GOV_4092">Email already registered</string>
+    <string name="error_E_GOV_4102">Password reset link has expired, please request a new one</string>
     <string name="error_E_GOV_4291">Too many requests, please retry in %1$d seconds</string>
     <string name="error_E_GOV_4292">Cooldown in progress</string>
     <string name="error_E_GOV_5001">Service busy, please retry later</string>
@@ -155,4 +177,16 @@
     <string name="guardian_field_target_user">Target user id</string>
     <string name="guardian_field_reason">Reason</string>
     <string name="guardian_transfer_warn">Transferring primary guardianship moves all permissions. Proceed carefully.</string>
+
+    <!-- Patient edit multi-step (MH-PAT-02) -->
+    <string name="patient_edit_step_basic_title">Step 1 / 2: Basic info</string>
+    <string name="patient_edit_step_basic_hint">Fill in the patient\'s basic information (* required)</string>
+    <string name="patient_edit_step_appearance_title">Step 2 / 2: Appearance</string>
+    <string name="patient_edit_step_appearance_hint">Appearance details help identify the patient if missing (optional)</string>
+    <string name="patient_field_birth_date_hint">Format: YYYY-MM-DD, e.g. 1945-03-20</string>
+    <string name="patient_field_medical_notes_hint">e.g. medical history, medications, allergies, emergency contact phone</string>
+    <string name="patient_field_height_hint">in centimetres (cm)</string>
+    <string name="patient_field_weight_hint">in kilograms (kg)</string>
+    <string name="patient_field_features_hint">e.g. skin tone, hairstyle, typical clothing, distinctive marks</string>
+    <string name="patient_field_gender_select">Select gender</string>
 </resources>

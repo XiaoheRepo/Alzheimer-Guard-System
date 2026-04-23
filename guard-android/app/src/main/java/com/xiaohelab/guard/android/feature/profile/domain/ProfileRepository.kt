@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.android.feature.profile.domain
 
+import com.xiaohelab.guard.android.core.common.DomainException
 import com.xiaohelab.guard.android.core.common.MhResult
 import com.xiaohelab.guard.android.core.network.handleEnvelope
 import com.xiaohelab.guard.android.feature.profile.data.AppearanceDto
@@ -17,6 +18,12 @@ import com.xiaohelab.guard.android.feature.profile.data.PatientProfileUpdateRequ
 import com.xiaohelab.guard.android.feature.profile.data.TransferInitiateRequest
 import com.xiaohelab.guard.android.feature.profile.data.TransferRequestDto
 import com.xiaohelab.guard.android.feature.profile.data.TransferRespondRequest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import javax.inject.Inject
 
 interface ProfileRepository {
@@ -33,8 +40,27 @@ interface ProfileRepository {
     suspend fun respondTransfer(patientId: String, transferId: String, accept: Boolean): MhResult<Unit>
 }
 
-class ProfileRepositoryImpl @Inject constructor(private val api: PatientApi) : ProfileRepository {
-    override suspend fun list() = handleEnvelope { api.list() }
+class ProfileRepositoryImpl @Inject constructor(
+    private val api: PatientApi,
+    private val json: Json,
+) : ProfileRepository {
+    override suspend fun list(): MhResult<PatientListDto> {
+        return try {
+            handleEnvelope { api.list() }.map { parsePatientList(it) }
+        } catch (t: Throwable) {
+            MhResult.Failure(DomainException(DomainException.CODE_PROTOCOL, "${t.javaClass.simpleName}: ${t.message}", cause = t))
+        }
+    }
+
+    private fun parsePatientList(element: JsonElement): PatientListDto = when (element) {
+        is JsonNull -> PatientListDto()
+        is JsonArray -> PatientListDto(
+            items = element.map { json.decodeFromJsonElement(it) },
+            total = element.size,
+        )
+        is JsonObject -> json.decodeFromJsonElement(element)
+        else -> PatientListDto()
+    }
     override suspend fun detail(id: String) = handleEnvelope { api.detail(id) }
     override suspend fun create(req: PatientCreateRequest) = handleEnvelope { api.create(req) }
     override suspend fun updateProfile(id: String, req: PatientProfileUpdateRequest) = handleEnvelope { api.updateProfile(id, req) }
@@ -72,6 +98,9 @@ class UpdatePatientProfileUseCase @Inject constructor(private val repo: ProfileR
 class UpdateAppearanceUseCase @Inject constructor(private val repo: ProfileRepository) {
     suspend operator fun invoke(id: String, a: AppearanceDto, version: Long) =
         repo.updateAppearance(id, PatientAppearanceUpdateRequest(a.height, a.weight, a.features, a.photoUrls, version))
+
+    suspend operator fun invoke(id: String, height: Int?, weight: Int?, features: String?, version: Long) =
+        invoke(id, AppearanceDto(height, weight, features), version)
 }
 class SetFenceUseCase @Inject constructor(private val repo: ProfileRepository) {
     suspend operator fun invoke(id: String, f: FenceDto, version: Long) =

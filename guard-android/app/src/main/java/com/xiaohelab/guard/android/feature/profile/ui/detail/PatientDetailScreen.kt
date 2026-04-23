@@ -109,7 +109,7 @@ fun PatientDetailScreen(
                 state.error != null -> Text(ErrorMessageMapper.message(ctx, state.error!!), color = MaterialTheme.colorScheme.error)
                 state.patient != null -> {
                     val p = state.patient!!
-                    ListItem(headlineContent = { Text(p.name) }, supportingContent = { Text(p.patientId) })
+                    ListItem(headlineContent = { Text(p.displayName) }, supportingContent = { Text(p.patientId) })
                     HorizontalDivider()
                     p.gender?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_gender)) }, supportingContent = { Text(it) }) }
                     p.birthDate?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_birth_date)) }, supportingContent = { Text(it) }) }

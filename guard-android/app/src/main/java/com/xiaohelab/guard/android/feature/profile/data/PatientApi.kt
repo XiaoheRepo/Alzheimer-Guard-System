@@ -3,6 +3,7 @@ package com.xiaohelab.guard.android.feature.profile.data
 import com.xiaohelab.guard.android.core.network.ApiEnvelope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -15,7 +16,7 @@ import retrofit2.http.Path
 interface PatientApi {
 
     @GET("/api/v1/patients")
-    suspend fun list(): Response<ApiEnvelope<PatientListDto>>
+    suspend fun list(): Response<ApiEnvelope<JsonElement>>
 
     @POST("/api/v1/patients")
     suspend fun create(@Body body: PatientCreateRequest): Response<ApiEnvelope<PatientDto>>
@@ -58,12 +59,21 @@ interface PatientApi {
 }
 
 @Serializable
-data class PatientListDto(val items: List<PatientDto> = emptyList())
+data class PatientListDto(
+    val items: List<PatientDto> = emptyList(),
+    @SerialName("page_no") val pageNo: Int = 1,
+    @SerialName("page_size") val pageSize: Int = 20,
+    val total: Int = 0,
+    @SerialName("has_next") val hasNext: Boolean = false,
+)
 
 @Serializable
 data class PatientDto(
     @SerialName("patient_id") val patientId: String,
-    val name: String,
+    // spec field is "patient_name"; older server builds may use "name" — accept both via @SerialName
+    @SerialName("patient_name") val name: String? = null,
+    // fallback for server builds that still use "name"
+    @SerialName("name") val nameFallback: String? = null,
     val gender: String? = null,
     @SerialName("birth_date") val birthDate: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null,
@@ -71,8 +81,16 @@ data class PatientDto(
     val appearance: AppearanceDto? = null,
     val fence: FenceDto? = null,
     val status: String? = null,
+    @SerialName("relation_role") val relationRole: String? = null,
+    @SerialName("fence_enabled") val fenceEnabled: Boolean? = null,
+    @SerialName("short_code") val shortCode: String? = null,
+    @SerialName("profile_no") val profileNo: String? = null,
+    val age: Int? = null,
     @SerialName("version") val version: Long? = null,
-)
+) {
+    /** Resolved display name regardless of which field the server populated. */
+    val displayName: String get() = name ?: nameFallback ?: ""
+}
 
 @Serializable
 data class AppearanceDto(

@@ -103,7 +103,7 @@ fun PatientListScreen(
                 else -> LazyColumn {
                     items(state.patients, key = { it.patientId }) { p ->
                         ListItem(
-                            headlineContent = { Text(p.name) },
+                            headlineContent = { Text(p.displayName) },
                             supportingContent = { Text(p.patientId) },
                             modifier = Modifier
                                 .fillMaxSize()
