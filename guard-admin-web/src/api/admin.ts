@@ -33,25 +33,28 @@ export function updateConfig(
 }
 
 /** -------- 审计日志 -------- */
+// API_V2.0.md §3.6.10 GET /api/v1/admin/logs
 export interface AuditLogItem {
-  log_id: string
-  ts: string
-  operator_id?: string
-  operator_name?: string
-  role?: Role
+  id: string
+  module: string
   action: string
-  resource_type?: string
-  resource_id?: string
-  trace_id?: string
-  status?: 'SUCCESS' | 'FAILED'
-  request_summary?: string
-  request_body?: unknown
-  response_body?: unknown
-  duration_ms?: number
-  pod_id?: string
+  action_source: 'USER' | 'AI_AGENT'
+  operator_user_id: string
+  operator_username: string
+  object_id?: string
+  result: 'SUCCESS' | 'FAILED'
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  ip?: string
+  trace_id: string
+  created_at: string
+  /** 实际后端返回的执行时间 */
+  executed_at?: string
+  /** 实际后端返回的 detail JSON 字符串 */
+  detail?: string
+  request_id?: string
 }
 
-/** GET /api/v1/admin/logs */
+/** GET /api/v1/admin/logs — API_V2.0.md §3.6.10 */
 export function listAuditLogs(params: Record<string, unknown>): Promise<CursorPage<AuditLogItem>> {
   return http.get<CursorPage<AuditLogItem>>('/api/v1/admin/logs', { params })
 }
