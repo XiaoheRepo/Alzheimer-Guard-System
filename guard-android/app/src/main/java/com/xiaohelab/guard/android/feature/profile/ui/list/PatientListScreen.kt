@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.android.feature.profile.ui.list
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -102,8 +103,10 @@ fun PatientListScreen(
                         ListItem(
                             headlineContent = { Text(p.name) },
                             supportingContent = { Text(p.patientId) },
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp)
-                                .let { it.then(androidx.compose.foundation.clickable(Modifier) { onPatientClick(p.patientId) }) }
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable { onPatientClick(p.patientId) }
+                                .padding(horizontal = 4.dp),
                         )
                         HorizontalDivider()
                     }
