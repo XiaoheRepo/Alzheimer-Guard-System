@@ -1,6 +1,7 @@
 package com.xiaohelab.guard.android.feature.auth.data
 
 import com.xiaohelab.guard.android.core.network.ApiEnvelope
+import com.xiaohelab.guard.android.core.network.StringOrNumberSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.Response
@@ -48,9 +49,10 @@ data class RegisterRequest(
 
 @Serializable
 data class RegisterResponseDto(
-    @SerialName("user_id") val userId: String,
-    val username: String,
-    // Server returns email_verification_sent per API §3.6.1; extra fields below are optional.
+    @SerialName("user_id")
+    @Serializable(with = StringOrNumberSerializer::class)
+    val userId: String? = null,              // API §3.6.1 实际响应可能省略此字段
+    val username: String? = null,
     @SerialName("email_verification_sent") val emailVerificationSent: Boolean? = null,
     val email: String? = null,
     val role: String? = null,
@@ -65,7 +67,9 @@ data class LoginRequest(
 
 @Serializable
 data class UserProfileDto(
-    @SerialName("user_id") val userId: String,
+    @SerialName("user_id")
+    @Serializable(with = StringOrNumberSerializer::class)
+    val userId: String,
     val username: String,
     val nickname: String? = null,
     val role: String,

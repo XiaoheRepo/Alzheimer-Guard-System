@@ -114,7 +114,7 @@
     <string name="error_E_AUTH_4001">用户名格式不合法</string>
     <string name="error_E_AUTH_4002">密码格式不合法</string>
     <string name="error_E_AUTH_4011">用户名或密码错误</string>
-    <string name="error_E_AUTH_4012">重置令牌已失效，请重新发起</string>
+    <string name="error_E_AUTH_4012">该账号不支持家属端登录，请使用 Web 管理端</string>
     <string name="error_E_AUTH_4013">原密码错误</string>
     <string name="error_E_AUTH_4091">用户名已被占用</string>
     <string name="error_E_AUTH_4092">该邮箱已被占用</string>
@@ -136,7 +136,7 @@
 
     <!-- ==== Additional keys used by M0/M1/M2 screens ==== -->
     <string name="auth_go_reset">忘记密码</string>
-    <string name="auth_reset_request_hint">我们将向该邮箱发送重置链接（HC-06 不使用短信）</string>
+    <string name="auth_reset_request_hint">我们将向该邮箱发送重置链接</string>
     <string name="auth_reset_confirm_hint">请输入邮件中的重置令牌和新密码</string>
     <string name="auth_field_reset_token">重置令牌</string>
     <string name="me_settings">设置</string>

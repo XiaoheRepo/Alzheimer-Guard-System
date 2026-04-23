@@ -114,7 +114,7 @@
     <string name="error_E_AUTH_4001">Invalid username format</string>
     <string name="error_E_AUTH_4002">Invalid password format</string>
     <string name="error_E_AUTH_4011">Incorrect username or password</string>
-    <string name="error_E_AUTH_4012">Reset token has expired, please try again</string>
+    <string name="error_E_AUTH_4012">This account is not supported on the family app. Please use the web admin portal.</string>
     <string name="error_E_AUTH_4013">Incorrect current password</string>
     <string name="error_E_AUTH_4091">Username already taken</string>
     <string name="error_E_AUTH_4092">Email already registered</string>

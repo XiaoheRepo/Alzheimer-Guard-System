@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.xiaohelab.guard.android.feature.profile.ui.list
 
 import androidx.compose.foundation.clickable

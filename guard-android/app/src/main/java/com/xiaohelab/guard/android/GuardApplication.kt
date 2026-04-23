@@ -17,6 +17,12 @@ class GuardApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(PiiRedactingTree(debug = BuildConfig.DEBUG_TOOLS_ENABLED))
+        // Startup smoke-test: if you don't see this line, Logcat is not connected properly.
+        Timber.tag("GUARD/APP").i(
+            "GuardApplication started | debugTools=%b | pid=%d",
+            BuildConfig.DEBUG_TOOLS_ENABLED,
+            android.os.Process.myPid(),
+        )
     }
 
     override val workManagerConfiguration: Configuration
