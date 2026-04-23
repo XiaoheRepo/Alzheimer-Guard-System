@@ -186,10 +186,6 @@ function openDisable(u: AdminUserListItem) {
 }
 
 async function onDisableSubmit() {
-  if (disableDlg.reason.trim().length < 10) {
-    message.warning(t('page.user.disable.reasonMin'))
-    return
-  }
   if (!disableDlg.target) return
   disableDlg.submitting = true
   try {
@@ -212,10 +208,6 @@ function openEnable(u: AdminUserListItem) {
 
 async function onEnableSubmit() {
   if (!enableDlg.target) return
-  if (enableDlg.reason.trim().length < 5) {
-    message.warning(t('page.user.enable.reasonMin'))
-    return
-  }
   enableDlg.submitting = true
   try {
     await enableAdminUser(enableDlg.target.user_id, { reason: enableDlg.reason.trim() })
@@ -461,7 +453,7 @@ function prevPage() {
     >
       <p>{{ t('page.user.enable.content', { name: enableDlg.target?.username }) }}</p>
       <a-form layout="vertical" style="margin-top: 12px">
-        <a-form-item :label="t('page.user.enable.reason')" required>
+        <a-form-item :label="t('page.user.enable.reason')">
           <a-textarea
             v-model:value="enableDlg.reason"
             :rows="3"
@@ -469,7 +461,6 @@ function prevPage() {
             :maxlength="256"
             show-count
           />
-          <div class="text-muted" style="font-size: 12px">{{ t('page.user.enable.reasonMin') }}</div>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -486,7 +477,7 @@ function prevPage() {
     >
       <p>{{ t('page.user.disable.content', { name: disableDlg.target?.username }) }}</p>
       <a-form layout="vertical" style="margin-top: 12px">
-        <a-form-item :label="t('page.user.disable.reason')" required>
+        <a-form-item :label="t('page.user.disable.reason')">
           <a-textarea
             v-model:value="disableDlg.reason"
             :rows="3"
@@ -494,9 +485,6 @@ function prevPage() {
             :maxlength="256"
             show-count
           />
-          <div class="text-muted" style="font-size: 12px">
-            {{ t('page.user.disable.reasonMin') }}
-          </div>
         </a-form-item>
       </a-form>
     </a-modal>
