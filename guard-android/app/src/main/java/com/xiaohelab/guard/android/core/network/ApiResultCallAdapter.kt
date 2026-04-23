@@ -38,7 +38,11 @@ inline fun <T> handleEnvelope(block: () -> Response<ApiEnvelope<T>>): MhResult<T
     val requestId = resp.request.header(RequestIdInterceptor.HEADER)
 
     when {
-        envelope.isOk -> @Suppress("UNCHECKED_CAST") MhResult.Success(envelope.data as T, traceId)
+        envelope.isOk -> {
+            @Suppress("UNCHECKED_CAST")
+            val payload = envelope.data ?: (Unit as T)
+            MhResult.Success(payload, traceId)
+        }
         resp.code == 429 -> {
             val retry = BackoffPolicy.parseRetryAfterSeconds(resp.header("Retry-After"))
             MhResult.Failure(DomainException(
