@@ -149,6 +149,7 @@ export function enableAdminUser(
   return http.post<AdminUserListItem>(
     `/api/v1/admin/users/${encodeURIComponent(userId)}/enable`,
     body || {},
+    { headers: { 'X-Confirm-Level': 'CONFIRM_1' } },
   )
 }
 

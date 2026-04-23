@@ -499,8 +499,9 @@ export default {
         title: 'Enable User',
         btn: 'Enable',
         content: 'Enable {name}?',
-        reason: 'Reason (optional)',
-        reasonPlaceholder: 'Optional, max 256 chars',
+        reason: 'Reason',
+        reasonPlaceholder: 'Enter reason (min 5 chars)',
+        reasonMin: 'Min 5 characters',
       },
       delete: {
         title: 'Delete User',

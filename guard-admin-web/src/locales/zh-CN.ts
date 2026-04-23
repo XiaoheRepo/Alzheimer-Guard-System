@@ -507,7 +507,8 @@ export default {
         btn: '启用',
         content: '确认启用 {name}？',
         reason: '启用理由',
-        reasonPlaceholder: '可选，最多 256 字',
+        reasonPlaceholder: '请输入启用理由（5字以上）',
+        reasonMin: '至少5字',
       },
       delete: {
         title: '删除用户',
