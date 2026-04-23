@@ -1,0 +1,136 @@
+<resources>
+    <!-- HC-Brand: system name -->
+    <string name="app_name">MaHome</string>
+
+    <!-- Common -->
+    <string name="common_confirm">Confirm</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_submit">Submit</string>
+    <string name="common_save">Save</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_back">Back</string>
+    <string name="common_loading">Loading…</string>
+    <string name="common_empty">No data</string>
+    <string name="common_network_error">Network error, please check your connection</string>
+    <string name="common_trace_label">Trace: %1$s</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_patient">Profiles</string>
+    <string name="nav_notification">Messages</string>
+    <string name="nav_me">Me</string>
+
+    <!-- Auth -->
+    <string name="auth_login_title">Sign in</string>
+    <string name="auth_login_subtitle">Welcome back to MaHome</string>
+    <string name="auth_field_username">Username</string>
+    <string name="auth_field_password">Password</string>
+    <string name="auth_field_email">Email</string>
+    <string name="auth_field_nickname">Nickname (optional)</string>
+    <string name="auth_field_new_password">New password</string>
+    <string name="auth_login_submit">Sign in</string>
+    <string name="auth_go_register">No account? Register now</string>
+    <string name="auth_go_forgot">Forgot password</string>
+    <string name="auth_register_title">Register</string>
+    <string name="auth_register_submit">Create account</string>
+    <string name="auth_register_hint_email">A verification link will be sent to your email after registration</string>
+    <string name="auth_reset_request_title">Forgot password</string>
+    <string name="auth_reset_request_desc">We will email you a reset link (no SMS)</string>
+    <string name="auth_reset_request_submit">Send reset link</string>
+    <string name="auth_reset_sent">If the email is registered, a reset link has been sent</string>
+    <string name="auth_reset_confirm_title">Reset password</string>
+    <string name="auth_reset_confirm_token">Reset token</string>
+    <string name="auth_reset_confirm_submit">Reset password</string>
+    <string name="auth_role_family_only">This account is not supported on the family app. Please use the web admin portal.</string>
+    <string name="auth_logout">Sign out</string>
+
+    <!-- Me / Settings -->
+    <string name="me_title">Me</string>
+    <string name="me_not_logged_in">Not signed in</string>
+    <string name="me_avatar_cd">User avatar</string>
+    <string name="me_item_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">Follow system</string>
+    <string name="settings_language_zh">简体中文</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_large_text">Large readable mode</string>
+    <string name="settings_large_text_desc">Body 20sp+, button 56dp, WCAG AA contrast</string>
+
+    <!-- Profile / Patient -->
+    <string name="patient_list_title">My family</string>
+    <string name="patient_list_empty">No patient profile yet</string>
+    <string name="patient_create">Create profile</string>
+    <string name="patient_detail_title">Profile</string>
+    <string name="patient_edit_title">Edit profile</string>
+    <string name="patient_field_name">Name</string>
+    <string name="patient_field_gender">Gender</string>
+    <string name="patient_field_gender_male">Male</string>
+    <string name="patient_field_gender_female">Female</string>
+    <string name="patient_field_gender_unknown">Unknown</string>
+    <string name="patient_field_birthday">Date of birth</string>
+    <string name="patient_field_chronic">Chronic conditions</string>
+    <string name="patient_field_medication">Medication</string>
+    <string name="patient_field_allergy">Allergies</string>
+    <string name="patient_field_emergency_phone">Emergency contact phone</string>
+    <string name="patient_field_avatar_url">Avatar URL</string>
+    <string name="patient_field_long_text">Long-form profile (for AI indexing)</string>
+    <string name="patient_section_appearance">Appearance</string>
+    <string name="patient_field_height">Height (cm)</string>
+    <string name="patient_field_weight">Weight (kg)</string>
+    <string name="patient_field_clothing">Typical clothing</string>
+    <string name="patient_field_features">Distinctive features</string>
+    <string name="patient_section_fence">Geo-fence</string>
+    <string name="patient_field_fence_enabled">Enable fence</string>
+    <string name="patient_field_fence_center">Fence center (lat, lng)</string>
+    <string name="patient_field_fence_radius">Fence radius (m)</string>
+    <string name="patient_status_normal">Normal</string>
+    <string name="patient_status_missing">Missing</string>
+    <string name="patient_status_missing_pending">Suspected missing</string>
+    <string name="patient_archive">Archive profile</string>
+    <string name="patient_archive_reason">Archive reason (10-256 chars)</string>
+    <string name="patient_guardians">Guardians</string>
+    <string name="patient_tags">Tags</string>
+    <string name="patient_pending_invitations">Pending invitations</string>
+
+    <!-- Guardian -->
+    <string name="guardian_invite_title">Invite guardian</string>
+    <string name="guardian_invite_target_user">Invitee user ID</string>
+    <string name="guardian_invite_reason">Note (optional)</string>
+    <string name="guardian_invite_submit">Send invitation</string>
+    <string name="guardian_respond_accept">Accept</string>
+    <string name="guardian_respond_reject">Reject</string>
+    <string name="guardian_respond_reject_reason">Reason (5-256 chars)</string>
+    <string name="guardian_transfer_title">Transfer primary guardianship</string>
+    <string name="guardian_transfer_target">Target user ID</string>
+    <string name="guardian_transfer_expire">Expiry (seconds, default 604800)</string>
+    <string name="guardian_transfer_submit">Initiate transfer</string>
+
+    <!-- Error map -->
+    <string name="error_E_AUTH_4001">Invalid username format</string>
+    <string name="error_E_AUTH_4002">Invalid password format</string>
+    <string name="error_E_AUTH_4011">Incorrect username or password</string>
+    <string name="error_E_AUTH_4012">Reset token has expired, please try again</string>
+    <string name="error_E_AUTH_4013">Incorrect current password</string>
+    <string name="error_E_AUTH_4091">Username already taken</string>
+    <string name="error_E_AUTH_4092">Email already registered</string>
+    <string name="error_E_GOV_4011">Session expired, please sign in again</string>
+    <string name="error_E_GOV_4030">Access denied for current role</string>
+    <string name="error_E_GOV_4031">Account has been banned</string>
+    <string name="error_E_GOV_4032">Account not activated, please verify your email</string>
+    <string name="error_E_GOV_4291">Too many requests, please retry in %1$d seconds</string>
+    <string name="error_E_GOV_4292">Cooldown in progress</string>
+    <string name="error_E_GOV_5001">Service busy, please retry later</string>
+    <string name="error_E_REQ_4001">Invalid request parameters</string>
+    <string name="error_E_REQ_4003">Client version or proxy anomaly, please upgrade the app</string>
+    <string name="error_E_PRO_4030">No access to this patient profile</string>
+    <string name="error_E_PRO_4031">Primary guardian action only</string>
+    <string name="error_E_PRO_4032">Cannot remove primary guardian</string>
+    <string name="error_E_PRO_4033">Not a guardian, action denied</string>
+    <string name="error_E_PRO_4091">Data has been updated, please refresh</string>
+    <string name="error_unknown">Unknown error (%1$s)</string>
+</resources>
