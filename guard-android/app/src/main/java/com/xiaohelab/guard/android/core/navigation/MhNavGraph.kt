@@ -19,7 +19,7 @@ import com.xiaohelab.guard.android.feature.mat.ui.MaterialOrderListScreen
 import com.xiaohelab.guard.android.feature.me.ui.MeScreen
 import com.xiaohelab.guard.android.feature.me.ui.SettingsScreen
 import com.xiaohelab.guard.android.feature.notification.ui.NotificationListScreen
-import com.xiaohelab.guard.android.feature.profile.ui.detail.FenceEditScreen
+import com.xiaohelab.guard.android.feature.profile.ui.fence.FenceEditScreen
 import com.xiaohelab.guard.android.feature.profile.ui.detail.PatientDetailScreen
 import com.xiaohelab.guard.android.feature.profile.ui.edit.PatientEditScreen
 import com.xiaohelab.guard.android.feature.profile.ui.guardian.GuardianInviteScreen
