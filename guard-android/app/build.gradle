@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace 'com.xiaohelab.guard.android'
+    namespace = 'com.xiaohelab.guard.android'
     compileSdk 35
 
     defaultConfig {
@@ -80,8 +80,8 @@ android {
         ]
     }
     buildFeatures {
-        compose true
-        buildConfig true
+        compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests {
