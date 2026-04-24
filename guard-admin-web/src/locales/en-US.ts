@@ -705,6 +705,7 @@ export default {
     E_CLUE_4092: 'Handled by another admin',
     E_MAT_4091: 'Order state does not allow this action',
     E_MAT_4092: 'Order state invalid, cannot auto-converge',
+    E_MAT_4093: 'Tag inventory insufficient, please issue tags first',
     E_MAT_4094: 'Order state conflict, cannot cancel',
     E_MAT_4095: 'Order cancellation review rejected',
     E_MAT_4096: 'Tag three-party consistency check failed',
