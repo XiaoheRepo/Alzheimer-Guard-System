@@ -85,6 +85,10 @@ fun PatientDetailScreen(
     patientId: String,
     onEdit: () -> Unit,
     onGuardians: () -> Unit,
+    onFenceEdit: () -> Unit,
+    onTagList: () -> Unit,
+    onMatOrders: () -> Unit,
+    onTasks: () -> Unit,
     onBack: () -> Unit,
     vm: PatientDetailViewModel = hiltViewModel(),
 ) {
@@ -125,6 +129,26 @@ fun PatientDetailScreen(
                         text = stringResource(R.string.guardian_manage),
                         contentDesc = stringResource(R.string.guardian_manage),
                         onClick = onGuardians,
+                    )
+                    MhPrimaryButton(
+                        text = stringResource(R.string.patient_fence_edit),
+                        contentDesc = stringResource(R.string.patient_fence_edit),
+                        onClick = onFenceEdit,
+                    )
+                    MhPrimaryButton(
+                        text = stringResource(R.string.patient_tag_list),
+                        contentDesc = stringResource(R.string.patient_tag_list),
+                        onClick = onTagList,
+                    )
+                    MhPrimaryButton(
+                        text = stringResource(R.string.patient_mat_orders),
+                        contentDesc = stringResource(R.string.patient_mat_orders),
+                        onClick = onMatOrders,
+                    )
+                    MhPrimaryButton(
+                        text = stringResource(R.string.patient_task_list),
+                        contentDesc = stringResource(R.string.patient_task_list),
+                        onClick = onTasks,
                     )
                 }
             }
