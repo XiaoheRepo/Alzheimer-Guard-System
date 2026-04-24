@@ -302,6 +302,11 @@
     <string name="clue_review_state">审核状态</string>
     <string name="clue_submit">提交</string>
 
+    <!-- ==== MH-HOME-00 首页：地图 + 消息通知 顶部 Tab ==== -->
+    <string name="home_tab_map">地图</string>
+    <string name="home_tab_notifications">消息通知</string>
+    <string name="home_map_placeholder">高德地图 AppKey 配置后将在此渲染患者位置</string>
+
     <!-- ==== M6: 通知中心 (MH-NOTIF-*) ==== -->
     <string name="notification_list_title">通知中心</string>
     <string name="notification_mark_read">标为已读</string>

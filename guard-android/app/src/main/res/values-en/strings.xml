@@ -302,6 +302,11 @@
     <string name="clue_review_state">Review State</string>
     <string name="clue_submit">Submit</string>
 
+    <!-- ==== MH-HOME-00 Home: Map + Notifications top Tab ==== -->
+    <string name="home_tab_map">Map</string>
+    <string name="home_tab_notifications">Notifications</string>
+    <string name="home_map_placeholder">Map renders once AMap AppKey is configured</string>
+
     <!-- ==== M6: Notifications (MH-NOTIF-*) ==== -->
     <string name="notification_list_title">Notifications</string>
     <string name="notification_mark_read">Mark as read</string>
