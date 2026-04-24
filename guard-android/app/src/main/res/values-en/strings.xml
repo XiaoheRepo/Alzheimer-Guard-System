@@ -23,6 +23,17 @@
     <string name="nav_patient">Profiles</string>
     <string name="nav_notification">Messages</string>
     <string name="nav_me">Me</string>
+    <string name="nav_profile">Profiles</string>
+    <string name="nav_tasks">Rescue</string>
+    <string name="nav_ai">AI</string>
+
+    <!-- AI sessions (MH-AI-01) -->
+    <string name="ai_session_list_title">AI Conversations</string>
+    <string name="ai_session_new">New conversation</string>
+    <string name="ai_session_open">Open conversation</string>
+    <string name="ai_session_delete">Delete session</string>
+    <string name="ai_session_delete_confirm">Delete session \"%1$s\"? This cannot be undone.</string>
+    <string name="ai_session_empty">No conversations yet. Tap the button to start your first chat.</string>
 
     <!-- Auth -->
     <string name="auth_login_title">Sign in</string>

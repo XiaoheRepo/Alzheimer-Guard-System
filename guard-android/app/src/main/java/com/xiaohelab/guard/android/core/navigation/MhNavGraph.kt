@@ -66,13 +66,9 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
             })
         }
 
-        // ── Home / Me ────────────────────────────────────────────────────────
+        // ── Home / Main shell (bottom nav: Profile / Tasks / AI / Me) ────────
         composable(MhRoutes.HOME) {
-            PatientListScreen(
-                onPatientClick = { id -> navController.navigate(MhRoutes.patientDetail(id)) },
-                onCreate = { navController.navigate(MhRoutes.PATIENT_CREATE) },
-                onMe = { navController.navigate(MhRoutes.ME) },
-            )
+            MainScaffold(navController = navController)
         }
         composable(MhRoutes.ME) {
             MeScreen(

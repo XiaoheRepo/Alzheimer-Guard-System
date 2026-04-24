@@ -23,6 +23,17 @@
     <string name="nav_patient">档案</string>
     <string name="nav_notification">消息</string>
     <string name="nav_me">我的</string>
+    <string name="nav_profile">档案</string>
+    <string name="nav_tasks">寻人</string>
+    <string name="nav_ai">AI 助手</string>
+
+    <!-- ==== AI sessions (MH-AI-01) ==== -->
+    <string name="ai_session_list_title">AI 对话</string>
+    <string name="ai_session_new">新建对话</string>
+    <string name="ai_session_open">打开对话</string>
+    <string name="ai_session_delete">删除会话</string>
+    <string name="ai_session_delete_confirm">确认删除会话「%1$s」？此操作不可恢复。</string>
+    <string name="ai_session_empty">还没有对话，点击右下角按钮开启第一次对话</string>
 
     <!-- ==== Auth (MH-AUTH-*) ==== -->
     <string name="auth_login_title">登录</string>

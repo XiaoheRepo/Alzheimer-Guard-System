@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -15,6 +16,9 @@ import retrofit2.http.Path
  * 错误码: E_AI_4041 / E_AI_4291 / E_AI_5001。
  */
 interface AiSessionApi {
+    @GET("/api/v1/ai/sessions")
+    suspend fun listSessions(): Response<ApiEnvelope<AiSessionListDto>>
+
     @POST("/api/v1/ai/sessions")
     suspend fun createSession(
         @Body body: CreateSessionRequest,
@@ -24,6 +28,11 @@ interface AiSessionApi {
     suspend fun getSession(
         @Path("session_id") sessionId: String,
     ): Response<ApiEnvelope<AiSessionDto>>
+
+    @DELETE("/api/v1/ai/sessions/{session_id}")
+    suspend fun deleteSession(
+        @Path("session_id") sessionId: String,
+    ): Response<ApiEnvelope<Unit>>
 
     @GET("/api/v1/ai/intents/{intent_id}")
     suspend fun getIntent(
@@ -48,6 +57,13 @@ data class AiSessionDto(
     @SerialName("patient_id") val patientId: String? = null,
     val status: String,
     @SerialName("created_at") val createdAt: String? = null,
+    val title: String? = null,
+)
+
+@Serializable
+data class AiSessionListDto(
+    val items: List<AiSessionDto> = emptyList(),
+    val total: Int = 0,
 )
 
 @Serializable
