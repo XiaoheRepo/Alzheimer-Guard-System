@@ -237,4 +237,93 @@
     <string name="patient_field_weight_hint">in kilograms (kg)</string>
     <string name="patient_field_features_hint">e.g. skin tone, hairstyle, typical clothing, distinctive marks</string>
     <string name="patient_field_gender_select">Select gender</string>
+
+    <!-- ==== M3-A: Tags (MH-TAG-*) ==== -->
+    <string name="tag_list_title">Tag List</string>
+    <string name="tag_bind_title">Bind Tag</string>
+    <string name="tag_field_tag_code">Tag Code</string>
+    <string name="tag_field_device_type">Device Type</string>
+    <string name="tag_field_alias">Alias (optional)</string>
+    <string name="tag_bind_submit">Bind</string>
+    <string name="tag_state">State</string>
+    <string name="tag_bound_at">Bound At</string>
+    <string name="tag_unbind">Unbind</string>
+    <string name="tag_unbind_confirm">Confirm unbinding this tag?</string>
+
+    <!-- ==== M3-B: Material orders (MH-MAT-*) ==== -->
+    <string name="mat_order_list_title">Material Orders</string>
+    <string name="mat_order_create_title">Request Material</string>
+    <string name="mat_field_item_code">Item Code</string>
+    <string name="mat_field_quantity">Quantity</string>
+    <string name="mat_field_delivery_address">Delivery Address (optional)</string>
+    <string name="mat_order_submit">Submit</string>
+    <string name="mat_order_state">State</string>
+
+    <!-- ==== M3-C: QR Scan (MH-SCAN) ==== -->
+    <string name="scan_title">Scan Tag</string>
+    <string name="scan_hint">Point camera at QR/barcode</string>
+    <string name="scan_no_permission">Camera permission required for scanning</string>
+
+    <!-- ==== M4: Fence edit (MH-FENCE-*) ==== -->
+    <string name="fence_edit_title">Edit Fence</string>
+    <string name="fence_field_radius">Fence Radius (m)</string>
+    <string name="fence_field_speed_threshold">Speed Threshold (km/h)</string>
+    <string name="fence_map_placeholder">Map requires Amap AppKey</string>
+    <string name="fence_coord_system">Coordinate system GCJ-02</string>
+
+    <!-- ==== M5-A: Tasks (MH-TASK-*) ==== -->
+    <string name="task_list_title">Rescue Tasks</string>
+    <string name="task_create_title">Create Task</string>
+    <string name="task_detail_title">Task Detail</string>
+    <string name="task_field_description">Description</string>
+    <string name="task_field_status">Status</string>
+    <string name="task_field_last_seen">Last seen location</string>
+    <string name="task_cancel">Cancel Task</string>
+    <string name="task_cancel_confirm">Cancel this task?</string>
+
+    <!-- ==== M5-B: Clues (MH-CLUE-*) ==== -->
+    <string name="clue_list_title">Clue List</string>
+    <string name="clue_create_title">Submit Clue</string>
+    <string name="clue_field_type">Type</string>
+    <string name="clue_field_content">Content</string>
+    <string name="clue_field_location">Location (optional)</string>
+    <string name="clue_review_state">Review State</string>
+    <string name="clue_submit">Submit</string>
+
+    <!-- ==== M6: Notifications (MH-NOTIF-*) ==== -->
+    <string name="notification_list_title">Notifications</string>
+    <string name="notification_mark_read">Mark as read</string>
+    <string name="notification_read_all">Mark all as read</string>
+    <string name="notification_empty">No notifications</string>
+
+    <!-- ==== M7: AI Assistant (MH-AI-*) ==== -->
+    <string name="ai_chat_title">AI Assistant</string>
+    <string name="ai_input_hint">Ask AI…</string>
+    <string name="ai_intent_confirm_title">Action Confirmation</string>
+    <string name="ai_intent_confirm_body">AI suggests: %1$s. Proceed?</string>
+    <string name="ai_intent_confirm">Confirm</string>
+    <string name="ai_intent_cancel">Cancel</string>
+
+    <!-- ==== PatientDetail new buttons ==== -->
+    <string name="patient_fence_edit">Edit Fence</string>
+    <string name="patient_tag_list">Tag Management</string>
+    <string name="patient_mat_orders">Material Orders</string>
+    <string name="patient_task_list">Rescue Tasks</string>
+
+    <!-- ==== Error codes: M3-A / M3-B / M5-A / M5-B / M6 / M7 ==== -->
+    <string name="error_E_TAG_4041">Tag not found</string>
+    <string name="error_E_TAG_4091">Tag already bound to another patient</string>
+    <string name="error_E_TAG_4031">No permission to operate this tag</string>
+    <string name="error_E_MAT_4041">Material item not found</string>
+    <string name="error_E_MAT_4291">Insufficient stock</string>
+    <string name="error_E_TASK_4041">Task not found</string>
+    <string name="error_E_TASK_4091">Patient already has an active rescue task</string>
+    <string name="error_E_TASK_4031">No permission to operate this task</string>
+    <string name="error_E_TASK_4221">Task state does not allow this action</string>
+    <string name="error_E_CLUE_4041">Clue not found</string>
+    <string name="error_E_CLUE_4031">No permission to operate this clue</string>
+    <string name="error_E_NOTIF_4041">Notification not found</string>
+    <string name="error_E_AI_4041">AI session not found</string>
+    <string name="error_E_AI_4291">AI usage quota reached</string>
+    <string name="error_E_AI_5001">AI service temporarily unavailable</string>
 </resources>
