@@ -82,4 +82,10 @@ object NetworkModule {
     @Singleton
     fun provideRemoteConfigApi(retrofit: Retrofit): RemoteConfigApi =
         retrofit.create(RemoteConfigApi::class.java)
+
+    /** M7: SSE 流式需要 API base URL。提供 named String 供 AiChatViewModel 使用。 */
+    @Provides
+    @Singleton
+    @javax.inject.Named("api_base_url")
+    fun provideApiBaseUrl(): String = BuildConfig.API_BASE_URL
 }

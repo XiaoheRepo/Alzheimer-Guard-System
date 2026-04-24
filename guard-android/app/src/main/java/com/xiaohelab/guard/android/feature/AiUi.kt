@@ -96,9 +96,9 @@ class AiChatViewModel @Inject constructor(
     private val aiRepo: AiRepository,
     /**
      * 手册 §11: AI SSE 使用 OkHttp EventSource。
-     * 注入 named OkHttpClient（与认证拦截器共享 token）。
+     * 使用带认证拦截器的共享 OkHttpClient（NetworkModule 提供）。
      */
-    @Named("auth") private val okHttpClient: OkHttpClient,
+    private val okHttpClient: OkHttpClient,
     private val json: Json,
     @Named("api_base_url") private val apiBaseUrl: String,
 ) : ViewModel() {
