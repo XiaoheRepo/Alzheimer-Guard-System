@@ -228,7 +228,7 @@ fun TaskListScreen(
                 modifier = Modifier.padding(pad),
             ) {
                 items(state.tasks, key = { it.taskId }) { task ->
-                    Card(Modifier.fillMaxWidth(), onClick = { onTaskClick(task.taskId) }) {
+                    Card(onClick = { onTaskClick(task.taskId) }, modifier = Modifier.fillMaxWidth()) {
                         ListItem(
                             headlineContent = { Text(task.patientId) },
                             supportingContent = {
