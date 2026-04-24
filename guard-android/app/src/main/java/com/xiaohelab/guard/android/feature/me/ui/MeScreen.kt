@@ -2,6 +2,7 @@
 
 package com.xiaohelab.guard.android.feature.me.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,6 +84,8 @@ class MeViewModel @Inject constructor(
 @Composable
 fun MeScreen(
     onSettings: () -> Unit,
+    onNotifications: () -> Unit,
+    onAiChat: () -> Unit,
     onLoggedOut: () -> Unit,
     onBack: () -> Unit,
     vm: MeViewModel = hiltViewModel(),
@@ -108,9 +111,19 @@ fun MeScreen(
                 Text(ErrorMessageMapper.message(ctx, e), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
             }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.me_settings)) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                headlineContent = { Text(stringResource(R.string.me_notifications)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClickLabel = stringResource(R.string.me_notifications)) { onNotifications() },
             )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.me_ai_chat)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClickLabel = stringResource(R.string.me_ai_chat)) { onAiChat() },
+            )
+            HorizontalDivider()
             MhPrimaryButton(
                 text = stringResource(R.string.me_settings),
                 contentDesc = stringResource(R.string.me_settings),

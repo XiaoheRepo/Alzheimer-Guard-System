@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
@@ -249,6 +250,7 @@ fun TagListScreen(
 fun TagBindScreen(
     patientId: String,
     tagCodePrefill: String?,
+    onScan: () -> Unit,
     onDone: () -> Unit,
     onBack: () -> Unit,
     vm: TagBindViewModel = hiltViewModel(),
@@ -270,6 +272,11 @@ fun TagBindScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onScan) {
+                        Icon(Icons.Filled.QrCodeScanner, contentDescription = stringResource(R.string.common_scan))
                     }
                 },
             )

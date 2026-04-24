@@ -14,6 +14,9 @@
     <string name="common_empty">No data</string>
     <string name="common_network_error">Network error, please check your connection</string>
     <string name="common_trace_label">Trace: %1$s</string>
+    <string name="common_scan">Scan</string>
+    <string name="me_notifications">Notifications</string>
+    <string name="me_ai_chat">AI Assistant</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

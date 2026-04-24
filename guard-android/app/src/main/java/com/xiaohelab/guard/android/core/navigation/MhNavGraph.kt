@@ -77,6 +77,8 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
         composable(MhRoutes.ME) {
             MeScreen(
                 onSettings = { navController.navigate(MhRoutes.SETTINGS) },
+                onNotifications = { navController.navigate(MhRoutes.NOTIFICATION_LIST) },
+                onAiChat = { navController.navigate(MhRoutes.aiChat()) },
                 onLoggedOut = {
                     navController.navigate(MhRoutes.AUTH_LOGIN) {
                         popUpTo(0) { inclusive = true }
@@ -180,6 +182,7 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
             TagBindScreen(
                 patientId = patientId,
                 tagCodePrefill = tagCode,
+                onScan = { navController.navigate(MhRoutes.qrScan("tag_bind:$patientId")) },
                 onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
             )
