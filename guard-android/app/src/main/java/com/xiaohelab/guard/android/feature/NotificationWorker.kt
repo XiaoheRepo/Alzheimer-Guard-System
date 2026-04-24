@@ -8,8 +8,6 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.xiaohelab.guard.android.core.common.MhResult
-import com.xiaohelab.guard.android.core.config.DefaultRemoteConfig
-import com.xiaohelab.guard.android.core.config.RemoteConfigRepository
 import com.xiaohelab.guard.android.core.eventbus.AppEvent
 import com.xiaohelab.guard.android.core.eventbus.AppEventBus
 import com.xiaohelab.guard.android.feature.notification.domain.ListNotificationsUseCase
@@ -30,7 +28,6 @@ class NotificationSyncWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val listNotifications: ListNotificationsUseCase,
     private val eventBus: AppEventBus,
-    private val remoteConfig: RemoteConfigRepository,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {

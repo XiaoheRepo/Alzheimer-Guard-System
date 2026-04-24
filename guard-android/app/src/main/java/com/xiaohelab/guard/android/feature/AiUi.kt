@@ -62,6 +62,8 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.sse.EventSource
 import okhttp3.sse.EventSourceListener
 import okhttp3.sse.EventSources
@@ -181,9 +183,11 @@ class AiChatViewModel @Inject constructor(
      */
     private fun sseStream(sessionId: String, content: String): Flow<AiMessageChunk> = callbackFlow {
         val body = json.encodeToString(AiMessageRequest.serializer(), AiMessageRequest(content))
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val requestBody = body.toRequestBody(mediaType)
         val request = Request.Builder()
             .url("${apiBaseUrl.trimEnd('/')}/api/v1/ai/sessions/$sessionId/messages")
-            .post(okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), body))
+            .post(requestBody)
             .build()
         val listener = object : EventSourceListener() {
             override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
