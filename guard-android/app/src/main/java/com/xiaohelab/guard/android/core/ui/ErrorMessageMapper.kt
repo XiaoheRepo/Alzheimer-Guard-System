@@ -101,6 +101,27 @@ object ErrorMessageMapper {
         "E_PRO_4098"  -> R.string.error_E_PRO_4098
         "E_PRO_4099"  -> R.string.error_E_PRO_4099
         "E_PRO_4221"  -> R.string.error_E_PRO_4221
+        // Tag domain (M3-A)
+        "E_TAG_4041"  -> R.string.error_E_TAG_4041
+        "E_TAG_4091"  -> R.string.error_E_TAG_4091
+        "E_TAG_4031"  -> R.string.error_E_TAG_4031
+        // Material domain (M3-B)
+        "E_MAT_4041"  -> R.string.error_E_MAT_4041
+        "E_MAT_4291"  -> R.string.error_E_MAT_4291
+        // Task domain (M5-A)
+        "E_TASK_4041" -> R.string.error_E_TASK_4041
+        "E_TASK_4091" -> R.string.error_E_TASK_4091
+        "E_TASK_4031" -> R.string.error_E_TASK_4031
+        "E_TASK_4221" -> R.string.error_E_TASK_4221
+        // Clue domain (M5-B)
+        "E_CLUE_4041" -> R.string.error_E_CLUE_4041
+        "E_CLUE_4031" -> R.string.error_E_CLUE_4031
+        // Notification domain (M6)
+        "E_NOTIF_4041" -> R.string.error_E_NOTIF_4041
+        // AI domain (M7)
+        "E_AI_4041"   -> R.string.error_E_AI_4041
+        "E_AI_4291"   -> R.string.error_E_AI_4291
+        "E_AI_5001"   -> R.string.error_E_AI_5001
         DomainException.CODE_NETWORK -> R.string.common_network_error
         else -> 0
     }

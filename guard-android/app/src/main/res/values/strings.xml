@@ -27,7 +27,7 @@
     <string name="auth_field_username">用户名</string>
     <string name="auth_field_password">密码</string>
     <string name="auth_field_email">邮箱</string>
-    <string name="auth_field_nickname">昵称（可选）</string>
+    <string name="auth_field_nickname">真实姓名（可选）</string>
     <string name="auth_field_phone">手机号</string>
     <string name="auth_field_phone_hint">中国大陆手机号，用于紧急联系，请必省</string>
     <string name="auth_register_phone_invalid">手机号格式不合法，请输入 11 位中国大陆手机号</string>

@@ -136,6 +136,12 @@ dependencies {
     implementation libs.kotlinx.datetime
     // SSE (reserved for AI domain M7)
     implementation libs.okhttp.sse
+    // CameraX + ML Kit (M3-C QR scan)
+    implementation libs.camerax.core
+    implementation libs.camerax.camera2
+    implementation libs.camerax.lifecycle
+    implementation libs.camerax.view
+    implementation libs.mlkit.barcode
 
     // Debug-only tooling (决策 5)
     debugImplementation libs.leakcanary.android

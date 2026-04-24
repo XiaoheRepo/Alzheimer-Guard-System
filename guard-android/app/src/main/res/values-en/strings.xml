@@ -1,6 +1,6 @@
 <resources>
     <!-- HC-Brand: system name -->
-    <string name="app_name">MaHome</string>
+    <string name="app_name">Alzheimer Guard System</string>
 
     <!-- Common -->
     <string name="common_confirm">Confirm</string>
@@ -23,11 +23,11 @@
 
     <!-- Auth -->
     <string name="auth_login_title">Sign in</string>
-    <string name="auth_login_subtitle">Welcome back to MaHome</string>
+    <string name="auth_login_subtitle">Welcome back to Alzheimer Guard System</string>
     <string name="auth_field_username">Username</string>
     <string name="auth_field_password">Password</string>
     <string name="auth_field_email">Email</string>
-    <string name="auth_field_nickname">Nickname (optional)</string>
+    <string name="auth_field_nickname">Realname (optional)</string>
     <string name="auth_field_phone">Phone number</string>
     <string name="auth_field_phone_hint">Chinese mainland mobile number, required for emergencies</string>
     <string name="auth_register_phone_invalid">Invalid phone number. Please enter an 11-digit Chinese mainland mobile number.</string>

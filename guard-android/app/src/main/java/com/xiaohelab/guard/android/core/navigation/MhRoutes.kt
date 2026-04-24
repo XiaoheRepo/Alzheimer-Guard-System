@@ -26,11 +26,66 @@ object MhRoutes {
     const val GUARDIAN_INVITE = "mh_guardian_invite/{patient_id}" // MH-GUA-02
     const val GUARDIAN_TRANSFER = "mh_guardian_transfer/{patient_id}" // MH-GUA-04
 
+    // Tags (M3-A, MH-TAG-*)
+    const val TAG_LIST = "mh_tag_list/{patient_id}"                        // MH-TAG-00
+    const val TAG_BIND = "mh_tag_bind/{patient_id}?tag_code={tag_code}"    // MH-TAG-01
+
+    // Material orders (M3-B, MH-MAT-*)
+    const val MAT_ORDER_LIST = "mh_mat_order_list/{patient_id}"    // MH-MAT-00
+    const val MAT_ORDER_CREATE = "mh_mat_order_create/{patient_id}" // MH-MAT-01
+
+    // Fence edit (M4, MH-FENCE-*)
+    const val FENCE_EDIT = "mh_fence_edit/{patient_id}"            // MH-FENCE-01
+
+    // Tasks (M5-A, MH-TASK-*)
+    const val TASK_LIST = "mh_task_list"                            // MH-TASK-00
+    const val TASK_CREATE = "mh_task_create"                        // MH-TASK-01
+    const val TASK_DETAIL = "mh_task_detail/{task_id}"              // MH-TASK-02
+
+    // Clues (M5-B, MH-CLUE-*)
+    const val CLUE_LIST = "mh_clue_list/{task_id}"                  // MH-CLUE-00
+    const val CLUE_CREATE = "mh_clue_create/{task_id}"              // MH-CLUE-01
+
+    // Notifications (M6, MH-NOTIF-*)
+    const val NOTIFICATION_LIST = "mh_notification_list"            // MH-NOTIF-00
+
+    // AI (M7, MH-AI-*)
+    const val AI_CHAT = "mh_ai_chat?session_id={session_id}"        // MH-AI-00
+
+    // QR Scan (M3-C, MH-SCAN)
+    const val QR_SCAN = "mh_qr_scan?target={target}"                // MH-SCAN
+
+    // ==== Arg keys (HC-ID-String: all NavType.StringType) ====
+    const val ARG_PATIENT_ID = "patient_id"
+    const val ARG_TAG_CODE = "tag_code"
+    const val ARG_TASK_ID = "task_id"
+    const val ARG_CLUE_ID = "clue_id"
+    const val ARG_ORDER_ID = "order_id"
+    const val ARG_SESSION_ID = "session_id"
+    const val ARG_TARGET = "target"
+
+    // ==== Helper functions ====
     fun patientDetail(patientId: String) = "mh_patient_detail/$patientId"
     fun patientEdit(patientId: String) = "mh_patient_edit/$patientId"
     fun guardianManage(patientId: String) = "mh_guardian_manage/$patientId"
     fun guardianInvite(patientId: String) = "mh_guardian_invite/$patientId"
     fun guardianTransfer(patientId: String) = "mh_guardian_transfer/$patientId"
 
-    const val ARG_PATIENT_ID = "patient_id"
+    fun tagList(patientId: String) = "mh_tag_list/$patientId"
+    fun tagBind(patientId: String, tagCode: String? = null) =
+        if (tagCode != null) "mh_tag_bind/$patientId?tag_code=$tagCode"
+        else "mh_tag_bind/$patientId"
+
+    fun matOrderList(patientId: String) = "mh_mat_order_list/$patientId"
+    fun matOrderCreate(patientId: String) = "mh_mat_order_create/$patientId"
+    fun fenceEdit(patientId: String) = "mh_fence_edit/$patientId"
+
+    fun taskDetail(taskId: String) = "mh_task_detail/$taskId"
+    fun clueList(taskId: String) = "mh_clue_list/$taskId"
+    fun clueCreate(taskId: String) = "mh_clue_create/$taskId"
+
+    fun aiChat(sessionId: String? = null) =
+        if (sessionId != null) "mh_ai_chat?session_id=$sessionId" else "mh_ai_chat"
+
+    fun qrScan(target: String) = "mh_qr_scan?target=$target"
 }

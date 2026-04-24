@@ -22,6 +22,9 @@ sealed interface AppEvent {
     ) : AppEvent
 
     data class RemoteConfigRefreshed(val updatedAt: String) : AppEvent
+
+    /** M6: 通知中心未读计数变化（WorkManager 轮询或 WS 推送后广播）。 */
+    data class NotificationUnreadCountChanged(val count: Int) : AppEvent
 }
 
 @Singleton

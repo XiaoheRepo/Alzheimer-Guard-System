@@ -59,6 +59,10 @@ object DefaultRemoteConfig {
     const val KEY_TAG_BINDING_REQUIRES_OTP = "tag_binding_requires_otp"
     const val KEY_FENCE_RADIUS_MAX_M = "fence.radius.max_m"
     const val KEY_FENCE_RADIUS_MIN_M = "fence.radius.min_m"
+    /** M4: 速度阈值（km/h），由服务端下发，HC-05 不得硬编码。 */
+    const val KEY_SPEED_THRESHOLD_KMH = "speed_threshold_kmh"
+    /** M6: 通知轮询间隔（秒），WorkManager 用此值设定 PeriodicWorkRequest 周期，HC-05。 */
+    const val KEY_NOTIFICATION_POLL_INTERVAL_SEC = "notification.poll.interval_seconds"
 
     val defaults: Map<String, String> = mapOf(
         KEY_TASK_SUSTAINED_DAYS to "7",
@@ -70,6 +74,8 @@ object DefaultRemoteConfig {
         KEY_TAG_BINDING_REQUIRES_OTP to "false",
         KEY_FENCE_RADIUS_MAX_M to "50000",
         KEY_FENCE_RADIUS_MIN_M to "100",
+        KEY_SPEED_THRESHOLD_KMH to "5",
+        KEY_NOTIFICATION_POLL_INTERVAL_SEC to "60",
     )
 }
 
