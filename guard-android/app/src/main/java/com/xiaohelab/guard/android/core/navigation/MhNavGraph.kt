@@ -16,6 +16,7 @@ import com.xiaohelab.guard.android.feature.clue.ui.ClueCreateScreen
 import com.xiaohelab.guard.android.feature.clue.ui.ClueListScreen
 import com.xiaohelab.guard.android.feature.mat.ui.MaterialOrderCreateScreen
 import com.xiaohelab.guard.android.feature.mat.ui.MaterialOrderListScreen
+import com.xiaohelab.guard.android.feature.me.ui.ChangePasswordScreen
 import com.xiaohelab.guard.android.feature.me.ui.MeScreen
 import com.xiaohelab.guard.android.feature.me.ui.SettingsScreen
 import com.xiaohelab.guard.android.feature.notification.ui.NotificationListScreen
@@ -75,6 +76,7 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
                 onSettings = { navController.navigate(MhRoutes.SETTINGS) },
                 onNotifications = { navController.navigate(MhRoutes.NOTIFICATION_LIST) },
                 onAiChat = { navController.navigate(MhRoutes.aiChat()) },
+                onChangePassword = { navController.navigate(MhRoutes.ME_CHANGE_PASSWORD) },
                 onLoggedOut = {
                     navController.navigate(MhRoutes.AUTH_LOGIN) {
                         popUpTo(0) { inclusive = true }
@@ -85,6 +87,12 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
         }
         composable(MhRoutes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(MhRoutes.ME_CHANGE_PASSWORD) {
+            ChangePasswordScreen(
+                onDone = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+            )
         }
 
         // ── Profile ──────────────────────────────────────────────────────────

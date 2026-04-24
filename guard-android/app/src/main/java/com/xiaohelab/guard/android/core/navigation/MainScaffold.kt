@@ -83,6 +83,7 @@ fun MainScaffold(navController: NavHostController) {
                     onSettings = { navController.navigate(MhRoutes.SETTINGS) },
                     onNotifications = { navController.navigate(MhRoutes.NOTIFICATION_LIST) },
                     onAiChat = { tab = MainTab.Ai },
+                    onChangePassword = { navController.navigate(MhRoutes.ME_CHANGE_PASSWORD) },
                     onLoggedOut = {
                         navController.navigate(MhRoutes.AUTH_LOGIN) {
                             popUpTo(0) { inclusive = true }

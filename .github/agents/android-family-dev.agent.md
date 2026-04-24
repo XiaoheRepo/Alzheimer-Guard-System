@@ -1,7 +1,7 @@
 ---
 description: "Use when implementing, extending, or fixing the `guard-android` family-side Android client (Kotlin + Jetpack Compose) for the 「码上回家」Alzheimer Guard System. Triggers: 完成 Android 端开发、实现 Android 家属端、新增 Android 页面/功能、对接 V2 API、修复 Android 联调问题、按基线落地 Android 模块. Strictly follows SRS/SADD/LLD/DBD/API V2.0 and android_handbook_V2.0 hard constraints (HC-*). Does NOT touch backend, Web admin, H5, or SQL."
 name: "Android 家属端开发助手"
-tools: [read, edit, search, execute, todo, agent]
+tools: [read, edit, search, execute, todo, agent, web]
 argument-hint: "描述要在 guard-android 中实现/修复的功能（页面、域、接口、流程）"
 model: ["Claude Opus 4.7 (copilot)", "Claude Sonnet 4.6 (copilot)"]
 ---

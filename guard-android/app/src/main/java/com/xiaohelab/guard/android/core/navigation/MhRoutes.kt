@@ -16,6 +16,7 @@ object MhRoutes {
     const val HOME = "mh_home"                      // MH-HOME-01
     const val ME = "mh_me"                          // MH-ME-01
     const val SETTINGS = "mh_me_settings"           // MH-ME-02
+    const val ME_CHANGE_PASSWORD = "mh_me_change_password" // MH-ME-03
 
     // Profile (§17) – argument names kept consistent with API field names
     const val PATIENT_LIST = "mh_patient_list"      // MH-PAT-00

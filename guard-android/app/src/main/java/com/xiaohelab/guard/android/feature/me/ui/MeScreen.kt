@@ -86,6 +86,7 @@ fun MeScreen(
     onSettings: () -> Unit,
     onNotifications: () -> Unit,
     onAiChat: () -> Unit,
+    onChangePassword: () -> Unit,
     onLoggedOut: () -> Unit,
     onBack: () -> Unit,
     vm: MeViewModel = hiltViewModel(),
@@ -122,6 +123,13 @@ fun MeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClickLabel = stringResource(R.string.me_ai_chat)) { onAiChat() },
+            )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.me_change_password)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClickLabel = stringResource(R.string.me_change_password)) { onChangePassword() },
             )
             HorizontalDivider()
             MhPrimaryButton(
