@@ -150,8 +150,6 @@
     <string name="error_E_GOV_4291">Too many requests, please retry in %1$d seconds</string>
     <string name="error_E_GOV_4292">Cooldown in progress</string>
     <string name="error_E_GOV_5001">Service busy, please retry later</string>
-    <string name="error_E_REQ_4001">Invalid request parameters</string>
-    <string name="error_E_REQ_4003">Client version or proxy anomaly, please upgrade the app</string>
     <string name="error_E_PRO_4030">No access to this patient profile</string>
     <string name="error_E_PRO_4031">Primary guardian action only</string>
     <string name="error_E_PRO_4032">Cannot remove primary guardian</string>

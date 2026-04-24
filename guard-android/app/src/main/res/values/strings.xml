@@ -150,8 +150,6 @@
     <string name="error_E_GOV_4291">访问过于频繁，请 %1$d 秒后再试</string>
     <string name="error_E_GOV_4292">冷却中，请稍候</string>
     <string name="error_E_GOV_5001">服务繁忙，请稍后重试</string>
-    <string name="error_E_REQ_4001">请求参数校验失败</string>
-    <string name="error_E_REQ_4003">客户端版本或代理异常，请升级 App</string>
     <string name="error_E_PRO_4030">无权访问该患者档案</string>
     <string name="error_E_PRO_4031">仅主监护可执行此操作</string>
     <string name="error_E_PRO_4032">不可移除主监护</string>
