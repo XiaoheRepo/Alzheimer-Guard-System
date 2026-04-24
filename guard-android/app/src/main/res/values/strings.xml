@@ -237,4 +237,93 @@
     <string name="patient_field_weight_hint">单位：千克（kg）</string>
     <string name="patient_field_features_hint">如肤色、发型、常穿衣物、显著特征等</string>
     <string name="patient_field_gender_select">选择性别</string>
+
+    <!-- ==== M3-A: 标签域 (MH-TAG-*) ==== -->
+    <string name="tag_list_title">标签列表</string>
+    <string name="tag_bind_title">绑定标签</string>
+    <string name="tag_field_tag_code">标签编码</string>
+    <string name="tag_field_device_type">设备类型</string>
+    <string name="tag_field_alias">别名（可选）</string>
+    <string name="tag_bind_submit">绑定</string>
+    <string name="tag_state">状态</string>
+    <string name="tag_bound_at">绑定时间</string>
+    <string name="tag_unbind">解绑</string>
+    <string name="tag_unbind_confirm">确认解绑该标签？</string>
+
+    <!-- ==== M3-B: 物资域 (MH-MAT-*) ==== -->
+    <string name="mat_order_list_title">物资申领</string>
+    <string name="mat_order_create_title">申领物资</string>
+    <string name="mat_field_item_code">物资编码</string>
+    <string name="mat_field_quantity">数量</string>
+    <string name="mat_field_delivery_address">配送地址（可选）</string>
+    <string name="mat_order_submit">提交申领</string>
+    <string name="mat_order_state">状态</string>
+
+    <!-- ==== M3-C: 扫码 (MH-SCAN) ==== -->
+    <string name="scan_title">扫描标签</string>
+    <string name="scan_hint">将二维码/条码对准框内</string>
+    <string name="scan_no_permission">需要相机权限才能扫码</string>
+
+    <!-- ==== M4: 围栏编辑 (MH-FENCE-*) ==== -->
+    <string name="fence_edit_title">编辑围栏</string>
+    <string name="fence_field_radius">围栏半径（米）</string>
+    <string name="fence_field_speed_threshold">速度阈值（km/h）</string>
+    <string name="fence_map_placeholder">地图功能需配置高德 AppKey</string>
+    <string name="fence_coord_system">坐标系 GCJ-02</string>
+
+    <!-- ==== M5-A: 任务域 (MH-TASK-*) ==== -->
+    <string name="task_list_title">寻回任务</string>
+    <string name="task_create_title">发布任务</string>
+    <string name="task_detail_title">任务详情</string>
+    <string name="task_field_description">任务描述</string>
+    <string name="task_field_status">任务状态</string>
+    <string name="task_field_last_seen">最后目击位置</string>
+    <string name="task_cancel">取消任务</string>
+    <string name="task_cancel_confirm">确认取消该任务？</string>
+
+    <!-- ==== M5-B: 线索域 (MH-CLUE-*) ==== -->
+    <string name="clue_list_title">线索列表</string>
+    <string name="clue_create_title">提交线索</string>
+    <string name="clue_field_type">线索类型</string>
+    <string name="clue_field_content">线索内容</string>
+    <string name="clue_field_location">位置（可选）</string>
+    <string name="clue_review_state">审核状态</string>
+    <string name="clue_submit">提交</string>
+
+    <!-- ==== M6: 通知中心 (MH-NOTIF-*) ==== -->
+    <string name="notification_list_title">通知中心</string>
+    <string name="notification_mark_read">标为已读</string>
+    <string name="notification_read_all">全部已读</string>
+    <string name="notification_empty">暂无通知</string>
+
+    <!-- ==== M7: AI 助手 (MH-AI-*) ==== -->
+    <string name="ai_chat_title">AI 助手</string>
+    <string name="ai_input_hint">向 AI 提问…</string>
+    <string name="ai_intent_confirm_title">操作确认</string>
+    <string name="ai_intent_confirm_body">AI 建议执行：%1$s，是否确认？</string>
+    <string name="ai_intent_confirm">确认执行</string>
+    <string name="ai_intent_cancel">取消</string>
+
+    <!-- ==== PatientDetail 新增按钮 ==== -->
+    <string name="patient_fence_edit">编辑围栏</string>
+    <string name="patient_tag_list">标签管理</string>
+    <string name="patient_mat_orders">物资申领</string>
+    <string name="patient_task_list">寻回任务</string>
+
+    <!-- ==== 错误码：M3-A / M3-B / M5-A / M5-B / M6 / M7 ==== -->
+    <string name="error_E_TAG_4041">标签不存在</string>
+    <string name="error_E_TAG_4091">该标签已绑定其他患者</string>
+    <string name="error_E_TAG_4031">无权操作该标签</string>
+    <string name="error_E_MAT_4041">物资不存在</string>
+    <string name="error_E_MAT_4291">库存不足</string>
+    <string name="error_E_TASK_4041">任务不存在</string>
+    <string name="error_E_TASK_4091">该患者已有进行中任务</string>
+    <string name="error_E_TASK_4031">无权操作该任务</string>
+    <string name="error_E_TASK_4221">任务当前状态不允许该操作</string>
+    <string name="error_E_CLUE_4041">线索不存在</string>
+    <string name="error_E_CLUE_4031">无权操作该线索</string>
+    <string name="error_E_NOTIF_4041">通知不存在</string>
+    <string name="error_E_AI_4041">AI 会话不存在</string>
+    <string name="error_E_AI_4291">AI 使用额度已达上限</string>
+    <string name="error_E_AI_5001">AI 服务暂时不可用</string>
 </resources>
