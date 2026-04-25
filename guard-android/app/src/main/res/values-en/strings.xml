@@ -336,6 +336,7 @@
     <string name="home_tab_map">Map</string>
     <string name="home_tab_notifications">Notifications</string>
     <string name="home_map_placeholder">Map renders once AMap AppKey is configured</string>
+    <string name="home_tasks_sheet_title">Rescue Tasks</string>
 
     <!-- ==== M6: Notifications (MH-NOTIF-*) ==== -->
     <string name="notification_list_title">Notifications</string>

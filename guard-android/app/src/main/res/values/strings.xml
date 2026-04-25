@@ -336,6 +336,7 @@
     <string name="home_tab_map">地图</string>
     <string name="home_tab_notifications">消息通知</string>
     <string name="home_map_placeholder">高德地图 AppKey 配置后将在此渲染患者位置</string>
+    <string name="home_tasks_sheet_title">寻人任务</string>
 
     <!-- ==== M6: 通知中心 (MH-NOTIF-*) ==== -->
     <string name="notification_list_title">通知中心</string>

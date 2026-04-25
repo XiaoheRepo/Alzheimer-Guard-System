@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -30,20 +29,18 @@ import com.xiaohelab.guard.android.feature.ai.ui.AiSessionsListScreen
 import com.xiaohelab.guard.android.feature.home.ui.HomeScreen
 import com.xiaohelab.guard.android.feature.me.ui.MeScreen
 import com.xiaohelab.guard.android.feature.profile.ui.list.PatientListScreen
-import com.xiaohelab.guard.android.feature.task.ui.TaskListScreen
 
-/** 底部导航 5 Tab（首页 / 档案 / 寻人 / AI / 我的）。首页内嵌 Map + 通知顶部切换。 */
+/** 底部导航 4 Tab（首页 / 档案 / AI / 我的）。寻人任务作为首页地图抽屉，不再独立 Tab。 */
 private enum class MainTab(val labelRes: Int, val icon: ImageVector) {
     Home(R.string.nav_home, Icons.Filled.Home),
     Profile(R.string.nav_profile, Icons.Filled.Groups),
-    Tasks(R.string.nav_tasks, Icons.Filled.Search),
     Ai(R.string.nav_ai, Icons.Filled.SmartToy),
     Me(R.string.nav_me, Icons.Filled.Person),
 }
 
 /**
- * MH-MAIN：登录后的主壳。五个一级入口承载家属端高频功能。
- * - 首页 = 地图 + 消息通知（顶部 Tab 切换，handbook §8.2）。
+ * MH-MAIN：登录后的主壳。四个一级入口承载家属端高频功能。
+ * - 首页 = 地图（含寻人任务抽屉）+ 消息通知（顶部 Tab 切换，扫码入口右上角）。
  */
 @Composable
 fun MainScaffold(navController: NavHostController) {
@@ -65,16 +62,16 @@ fun MainScaffold(navController: NavHostController) {
     ) { pad ->
         Box(Modifier.fillMaxSize().padding(pad)) {
             when (tab) {
-                MainTab.Home -> HomeScreen()
+                MainTab.Home -> HomeScreen(
+                    onScan = { navController.navigate(MhRoutes.qrScan(MhRoutes.SCAN_TARGET_ME_ENTRY)) },
+                    onOpenTask = { id -> navController.navigate(MhRoutes.taskDetail(id)) },
+                    onCreateTask = { navController.navigate(MhRoutes.TASK_CREATE) },
+                    onOpenNotificationDetail = { /* 通知列表项已在 ViewModel 内 markRead；详情页待 B7 接入 */ },
+                )
                 MainTab.Profile -> PatientListScreen(
                     onPatientClick = { id -> navController.navigate(MhRoutes.patientDetail(id)) },
                     onCreate = { navController.navigate(MhRoutes.PATIENT_CREATE) },
                     onMe = { tab = MainTab.Me },
-                )
-                MainTab.Tasks -> TaskListScreen(
-                    onTaskClick = { taskId -> navController.navigate(MhRoutes.taskDetail(taskId)) },
-                    onCreate = { navController.navigate(MhRoutes.TASK_CREATE) },
-                    onBack = { /* root tab — no back */ },
                 )
                 MainTab.Ai -> AiSessionsListScreen(
                     onOpenSession = { sessionId -> navController.navigate(MhRoutes.aiChat(sessionId)) },
