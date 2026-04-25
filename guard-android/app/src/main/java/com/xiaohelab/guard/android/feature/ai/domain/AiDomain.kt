@@ -11,8 +11,8 @@ import javax.inject.Inject
 
 interface AiRepository {
     suspend fun listSessions(): MhResult<AiSessionListDto>
-    /** API V2.0 §3.5.1：patient_id 必填。 */
-    suspend fun createSession(patientId: String, taskId: String? = null): MhResult<AiSessionDto>
+    /** API V2.0 §3.5.1：patient_id 与 task_id 均必填。 */
+    suspend fun createSession(patientId: String, taskId: String): MhResult<AiSessionDto>
     suspend fun getSession(sessionId: String): MhResult<AiSessionDto>
     suspend fun deleteSession(sessionId: String): MhResult<Unit>
     suspend fun getIntent(intentId: String): MhResult<IntentDto>
@@ -23,7 +23,7 @@ interface AiRepository {
 class AiRepositoryImpl @Inject constructor(private val api: AiSessionApi) : AiRepository {
     override suspend fun listSessions() = handleEnvelope { api.listSessions() }
 
-    override suspend fun createSession(patientId: String, taskId: String?) =
+    override suspend fun createSession(patientId: String, taskId: String) =
         handleEnvelope { api.createSession(CreateSessionRequest(patientId = patientId, taskId = taskId)) }
 
     override suspend fun getSession(sessionId: String) = handleEnvelope { api.getSession(sessionId) }
@@ -55,7 +55,8 @@ class ListAiSessionsUseCase @Inject constructor(private val repo: AiRepository) 
 }
 
 class CreateAiSessionUseCase @Inject constructor(private val repo: AiRepository) {
-    suspend operator fun invoke(patientId: String, taskId: String? = null) =
+    /** API V2.0 §3.5.1：patient_id 与 task_id 均必填。 */
+    suspend operator fun invoke(patientId: String, taskId: String) =
         repo.createSession(patientId, taskId)
 }
 
