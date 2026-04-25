@@ -128,7 +128,7 @@ class CreatePatientUseCase @Inject constructor(private val repo: ProfileReposito
         appearanceFeatures: String? = null,
     ) = repo.create(
         PatientCreateRequest(
-            name = name,
+            patientName = name,
             gender = gender,
             birthday = birthday,
             avatarUrl = avatarUrl,
@@ -137,10 +137,15 @@ class CreatePatientUseCase @Inject constructor(private val repo: ProfileReposito
             allergy = allergy,
             emergencyContactPhone = emergencyContactPhone,
             longTextProfile = longTextProfile,
-            appearanceHeightCm = appearanceHeightCm,
-            appearanceWeightKg = appearanceWeightKg,
-            appearanceClothing = appearanceClothing,
-            appearanceFeatures = appearanceFeatures,
+            appearance = if (
+                appearanceHeightCm != null || appearanceWeightKg != null ||
+                appearanceClothing != null || appearanceFeatures != null
+            ) AppearanceDto(
+                heightCm = appearanceHeightCm,
+                weightKg = appearanceWeightKg,
+                clothing = appearanceClothing,
+                features = appearanceFeatures,
+            ) else null,
         )
     )
 }
@@ -160,7 +165,7 @@ class UpdatePatientProfileUseCase @Inject constructor(private val repo: ProfileR
     ) = repo.updateProfile(
         id,
         PatientProfileUpdateRequest(
-            name = name,
+            patientName = name,
             gender = gender,
             birthday = birthday,
             avatarUrl = avatarUrl,
@@ -198,18 +203,21 @@ class SetFenceUseCase @Inject constructor(private val repo: ProfileRepository) {
     suspend operator fun invoke(id: String, f: FenceDto) =
         repo.updateFence(
             id,
+            // API V2.0 §3.3.4：请求体为嵌套 fence{}。FenceDto 直接复用 wire DTO。
             PatientFenceUpdateRequest(
-                fenceEnabled = f.enabled,
-                fenceCenterLat = f.centerLat,
-                fenceCenterLng = f.centerLng,
-                fenceRadiusM = f.radiusM,
-                fenceCoordSystem = f.coordSystem ?: "WGS84",
+                fence = FenceDto(
+                    enabled = f.enabled,
+                    centerLat = f.centerLat,
+                    centerLng = f.centerLng,
+                    radiusM = f.radiusM,
+                    coordSystem = f.coordSystem ?: "WGS84",
+                ),
             ),
         )
 
     /** 关闭围栏（HC-Coord 兼容；其他参数置空）。 */
     suspend fun disable(id: String) =
-        repo.updateFence(id, PatientFenceUpdateRequest(fenceEnabled = false))
+        repo.updateFence(id, PatientFenceUpdateRequest(fence = FenceDto(enabled = false)))
 }
 class ArchivePatientUseCase @Inject constructor(private val repo: ProfileRepository) { suspend operator fun invoke(id: String) = repo.archive(id) }
 

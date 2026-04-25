@@ -55,7 +55,7 @@ class PatientServiceTest {
     void create_should_persist_patient_and_primary_relation_and_publish_event() {
         // given
         PatientCreateRequest req = new PatientCreateRequest();
-        req.setName("张老");
+        req.setPatientName("张老");
         req.setGender("MALE");
         when(patientRepository.existsByShortCode(anyString())).thenReturn(false);
         when(patientRepository.save(any())).thenAnswer(inv -> {
@@ -84,11 +84,11 @@ class PatientServiceTest {
         when(patientRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         PatientUpdateRequest req = new PatientUpdateRequest();
-        req.setName("新名字");
+        req.setPatientName("新名字");
         var resp = patientService.update(7L, req);
 
         assertThat(resp.getProfileVersion()).isEqualTo(4L);
-        assertThat(resp.getName()).isEqualTo("新名字");
+        assertThat(resp.getPatientName()).isEqualTo("新名字");
         verify(outboxService).publish(eq("profile.updated"), anyString(), anyString(), anyMap());
     }
 

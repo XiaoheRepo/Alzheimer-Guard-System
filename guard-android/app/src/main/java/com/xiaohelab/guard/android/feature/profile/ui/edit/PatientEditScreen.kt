@@ -108,9 +108,9 @@ class PatientEditViewModel @Inject constructor(
                         birthday = d.birthday.orEmpty(),
                         avatarUrl = d.avatarUrl.orEmpty(),
                         chronicDiseases = d.chronicDiseases.orEmpty(),
-                        height = d.appearanceHeightCm?.toString().orEmpty(),
-                        weight = d.appearanceWeightKg?.toString().orEmpty(),
-                        features = d.appearanceFeatures.orEmpty(),
+                        height = d.appearance?.heightCm?.toString().orEmpty(),
+                        weight = d.appearance?.weightKg?.toString().orEmpty(),
+                        features = d.appearance?.features.orEmpty(),
                     )
                 }
                 is MhResult.Failure -> _s.update { it.copy(loading = false, error = r.error) }

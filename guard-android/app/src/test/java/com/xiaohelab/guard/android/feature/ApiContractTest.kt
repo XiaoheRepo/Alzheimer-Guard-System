@@ -200,19 +200,26 @@ class ApiContractTest {
     // ── AI API ───────────────────────────────────────────────────────────────
 
     @Test
-    fun `AiSessionApi createSession sends patient_id`() = runTest {
+    fun `AiSessionApi createSession sends patient_id and task_id`() = runTest {
         server.enqueue(
             MockResponse()
-                .setBody("""{"code":200,"data":{"session_id":"sess_001","patient_id":"p_001","status":"ACTIVE","created_at":"2024-01-01T00:00:00Z"},"message":"ok","trace_id":"t8"}""")
+                .setBody("""{"code":200,"data":{"session_id":"sess_001","patient_id":"p_001","task_id":"t_001","status":"ACTIVE","created_at":"2024-01-01T00:00:00Z"},"message":"ok","trace_id":"t8"}""")
                 .addHeader("Content-Type", "application/json")
         )
         val api = retrofit.create(AiSessionApi::class.java)
-        api.createSession(com.xiaohelab.guard.android.feature.ai.data.CreateSessionRequest("p_001"))
+        // API V2.0 §3.5.1：task_id 必填。
+        api.createSession(
+            com.xiaohelab.guard.android.feature.ai.data.CreateSessionRequest(
+                patientId = "p_001",
+                taskId = "t_001",
+            )
+        )
 
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/v1/ai/sessions", request.path)
         val body = request.body.readUtf8()
         assertTrue(body.contains("\"patient_id\":\"p_001\""))
+        assertTrue(body.contains("\"task_id\":\"t_001\""))
     }
 }
