@@ -94,11 +94,16 @@ data class AiSessionListDto(
     val total: Int? = null,
 )
 
-/** 创建会话请求体；patient_id 必填，task_id 可选。 */
+/**
+ * 创建会话请求体（API V2.0 §3.5.1）。
+ *
+ * **基线裁决**：`patient_id` / `task_id` 均为必填字符串。AI 会话必须挂在某条寻回任务上下文之下。
+ * UI 入口必须在已有 task 的语境中创建会话；无任务上下文（如健康咨询）当前不允许直接进入 AI 会话。
+ */
 @Serializable
 data class CreateSessionRequest(
     @SerialName("patient_id") val patientId: String,
-    @SerialName("task_id") val taskId: String? = null,
+    @SerialName("task_id") val taskId: String,
     /** 可选首条用户提示词（部分后端版本支持）。 */
     val prompt: String? = null,
 )

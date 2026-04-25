@@ -86,24 +86,31 @@ data class PatientListDto(
 )
 
 /**
- * 患者档案响应 DTO，对齐后端 `PatientResponse` 实际 wire 字段。
+ * 患者档案响应 DTO（API V2.0 §3.3.1）。
  *
- * - `name` 字段：后端 `PatientResponse.name`（API V2.0 文档使用 `patient_name`，后端尚未对齐 → RFC）。
- * - 外观/围栏：后端使用扁平字段 `appearance_*` / `fence_*`，非嵌套对象。
+ * **基线对齐（裁决执行后）**：
+ * - 姓名 wire 字段：`patient_name`（API V2.0 §3.3 字段字典），保留 `name` 作为 [JsonNames] 兼容
+ *   旧后端实现。
+ * - 外观 / 围栏：嵌套对象 `appearance{}` / `fence{}`。同时保留旧扁平字段
+ *   `appearance_*` / `fence_*` 作为防御性兼容（kotlinx-serialization 默认忽略 null 字段，多余字段
+ *   被 `ignoreUnknownKeys=true` 容忍）。
  * - 状态：使用 `lost_status`（NORMAL / MISSING_PENDING / MISSING）。
- * - 版本：使用 `profile_version`（与后端乐观锁字段对齐）。
+ * - 版本：使用 `profile_version`。
  * - 电话：后端只下发脱敏后的 `emergency_contact_phone_masked`。
+ * - 所有 ID 字段在 wire 上为 String；[IdAsStringSerializer] 兼容数值 / 字符串两种历史格式。
  */
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 @Serializable
 data class PatientDto(
     @Serializable(with = IdAsStringSerializer::class)
     @SerialName("patient_id")
     val patientId: String,
-    /** 当前后端字段为 `name`；同时容忍 `patient_name` 兼容文档版本。 */
-    @SerialName("name") val name: String? = null,
-    @SerialName("patient_name") val patientName: String? = null,
+    /** 基线 wire 字段为 patient_name；同时容忍历史 name。 */
+    @SerialName("patient_name")
+    @kotlinx.serialization.json.JsonNames("name")
+    val patientName: String? = null,
     val gender: String? = null,
-    /** ISO yyyy-MM-dd，对齐后端 `birthday`。 */
+    /** ISO yyyy-MM-dd。 */
     @SerialName("birthday") val birthday: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("short_code") val shortCode: String? = null,
@@ -113,17 +120,10 @@ data class PatientDto(
     val allergy: String? = null,
     @SerialName("emergency_contact_phone_masked") val emergencyContactPhoneMasked: String? = null,
     @SerialName("long_text_profile") val longTextProfile: String? = null,
-    // 外观（扁平）
-    @SerialName("appearance_height_cm") val appearanceHeightCm: Int? = null,
-    @SerialName("appearance_weight_kg") val appearanceWeightKg: Int? = null,
-    @SerialName("appearance_clothing") val appearanceClothing: String? = null,
-    @SerialName("appearance_features") val appearanceFeatures: String? = null,
-    // 围栏（扁平）
-    @SerialName("fence_enabled") val fenceEnabled: Boolean? = null,
-    @SerialName("fence_center_lat") val fenceCenterLat: Double? = null,
-    @SerialName("fence_center_lng") val fenceCenterLng: Double? = null,
-    @SerialName("fence_radius_m") val fenceRadiusM: Int? = null,
-    @SerialName("fence_coord_system") val fenceCoordSystem: String? = null,
+    /** 外观（嵌套，基线 wire）。 */
+    val appearance: AppearanceDto? = null,
+    /** 围栏（嵌套，基线 wire）。 */
+    val fence: FenceDto? = null,
     /** API V2.0：NORMAL / MISSING_PENDING / MISSING。HC-02 客户端只读。 */
     @SerialName("lost_status") val lostStatus: String? = null,
     @SerialName("profile_version") val profileVersion: Long? = null,
@@ -133,18 +133,20 @@ data class PatientDto(
     @SerialName("relation_role") val relationRole: String? = null,
     val age: Int? = null,
 ) {
-    /** 兼容字段优先级：`name` > `patient_name`（API V2.0 字典）。 */
-    val displayName: String get() = name ?: patientName ?: ""
+    /** 兼容旧扁平字段无姓名时的回退展示。 */
+    val displayName: String get() = patientName ?: ""
 }
 
 /**
- * 创建患者请求体，对齐后端 `PatientCreateRequest`。
+ * 创建患者请求体（API V2.0 §3.3.1）。
  *
- * 必填：`name` / `gender` / `birthday` / `avatar_url`。
+ * 必填：`patient_name` / `gender` / `birthday` / `avatar_url`。
+ * 外观与围栏均为可选嵌套对象，未传则默认值由后端处理。
  */
 @Serializable
 data class PatientCreateRequest(
-    val name: String,
+    /** wire 字段为 patient_name。 */
+    @SerialName("patient_name") val patientName: String,
     /** MALE / FEMALE / UNKNOWN。 */
     val gender: String,
     /** yyyy-MM-dd。 */
@@ -156,21 +158,19 @@ data class PatientCreateRequest(
     val allergy: String? = null,
     @SerialName("emergency_contact_phone") val emergencyContactPhone: String? = null,
     @SerialName("long_text_profile") val longTextProfile: String? = null,
-    @SerialName("appearance_height_cm") val appearanceHeightCm: Int? = null,
-    @SerialName("appearance_weight_kg") val appearanceWeightKg: Int? = null,
-    @SerialName("appearance_clothing") val appearanceClothing: String? = null,
-    @SerialName("appearance_features") val appearanceFeatures: String? = null,
+    val appearance: AppearanceDto? = null,
+    val fence: FenceDto? = null,
 )
 
 /**
- * 更新基础档案请求体，对齐后端 `PatientUpdateRequest`（PUT /{id}/profile）。
+ * 更新基础档案请求体（PUT /{id}/profile，API V2.0 §3.3.2）。
  *
- * 后端不接 `version` 字段（乐观锁在 service 层基于 `profile_version` 自校验），所以不在请求体声明。
+ * 字段全部可选，null 表示不修改。
  * 头像 URL 可选但**不允许清空**，赋空字符串将被后端拒绝（E_PRO_4014）。
  */
 @Serializable
 data class PatientProfileUpdateRequest(
-    val name: String? = null,
+    @SerialName("patient_name") val patientName: String? = null,
     val gender: String? = null,
     @SerialName("birthday") val birthday: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null,
@@ -179,13 +179,10 @@ data class PatientProfileUpdateRequest(
     val allergy: String? = null,
     @SerialName("emergency_contact_phone") val emergencyContactPhone: String? = null,
     @SerialName("long_text_profile") val longTextProfile: String? = null,
-    @SerialName("appearance_height_cm") val appearanceHeightCm: Int? = null,
-    @SerialName("appearance_weight_kg") val appearanceWeightKg: Int? = null,
-    @SerialName("appearance_clothing") val appearanceClothing: String? = null,
-    @SerialName("appearance_features") val appearanceFeatures: String? = null,
+    val appearance: AppearanceDto? = null,
 )
 
-/** 外观更新请求，对齐后端 `AppearanceUpdateRequest`。字段名 `height_cm` / `weight_kg`，无 photo_urls / version。 */
+/** 外观更新请求（PUT /{id}/appearance，API V2.0 §3.3.3）。字段名 `height_cm` / `weight_kg`。 */
 @Serializable
 data class PatientAppearanceUpdateRequest(
     @SerialName("height_cm") val heightCm: Int? = null,
@@ -195,17 +192,13 @@ data class PatientAppearanceUpdateRequest(
 )
 
 /**
- * 围栏更新请求，对齐后端 `FenceUpdateRequest`。
- * 字段名 `fence_*` 全前缀；`fence_enabled` 必填；启用时需带 lat/lng/radius。
+ * 围栏更新请求（PUT /{id}/fence，API V2.0 §3.3.4）。
+ * wire 结构：外层包一层 `fence{}`，子字段为 `enabled` / `center_lat` / `center_lng` /
+ * `radius_m` / `coord_system`。
  */
 @Serializable
 data class PatientFenceUpdateRequest(
-    @SerialName("fence_enabled") val fenceEnabled: Boolean,
-    @SerialName("fence_center_lat") val fenceCenterLat: Double? = null,
-    @SerialName("fence_center_lng") val fenceCenterLng: Double? = null,
-    @SerialName("fence_radius_m") val fenceRadiusM: Int? = null,
-    /** WGS84 / GCJ-02 / BD-09，默认 WGS84。 */
-    @SerialName("fence_coord_system") val fenceCoordSystem: String? = "WGS84",
+    val fence: FenceDto,
 )
 
 /** API V2.0 §3.3.5 走失/安全确认请求体。 */
@@ -217,25 +210,26 @@ data class MissingPendingConfirmRequest(
     @SerialName("request_time") val requestTime: String? = null,
 )
 
-// ─── 本地 UI 模型（非序列化）────────────────────────────────────────────
-// 注意：后端 wire 不存在嵌套 appearance / fence 对象。下面的两个类**仅供 UI 状态聚合使用**，
-// 不应再作为请求/响应字段被序列化（已从 PatientDto 中移除嵌套引用）。
+// ─── wire DTO（基线 §3.3.1 嵌套对象）────────────────────────────────────────────
 
-/** UI 聚合：外观信息。 */
+/** 外观特征（基线 wire 嵌套对象）。 */
+@Serializable
 data class AppearanceDto(
-    val heightCm: Int? = null,
-    val weightKg: Int? = null,
+    @SerialName("height_cm") val heightCm: Int? = null,
+    @SerialName("weight_kg") val weightKg: Int? = null,
     val clothing: String? = null,
     val features: String? = null,
 )
 
-/** UI 聚合：围栏信息。 */
+/** 围栏配置（基线 wire 嵌套对象）。 */
+@Serializable
 data class FenceDto(
-    val enabled: Boolean,
-    val centerLat: Double?,
-    val centerLng: Double?,
-    val radiusM: Int?,
-    val coordSystem: String? = "WGS84",
+    val enabled: Boolean = false,
+    @SerialName("center_lat") val centerLat: Double? = null,
+    @SerialName("center_lng") val centerLng: Double? = null,
+    @SerialName("radius_m") val radiusM: Int? = null,
+    /** WGS84 / GCJ-02 / BD-09，默认 WGS84。 */
+    @SerialName("coord_system") val coordSystem: String? = "WGS84",
 )
 
 @Serializable
