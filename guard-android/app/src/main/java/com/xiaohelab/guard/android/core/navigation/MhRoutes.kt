@@ -55,6 +55,7 @@ object MhRoutes {
 
     // QR Scan (M3-C, MH-SCAN)
     const val QR_SCAN = "mh_qr_scan?target={target}"                // MH-SCAN
+    const val SCAN_RESULT = "mh_scan_result?tag_code={tag_code}"    // MH-SCAN-RESULT
 
     // ==== Arg keys (HC-ID-String: all NavType.StringType) ====
     const val ARG_PATIENT_ID = "patient_id"
@@ -89,4 +90,8 @@ object MhRoutes {
         if (sessionId != null) "mh_ai_chat?session_id=$sessionId" else "mh_ai_chat"
 
     fun qrScan(target: String) = "mh_qr_scan?target=$target"
+    fun scanResult(tagCode: String) = "mh_scan_result?tag_code=$tagCode"
+
+    /** Me 页扫码入口的 target 前缀（handbook §9 扫码 - 我的页入口）。 */
+    const val SCAN_TARGET_ME_ENTRY = "me_entry:scan"
 }

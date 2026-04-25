@@ -17,6 +17,36 @@
     <string name="common_scan">Scan</string>
     <string name="me_notifications">Notifications</string>
     <string name="me_ai_chat">AI Assistant</string>
+    <string name="me_change_password">Change Password</string>
+
+    <!-- Me fields (MH-ME-01) -->
+    <string name="me_scan">Scan &amp; Report</string>
+    <string name="me_field_username">Account</string>
+    <string name="me_field_nickname">Nickname</string>
+    <string name="me_field_email">Email</string>
+    <string name="me_field_user_id">User ID</string>
+    <string name="me_field_role_prefix">Role: </string>
+    <string name="me_field_not_set">Not set</string>
+    <string name="me_role_family">Family</string>
+    <string name="me_role_admin">Admin</string>
+    <string name="me_role_super_admin">Super Admin</string>
+
+    <!-- Scan Result (MH-SCAN-RESULT) -->
+    <string name="scan_result_title">Scan Result</string>
+    <string name="scan_result_tag_label">Scanned Tag Code</string>
+    <string name="scan_result_hint">Go to the Profiles tab, pick the matching patient, then open the Tags page to bind or confirm loss. To submit a sighting clue, open a rescue task and tap "Report Clue".</string>
+    <string name="scan_result_go_profiles">Go to Profiles</string>
+
+    <!-- Change Password (MH-ME-03) -->
+    <string name="change_password_title">Change Password</string>
+    <string name="change_password_old">Current Password</string>
+    <string name="change_password_new">New Password</string>
+    <string name="change_password_confirm">Confirm New Password</string>
+    <string name="change_password_submit">Submit</string>
+    <string name="change_password_hint">At least 10 chars, with upper/lowercase letters and digits</string>
+    <string name="change_password_err_empty_old">Please enter your current password</string>
+    <string name="change_password_err_weak">New password does not meet complexity requirements</string>
+    <string name="change_password_err_mismatch">The two new password entries do not match</string>
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>

@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.xiaohelab.guard.android.core.scan.QrScanScreen
+import com.xiaohelab.guard.android.core.scan.ScanResultScreen
 import com.xiaohelab.guard.android.feature.ai.ui.AiChatScreen
 import com.xiaohelab.guard.android.feature.auth.ui.login.LoginScreen
 import com.xiaohelab.guard.android.feature.auth.ui.register.RegisterScreen
@@ -74,15 +75,13 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
         composable(MhRoutes.ME) {
             MeScreen(
                 onSettings = { navController.navigate(MhRoutes.SETTINGS) },
-                onNotifications = { navController.navigate(MhRoutes.NOTIFICATION_LIST) },
-                onAiChat = { navController.navigate(MhRoutes.aiChat()) },
+                onScan = { navController.navigate(MhRoutes.qrScan(MhRoutes.SCAN_TARGET_ME_ENTRY)) },
                 onChangePassword = { navController.navigate(MhRoutes.ME_CHANGE_PASSWORD) },
                 onLoggedOut = {
                     navController.navigate(MhRoutes.AUTH_LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onBack = { navController.popBackStack() },
             )
         }
         composable(MhRoutes.SETTINGS) {
@@ -226,11 +225,42 @@ fun MhNavGraph(navController: NavHostController, startDestination: String) {
             val target = entry.arguments?.getString(MhRoutes.ARG_TARGET).orEmpty()
             QrScanScreen(
                 onScanned = { tagCode ->
-                    // 扫码成功：回到 tagBind 页并带入 tag_code prefill
-                    // target 携带 patient_id，格式 "tag_bind:<patient_id>"
-                    val patientId = target.removePrefix("tag_bind:")
-                    navController.navigate(MhRoutes.tagBind(patientId, tagCode)) {
-                        popUpTo(MhRoutes.QR_SCAN) { inclusive = true }
+                    when {
+                        target.startsWith("tag_bind:") -> {
+                            val patientId = target.removePrefix("tag_bind:")
+                            navController.navigate(MhRoutes.tagBind(patientId, tagCode)) {
+                                popUpTo(MhRoutes.QR_SCAN) { inclusive = true }
+                            }
+                        }
+                        target == MhRoutes.SCAN_TARGET_ME_ENTRY -> {
+                            // MH-SCAN-RESULT：Me 页扫码 → 结果页。
+                            navController.navigate(MhRoutes.scanResult(tagCode)) {
+                                popUpTo(MhRoutes.QR_SCAN) { inclusive = true }
+                            }
+                        }
+                        else -> {
+                            // 兜底：未知 target，回栈。
+                            navController.popBackStack()
+                        }
+                    }
+                },
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        // ── MH-SCAN-RESULT: Me 页扫码结果页 ──────────────────────────────────
+        composable(
+            MhRoutes.SCAN_RESULT,
+            arguments = listOf(
+                navArgument(MhRoutes.ARG_TAG_CODE) { type = NavType.StringType; defaultValue = "" },
+            ),
+        ) { entry ->
+            val code = entry.arguments?.getString(MhRoutes.ARG_TAG_CODE).orEmpty()
+            ScanResultScreen(
+                tagCode = code,
+                onGoToProfiles = {
+                    navController.navigate(MhRoutes.HOME) {
+                        popUpTo(MhRoutes.HOME) { inclusive = false }
                     }
                 },
                 onBack = { navController.popBackStack() },

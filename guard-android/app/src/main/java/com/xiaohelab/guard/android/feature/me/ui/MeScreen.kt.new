@@ -1,6 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-
-package com.xiaohelab.guard.android.feature.me.ui
+// STALE FILE: intentionally non-compilable content. Do not process.
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -90,7 +88,7 @@ class MeViewModel @Inject constructor(
  * 产品调整（2026-04）：
  * - 去除"通知中心 / AI 助手"列表项：两者已是底部 Tab（首页通知子 Tab / AI Tab），此处重复。
  * - 全量展示用户资料（昵称 / 账号 / 邮箱 / 角色 / 用户 ID）。
- * - 左上角新增扫码入口 → QrScan (target=me_entry:scan) → ScanResult（MH-SCAN-RESULT）。
+ * - 左上角新增扫码入口 → QrScan (target=me_entry:scan) → ScanResult。
  *
  * HC-07: 涉及敏感信息展示；MainActivity 已全局 FLAG_SECURE（禁止截屏）。
  */
@@ -112,7 +110,10 @@ fun MeScreen(
         TopAppBar(
             title = { Text(stringResource(R.string.me_title)) },
             navigationIcon = {
-                IconButton(onClick = onScan) {
+                IconButton(
+                    onClick = onScan,
+                    modifier = Modifier,
+                ) {
                     Icon(
                         imageVector = Icons.Filled.QrCodeScanner,
                         contentDescription = stringResource(R.string.me_scan),
@@ -181,7 +182,10 @@ private fun UserProfileCard(user: UserProfileDto) {
                 },
             )
             HorizontalDivider()
-            ProfileRow(labelRes = R.string.me_field_username, value = user.username)
+            ProfileRow(
+                labelRes = R.string.me_field_username,
+                value = user.username,
+            )
             ProfileRow(
                 labelRes = R.string.me_field_nickname,
                 value = user.nickname?.takeIf { it.isNotBlank() } ?: stringResource(R.string.me_field_not_set),
@@ -190,7 +194,10 @@ private fun UserProfileCard(user: UserProfileDto) {
                 labelRes = R.string.me_field_email,
                 value = user.email?.takeIf { it.isNotBlank() } ?: stringResource(R.string.me_field_not_set),
             )
-            ProfileRow(labelRes = R.string.me_field_user_id, value = user.userId)
+            ProfileRow(
+                labelRes = R.string.me_field_user_id,
+                value = user.userId,
+            )
         }
     }
 }

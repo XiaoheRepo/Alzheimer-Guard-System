@@ -17,6 +17,36 @@
     <string name="common_scan">扫码</string>
     <string name="me_notifications">通知中心</string>
     <string name="me_ai_chat">AI 助手</string>
+    <string name="me_change_password">修改密码</string>
+
+    <!-- ==== Me fields (MH-ME-01) ==== -->
+    <string name="me_scan">扫码上报</string>
+    <string name="me_field_username">账号</string>
+    <string name="me_field_nickname">昵称</string>
+    <string name="me_field_email">邮箱</string>
+    <string name="me_field_user_id">用户 ID</string>
+    <string name="me_field_role_prefix">角色：</string>
+    <string name="me_field_not_set">未设置</string>
+    <string name="me_role_family">家属</string>
+    <string name="me_role_admin">管理员</string>
+    <string name="me_role_super_admin">超级管理员</string>
+
+    <!-- ==== Scan Result (MH-SCAN-RESULT) ==== -->
+    <string name="scan_result_title">扫描结果</string>
+    <string name="scan_result_tag_label">扫描到的标签编号</string>
+    <string name="scan_result_hint">请进入「档案」Tab，选择对应患者后前往「电子标签」页完成绑定或丢失确认；如需上报线索，请从任务详情进入「线索上报」。</string>
+    <string name="scan_result_go_profiles">前往档案</string>
+
+    <!-- ==== Change Password (MH-ME-03) ==== -->
+    <string name="change_password_title">修改密码</string>
+    <string name="change_password_old">当前密码</string>
+    <string name="change_password_new">新密码</string>
+    <string name="change_password_confirm">确认新密码</string>
+    <string name="change_password_submit">提交</string>
+    <string name="change_password_hint">至少 10 位，包含大小写字母和数字</string>
+    <string name="change_password_err_empty_old">请输入当前密码</string>
+    <string name="change_password_err_weak">新密码不符合复杂度要求</string>
+    <string name="change_password_err_mismatch">两次输入的新密码不一致</string>
 
     <!-- ==== Navigation Tabs ==== -->
     <string name="nav_home">首页</string>

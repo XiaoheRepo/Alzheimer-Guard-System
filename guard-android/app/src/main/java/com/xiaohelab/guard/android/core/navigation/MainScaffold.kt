@@ -81,15 +81,13 @@ fun MainScaffold(navController: NavHostController) {
                 )
                 MainTab.Me -> MeScreen(
                     onSettings = { navController.navigate(MhRoutes.SETTINGS) },
-                    onNotifications = { navController.navigate(MhRoutes.NOTIFICATION_LIST) },
-                    onAiChat = { tab = MainTab.Ai },
+                    onScan = { navController.navigate(MhRoutes.qrScan(MhRoutes.SCAN_TARGET_ME_ENTRY)) },
                     onChangePassword = { navController.navigate(MhRoutes.ME_CHANGE_PASSWORD) },
                     onLoggedOut = {
                         navController.navigate(MhRoutes.AUTH_LOGIN) {
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    onBack = { tab = MainTab.Profile },
                 )
             }
         }
