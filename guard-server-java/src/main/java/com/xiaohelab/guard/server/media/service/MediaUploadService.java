@@ -17,9 +17,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 对象存储直传凭证服务（V2.1 §3.8.3.1，backend_handbook §25.5）。
- * <p>毕设阶段无实际 OSS SDK 依赖：基于 HMAC-SHA256 风格签名生成形似 presigned URL，
- * 线上接入时替换为 aliyun-sdk-oss 的 {@code OSS.generatePresignedUrl}。</p>
+ * 对象存储直传凭证服务（V2.1 §3.8.3.1，backend_handbook §25.5、§19.3）。
+ * <p>有 OSS access key 时调用 aliyun-sdk-oss 的 {@code generatePresignedUrl(PUT)} 签真实直传 URL；
+ * 无 key 时回退到本地 HMAC stub，便于毕设阶段离线开发。</p>
  * 体积白名单（字节）：
  * <ul>
  *   <li>PATIENT_AVATAR / USER_AVATAR: 5 MB</li>
@@ -38,14 +38,20 @@ public class MediaUploadService {
     private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("yyyy/MM/dd")
             .withZone(ZoneOffset.UTC);
 
+    private final AliyunOssClient ossClient;
+
     @Value("${guard.media.oss-endpoint:https://mh-dev.oss-cn-beijing.aliyuncs.com}")
-    private String endpoint;
+    private String stubEndpoint;
 
     @Value("${guard.media.public-cdn:https://cdn.example.com}")
-    private String cdnBase;
+    private String stubCdnBase;
 
     @Value("${guard.media.bucket:mh-dev}")
-    private String bucket;
+    private String stubBucket;
+
+    public MediaUploadService(AliyunOssClient ossClient) {
+        this.ossClient = ossClient;
+    }
 
     /** 签发直传凭证。 */
     public Map<String, Object> sign(Long userId, MediaUploadSignRequest req) {
@@ -63,13 +69,28 @@ public class MediaUploadService {
         String folder = sceneToFolder(req.getScene());
         String objectKey = String.format("media/%s/%s/u%d_%s%s", folder, day, userId, rand, ext);
 
-        long expiresAtEpoch = System.currentTimeMillis() / 1000L + URL_TTL_SECONDS;
-        String signBase = String.join("\n", "PUT", req.getContentType(),
-                String.valueOf(expiresAtEpoch), "/" + bucket + "/" + objectKey);
-        String signature = CryptoUtil.sha256Hex(signBase + "|" + userId);
-        String uploadUrl = String.format("%s/%s?Expires=%d&OSSAccessKeyId=STUB&Signature=%s",
-                endpoint, objectKey, expiresAtEpoch, signature);
-        String publicUrl = cdnBase + "/" + objectKey;
+        long ttl = ossClient.isEnabled() ? ossClient.getProps().getUrlExpirationSeconds() : URL_TTL_SECONDS;
+        long expiresAtEpoch = System.currentTimeMillis() / 1000L + ttl;
+
+        String uploadUrl;
+        String publicUrl;
+        String mode;
+        if (ossClient.isEnabled()) {
+            try {
+                uploadUrl = ossClient.presignPut(objectKey, req.getContentType(), ttl);
+                publicUrl = ossClient.publicUrl(objectKey);
+                mode = "OSS";
+            } catch (Exception ex) {
+                log.warn("[OSS] presign 失败，回退 stub：{}", ex.getMessage());
+                uploadUrl = buildStubUploadUrl(userId, objectKey, req.getContentType(), expiresAtEpoch);
+                publicUrl = stubCdnBase + "/" + objectKey;
+                mode = "STUB_FALLBACK";
+            }
+        } else {
+            uploadUrl = buildStubUploadUrl(userId, objectKey, req.getContentType(), expiresAtEpoch);
+            publicUrl = stubCdnBase + "/" + objectKey;
+            mode = "STUB";
+        }
 
         Map<String, String> headers = new HashMap<>();
         headers.put("Content-Type", req.getContentType());
@@ -85,9 +106,18 @@ public class MediaUploadService {
                 java.time.Instant.ofEpochSecond(expiresAtEpoch), ZoneOffset.UTC).toString());
         out.put("max_size_bytes", max);
         out.put("scene", req.getScene());
-        log.info("[Media] upload-sign userId={} scene={} size={} object_key={}",
-                userId, req.getScene(), req.getSizeBytes(), objectKey);
+        out.put("mode", mode);
+        log.info("[Media] upload-sign userId={} scene={} size={} object_key={} mode={}",
+                userId, req.getScene(), req.getSizeBytes(), objectKey, mode);
         return out;
+    }
+
+    private String buildStubUploadUrl(Long userId, String objectKey, String contentType, long expiresAtEpoch) {
+        String signBase = String.join("\n", "PUT", contentType,
+                String.valueOf(expiresAtEpoch), "/" + stubBucket + "/" + objectKey);
+        String signature = CryptoUtil.sha256Hex(signBase + "|" + userId);
+        return String.format("%s/%s?Expires=%d&OSSAccessKeyId=STUB&Signature=%s",
+                stubEndpoint, objectKey, expiresAtEpoch, signature);
     }
 
     private String sceneToFolder(String scene) {
@@ -109,3 +139,4 @@ public class MediaUploadService {
         };
     }
 }
+

@@ -24,13 +24,16 @@ public class AiPosterService {
     private final RescueTaskRepository taskRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
+    private final DashScopeClient dashScopeClient;
 
     public AiPosterService(RescueTaskRepository taskRepository,
                            GuardianAuthorizationService authorizationService,
-                           OutboxService outboxService) {
+                           OutboxService outboxService,
+                           DashScopeClient dashScopeClient) {
         this.taskRepository = taskRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
+        this.dashScopeClient = dashScopeClient;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -40,9 +43,16 @@ public class AiPosterService {
                 .orElseThrow(() -> BizException.of(ErrorCode.E_TASK_4041));
         authorizationService.assertGuardian(user, task.getPatientId());
 
-        // 生成占位 URL（真实项目应调用模型 + OSS 上传）
-        String url = "https://assets.guard.local/poster/" + task.getTaskNo() + ".png?tpl="
-                + (template != null ? template : "default");
+        String url = null;
+        if (dashScopeClient != null && dashScopeClient.isEnabled()) {
+            String prompt = buildPosterPrompt(task, template);
+            url = dashScopeClient.generateImage(prompt).orElse(null);
+        }
+        if (url == null || url.isBlank()) {
+            // 降级：占位 URL
+            url = "https://assets.guard.local/poster/" + task.getTaskNo() + ".png?tpl="
+                    + (template != null ? template : "default");
+        }
         task.setPosterUrl(url);
         taskRepository.save(task);
 
@@ -50,5 +60,12 @@ public class AiPosterService {
                 String.valueOf(task.getPatientId()),
                 Map.of("task_id", taskId, "task_no", task.getTaskNo(), "poster_url", url));
         return url;
+    }
+
+    private String buildPosterPrompt(RescueTaskEntity task, String template) {
+        String tpl = (template != null && !template.isBlank()) ? template : "default";
+        return "为阿尔兹海默症走失患者生成一张寻人海报背景图：温暖、希望、易识别，"
+                + "风格 [" + tpl + "]，竖版构图，留出顶部 1/3 文字位，颜色稳重不刺眼。"
+                + "任务编号：" + task.getTaskNo() + "。";
     }
 }

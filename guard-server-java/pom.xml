@@ -20,7 +20,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <aliyun-oss.version>3.17.4</aliyun-oss.version>
         <dashscope.version>2.18.2</dashscope.version>
-        <jpush.version>3.6.7</jpush.version>
+        <jpush.version>3.7.7</jpush.version>
     </properties>
     <dependencies>
         <!-- Web -->

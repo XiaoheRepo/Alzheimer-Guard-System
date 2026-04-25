@@ -50,19 +50,22 @@ public class AiSessionService {
     private final OutboxService outboxService;
     private final AuditLogger auditLogger;
     private final StringRedisTemplate redis;
+    private final DashScopeClient dashScopeClient;
 
     public AiSessionService(AiSessionRepository sessionRepository,
                             GuardianAuthorizationService authorizationService,
                             AiQuotaService quotaService,
                             OutboxService outboxService,
                             AuditLogger auditLogger,
-                            StringRedisTemplate redis) {
+                            StringRedisTemplate redis,
+                            DashScopeClient dashScopeClient) {
         this.sessionRepository = sessionRepository;
         this.authorizationService = authorizationService;
         this.quotaService = quotaService;
         this.outboxService = outboxService;
         this.auditLogger = auditLogger;
         this.redis = redis;
+        this.dashScopeClient = dashScopeClient;
     }
 
     /**
@@ -182,7 +185,22 @@ public class AiSessionService {
     }
 
     private String buildStubReply(String prompt, AiSessionEntity s) {
-        return "[毕设桩回复] 针对患者 ID=" + s.getPatientId() + " 您的问题：" + prompt
+        // 1. 优先调用百炼 DashScope（V2.1 §19.4）
+        if (dashScopeClient != null && dashScopeClient.isEnabled()) {
+            String system = "你是「码上回家」阿尔兹海默症协同寻回系统的智能助手，"
+                    + "面向走失患者的家属，帮助分析行为、轨迹、走失风险与寻回建议。"
+                    + "回答务必简洁、可执行；不得编造未提供的事实。"
+                    + "当前对话患者 ID=" + s.getPatientId()
+                    + (s.getTaskId() != null ? "，关联寻回任务 ID=" + s.getTaskId() : "")
+                    + "。请使用中文。";
+            var reply = dashScopeClient.chat(system, prompt);
+            if (reply.isPresent() && !reply.get().isBlank()) {
+                return reply.get();
+            }
+            log.warn("[AI] DashScope 返回空，回退本地桩 sessionId={}", s.getSessionId());
+        }
+        // 2. 降级桩
+        return "[本地桩回复] 针对患者 ID=" + s.getPatientId() + " 您的问题：" + prompt
                 + "\n建议：保持冷静、优先查看患者常规轨迹点、联系监护成员协同寻回。";
     }
 
