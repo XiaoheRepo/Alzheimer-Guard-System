@@ -110,7 +110,7 @@ public class AdminPatientService {
         AdminPatientDetailResponse r = new AdminPatientDetailResponse();
         r.setPatientId(String.valueOf(p.getId()));
         r.setProfileNo(p.getProfileNo());
-        r.setName(DesensitizeUtil.chineseName(p.getName()));
+        r.setPatientName(DesensitizeUtil.chineseName(p.getName()));
         r.setGender(p.getGender());
         r.setBirthday(p.getBirthday());
         r.setShortCode(p.getShortCode());
@@ -258,7 +258,7 @@ public class AdminPatientService {
         AdminPatientListItem i = new AdminPatientListItem();
         i.setPatientId(String.valueOf(p.getId()));
         i.setProfileNo(p.getProfileNo());
-        i.setName(DesensitizeUtil.chineseName(p.getName()));
+        i.setPatientName(DesensitizeUtil.chineseName(p.getName()));
         i.setShortCode(p.getShortCode());
         i.setGender(p.getGender());
         i.setLostStatus(p.getLostStatus());

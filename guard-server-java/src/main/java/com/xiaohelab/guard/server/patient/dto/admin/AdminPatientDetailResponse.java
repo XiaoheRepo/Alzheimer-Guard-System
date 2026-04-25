@@ -15,8 +15,9 @@ public class AdminPatientDetailResponse {
     private String patientId;
     @JsonProperty("profile_no")
     private String profileNo;
-    /** 脱敏 */
-    private String name;
+    /** 脱敏后；wire 字段为 patient_name（API V2.0 §3.3 字段字典）。 */
+    @JsonProperty("patient_name")
+    private String patientName;
     private String gender;
     private LocalDate birthday;
     @JsonProperty("short_code")
@@ -39,8 +40,8 @@ public class AdminPatientDetailResponse {
     public void setPatientId(String patientId) { this.patientId = patientId; }
     public String getProfileNo() { return profileNo; }
     public void setProfileNo(String profileNo) { this.profileNo = profileNo; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getPatientName() { return patientName; }
+    public void setPatientName(String patientName) { this.patientName = patientName; }
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
     public LocalDate getBirthday() { return birthday; }

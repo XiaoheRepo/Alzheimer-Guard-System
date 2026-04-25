@@ -195,21 +195,23 @@ public class PatientService {
                 String.valueOf(p.getId()), Map.of("patient_id", p.getId()));
     }
 
-    /** 更新围栏。 */
+    /** 更新围栏（API V2.0 §3.3.4：请求体嵌套 fence{}）。 */
     @Transactional(rollbackFor = Exception.class)
     public PatientResponse updateFence(Long patientId, FenceUpdateRequest req) {
         AuthUser user = SecurityUtil.current();
         PatientProfileEntity p = authorizationService.assertGuardian(user, patientId);
-        if (Boolean.TRUE.equals(req.getFenceEnabled())) {
-            if (req.getFenceCenterLat() == null || req.getFenceCenterLng() == null || req.getFenceRadiusM() == null) {
+        FenceUpdateRequest.FenceBlock fe = req.getFence();
+        if (fe == null) throw BizException.of(ErrorCode.E_PRO_4221);
+        if (Boolean.TRUE.equals(fe.getEnabled())) {
+            if (fe.getCenterLat() == null || fe.getCenterLng() == null || fe.getRadiusM() == null) {
                 throw BizException.of(ErrorCode.E_PRO_4221);
             }
-            p.setFenceCenterLat(req.getFenceCenterLat());
-            p.setFenceCenterLng(req.getFenceCenterLng());
-            p.setFenceRadiusM(req.getFenceRadiusM());
-            p.setFenceCoordSystem(req.getFenceCoordSystem() != null ? req.getFenceCoordSystem() : "WGS84");
+            p.setFenceCenterLat(fe.getCenterLat());
+            p.setFenceCenterLng(fe.getCenterLng());
+            p.setFenceRadiusM(fe.getRadiusM());
+            p.setFenceCoordSystem(fe.getCoordSystem() != null ? fe.getCoordSystem() : "WGS84");
         }
-        p.setFenceEnabled(req.getFenceEnabled());
+        p.setFenceEnabled(fe.getEnabled());
         p.setProfileVersion(p.getProfileVersion() + 1);
         patientRepository.save(p);
         return toResponse(p);
@@ -320,7 +322,7 @@ public class PatientService {
     public PatientResponse toResponse(PatientProfileEntity p) {
         PatientResponse r = new PatientResponse();
         r.setPatientId(p.getId());
-        r.setName(p.getName());
+        r.setPatientName(p.getName());
         r.setGender(p.getGender());
         r.setBirthday(p.getBirthday());
         r.setShortCode(p.getShortCode());
@@ -330,14 +332,21 @@ public class PatientService {
         r.setAllergy(p.getAllergy());
         r.setEmergencyContactPhoneMasked(DesensitizeUtil.phone(p.getEmergencyContactPhone()));
         r.setLongTextProfile(p.getLongTextProfile());
-        r.setAppearanceHeightCm(p.getAppearanceHeightCm());
-        r.setAppearanceWeightKg(p.getAppearanceWeightKg());
-        r.setAppearanceClothing(p.getAppearanceClothing());
-        r.setAppearanceFeatures(p.getAppearanceFeatures());
-        r.setFenceEnabled(p.getFenceEnabled());
-        r.setFenceCenterLat(p.getFenceCenterLat());
-        r.setFenceCenterLng(p.getFenceCenterLng());
-        r.setFenceRadiusM(p.getFenceRadiusM());
+        // 外观（扁平 → 嵌套）
+        PatientResponse.Appearance ap = new PatientResponse.Appearance();
+        ap.setHeightCm(p.getAppearanceHeightCm());
+        ap.setWeightKg(p.getAppearanceWeightKg());
+        ap.setClothing(p.getAppearanceClothing());
+        ap.setFeatures(p.getAppearanceFeatures());
+        r.setAppearance(ap);
+        // 围栏（扁平 → 嵌套）
+        PatientResponse.Fence fe = new PatientResponse.Fence();
+        fe.setEnabled(p.getFenceEnabled());
+        fe.setCenterLat(p.getFenceCenterLat());
+        fe.setCenterLng(p.getFenceCenterLng());
+        fe.setRadiusM(p.getFenceRadiusM());
+        fe.setCoordSystem(p.getFenceCoordSystem());
+        r.setFence(fe);
         r.setLostStatus(p.getLostStatus());
         r.setProfileVersion(p.getProfileVersion());
         r.setCreatedAt(p.getCreatedAt());

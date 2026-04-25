@@ -84,6 +84,10 @@ public class AiSessionController {
             emitter.send(SseEmitter.event()
                     .name("done")
                     .data(Map.of("finish_reason", "stop")));
+            // TODO(RFC-5/AI-Agent): 待 FunctionCalling Agent 能力接入后，按 API V2.0 §3.5.2
+            //   在 done 之前增发 `event:tool_call`，载荷字段对齐 AiToolCallEvent
+            //   （intent_id / action / description / execution_level / requires_confirm / expires_at）。
+            //   目前后端未实现 Agent 推理路径，事件暂不发出；Android 端已就绪接收。
             emitter.complete();
         } catch (IOException io) {
             log.warn("[AI-SSE] send io error sessionId={} err={}", sessionId, io.getMessage());

@@ -13,8 +13,9 @@ public class AdminPatientListItem {
     private String patientId;
     @JsonProperty("profile_no")
     private String profileNo;
-    /** 脱敏后 */
-    private String name;
+    /** 脱敏后；wire 字段为 patient_name（API V2.0 §3.3 字段字典）。 */
+    @JsonProperty("patient_name")
+    private String patientName;
     @JsonProperty("short_code")
     private String shortCode;
     private String gender;
@@ -31,8 +32,8 @@ public class AdminPatientListItem {
     public void setPatientId(String patientId) { this.patientId = patientId; }
     public String getProfileNo() { return profileNo; }
     public void setProfileNo(String profileNo) { this.profileNo = profileNo; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getPatientName() { return patientName; }
+    public void setPatientName(String patientName) { this.patientName = patientName; }
     public String getShortCode() { return shortCode; }
     public void setShortCode(String shortCode) { this.shortCode = shortCode; }
     public String getGender() { return gender; }
