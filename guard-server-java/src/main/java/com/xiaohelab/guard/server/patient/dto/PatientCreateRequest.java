@@ -1,15 +1,28 @@
 package com.xiaohelab.guard.server.patient.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
+/**
+ * 创建患者档案请求（API V2.0 §3.3.1）。
+ * <p>wire 结构：</p>
+ * <ul>
+ *   <li>姓名：{@code patient_name}（必填，2-64）；为兼容旧客户端同时接收 {@code name}（{@link JsonAlias}）。</li>
+ *   <li>外观：嵌套对象 {@code appearance{}}（可选）。</li>
+ *   <li>围栏：嵌套对象 {@code fence{}}（可选；启用时 lat/lng/radius_m 必填）。</li>
+ * </ul>
+ */
 public class PatientCreateRequest {
 
     @NotBlank
     @Size(min = 1, max = 64)
-    private String name;
+    @JsonProperty("patient_name")
+    @JsonAlias({"name"})
+    private String patientName;
 
     @NotBlank
     @Pattern(regexp = "MALE|FEMALE|UNKNOWN")
@@ -41,24 +54,70 @@ public class PatientCreateRequest {
     @Size(max = 5000)
     private String longTextProfile;
 
-    @JsonProperty("appearance_height_cm")
-    @Min(50) @Max(250)
-    private Integer appearanceHeightCm;
+    /** 外观特征嵌套对象。 */
+    @Valid
+    private AppearanceBlock appearance;
 
-    @JsonProperty("appearance_weight_kg")
-    @Min(20) @Max(250)
-    private Integer appearanceWeightKg;
+    /** 围栏配置嵌套对象。 */
+    @Valid
+    private FenceBlock fence;
 
-    @JsonProperty("appearance_clothing")
-    @Size(max = 500)
-    private String appearanceClothing;
+    /** 外观嵌套子对象。 */
+    public static class AppearanceBlock {
+        @JsonProperty("height_cm")
+        @Min(50) @Max(250)
+        private Integer heightCm;
 
-    @JsonProperty("appearance_features")
-    @Size(max = 500)
-    private String appearanceFeatures;
+        @JsonProperty("weight_kg")
+        @Min(10) @Max(300)
+        private Integer weightKg;
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+        @Size(max = 500)
+        private String clothing;
+
+        @Size(max = 500)
+        private String features;
+
+        public Integer getHeightCm() { return heightCm; }
+        public void setHeightCm(Integer heightCm) { this.heightCm = heightCm; }
+        public Integer getWeightKg() { return weightKg; }
+        public void setWeightKg(Integer weightKg) { this.weightKg = weightKg; }
+        public String getClothing() { return clothing; }
+        public void setClothing(String clothing) { this.clothing = clothing; }
+        public String getFeatures() { return features; }
+        public void setFeatures(String features) { this.features = features; }
+    }
+
+    /** 围栏嵌套子对象。 */
+    public static class FenceBlock {
+        private Boolean enabled;
+        @JsonProperty("center_lat")
+        @DecimalMin("-90") @DecimalMax("90")
+        private Double centerLat;
+        @JsonProperty("center_lng")
+        @DecimalMin("-180") @DecimalMax("180")
+        private Double centerLng;
+        @JsonProperty("radius_m")
+        @Min(100) @Max(50000)
+        private Integer radiusM;
+        @JsonProperty("coord_system")
+        @Pattern(regexp = "WGS84|GCJ-02|BD-09")
+        private String coordSystem;
+
+        public Boolean getEnabled() { return enabled; }
+        public void setEnabled(Boolean enabled) { this.enabled = enabled; }
+        public Double getCenterLat() { return centerLat; }
+        public void setCenterLat(Double centerLat) { this.centerLat = centerLat; }
+        public Double getCenterLng() { return centerLng; }
+        public void setCenterLng(Double centerLng) { this.centerLng = centerLng; }
+        public Integer getRadiusM() { return radiusM; }
+        public void setRadiusM(Integer radiusM) { this.radiusM = radiusM; }
+        public String getCoordSystem() { return coordSystem; }
+        public void setCoordSystem(String coordSystem) { this.coordSystem = coordSystem; }
+    }
+
+    public String getPatientName() { return patientName; }
+    public void setPatientName(String patientName) { this.patientName = patientName; }
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
     public LocalDate getBirthday() { return birthday; }
@@ -75,12 +134,8 @@ public class PatientCreateRequest {
     public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
     public String getLongTextProfile() { return longTextProfile; }
     public void setLongTextProfile(String longTextProfile) { this.longTextProfile = longTextProfile; }
-    public Integer getAppearanceHeightCm() { return appearanceHeightCm; }
-    public void setAppearanceHeightCm(Integer appearanceHeightCm) { this.appearanceHeightCm = appearanceHeightCm; }
-    public Integer getAppearanceWeightKg() { return appearanceWeightKg; }
-    public void setAppearanceWeightKg(Integer appearanceWeightKg) { this.appearanceWeightKg = appearanceWeightKg; }
-    public String getAppearanceClothing() { return appearanceClothing; }
-    public void setAppearanceClothing(String appearanceClothing) { this.appearanceClothing = appearanceClothing; }
-    public String getAppearanceFeatures() { return appearanceFeatures; }
-    public void setAppearanceFeatures(String appearanceFeatures) { this.appearanceFeatures = appearanceFeatures; }
+    public AppearanceBlock getAppearance() { return appearance; }
+    public void setAppearance(AppearanceBlock appearance) { this.appearance = appearance; }
+    public FenceBlock getFence() { return fence; }
+    public void setFence(FenceBlock fence) { this.fence = fence; }
 }
