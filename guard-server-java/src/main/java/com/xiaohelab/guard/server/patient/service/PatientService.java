@@ -59,9 +59,9 @@ public class PatientService {
     @Transactional(rollbackFor = Exception.class)
     public PatientResponse create(PatientCreateRequest req) {
         AuthUser user = SecurityUtil.current();
-        // 1. 组装实体
+        // 1. 组装实体（嵌套 wire DTO → 扁平 DB 字段）
         PatientProfileEntity p = new PatientProfileEntity();
-        p.setName(req.getName());
+        p.setName(req.getPatientName());
         p.setGender(req.getGender());
         p.setBirthday(req.getBirthday());
         p.setAvatarUrl(req.getAvatarUrl());
@@ -70,10 +70,31 @@ public class PatientService {
         p.setAllergy(req.getAllergy());
         p.setEmergencyContactPhone(req.getEmergencyContactPhone());
         p.setLongTextProfile(req.getLongTextProfile());
-        p.setAppearanceHeightCm(req.getAppearanceHeightCm());
-        p.setAppearanceWeightKg(req.getAppearanceWeightKg());
-        p.setAppearanceClothing(req.getAppearanceClothing());
-        p.setAppearanceFeatures(req.getAppearanceFeatures());
+        // 1.1 外观（嵌套）
+        PatientCreateRequest.AppearanceBlock ap = req.getAppearance();
+        if (ap != null) {
+            p.setAppearanceHeightCm(ap.getHeightCm());
+            p.setAppearanceWeightKg(ap.getWeightKg());
+            p.setAppearanceClothing(ap.getClothing());
+            p.setAppearanceFeatures(ap.getFeatures());
+        }
+        // 1.2 围栏（嵌套）
+        PatientCreateRequest.FenceBlock fe = req.getFence();
+        if (fe != null) {
+            boolean enabled = Boolean.TRUE.equals(fe.getEnabled());
+            p.setFenceEnabled(enabled);
+            if (enabled) {
+                if (fe.getCenterLat() == null || fe.getCenterLng() == null || fe.getRadiusM() == null) {
+                    throw BizException.of(ErrorCode.E_PRO_4221);
+                }
+                p.setFenceCenterLat(fe.getCenterLat());
+                p.setFenceCenterLng(fe.getCenterLng());
+                p.setFenceRadiusM(fe.getRadiusM());
+                p.setFenceCoordSystem(fe.getCoordSystem() != null ? fe.getCoordSystem() : "WGS84");
+            }
+        } else {
+            p.setFenceEnabled(false);
+        }
         p.setProfileNo(BusinessNoUtil.profileNo());
         p.setShortCode(generateUniqueShortCode());
         p.setLostStatus("NORMAL");
@@ -127,7 +148,7 @@ public class PatientService {
         AuthUser user = SecurityUtil.current();
         PatientProfileEntity p = authorizationService.assertGuardian(user, patientId);
         // 1. 更新可变字段（null 跳过）
-        if (req.getName() != null) p.setName(req.getName());
+        if (req.getPatientName() != null) p.setName(req.getPatientName());
         if (req.getGender() != null) p.setGender(req.getGender());
         if (req.getBirthday() != null) p.setBirthday(req.getBirthday());
         if (req.getAvatarUrl() != null) {
@@ -139,10 +160,14 @@ public class PatientService {
         if (req.getAllergy() != null) p.setAllergy(req.getAllergy());
         if (req.getEmergencyContactPhone() != null) p.setEmergencyContactPhone(req.getEmergencyContactPhone());
         if (req.getLongTextProfile() != null) p.setLongTextProfile(req.getLongTextProfile());
-        if (req.getAppearanceHeightCm() != null) p.setAppearanceHeightCm(req.getAppearanceHeightCm());
-        if (req.getAppearanceWeightKg() != null) p.setAppearanceWeightKg(req.getAppearanceWeightKg());
-        if (req.getAppearanceClothing() != null) p.setAppearanceClothing(req.getAppearanceClothing());
-        if (req.getAppearanceFeatures() != null) p.setAppearanceFeatures(req.getAppearanceFeatures());
+        // 外观（嵌套，整体替换语义；子字段 null 跳过）
+        PatientUpdateRequest.AppearanceBlock ap = req.getAppearance();
+        if (ap != null) {
+            if (ap.getHeightCm() != null) p.setAppearanceHeightCm(ap.getHeightCm());
+            if (ap.getWeightKg() != null) p.setAppearanceWeightKg(ap.getWeightKg());
+            if (ap.getClothing() != null) p.setAppearanceClothing(ap.getClothing());
+            if (ap.getFeatures() != null) p.setAppearanceFeatures(ap.getFeatures());
+        }
         p.setProfileVersion(p.getProfileVersion() + 1);
         patientRepository.save(p);
 
