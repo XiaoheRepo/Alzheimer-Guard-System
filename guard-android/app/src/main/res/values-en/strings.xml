@@ -279,6 +279,7 @@
     <string name="patient_field_weight_hint">in kilograms (kg)</string>
     <string name="patient_field_features_hint">e.g. skin tone, hairstyle, typical clothing, distinctive marks</string>
     <string name="patient_field_gender_select">Select gender</string>
+    <string name="patient_field_avatar_url_hint">Required: OSS avatar URL (upload via Avatar Picker, then paste here)</string>
 
     <!-- ==== M3-A: Tags (MH-TAG-*) ==== -->
     <string name="tag_list_title">Tag List</string>

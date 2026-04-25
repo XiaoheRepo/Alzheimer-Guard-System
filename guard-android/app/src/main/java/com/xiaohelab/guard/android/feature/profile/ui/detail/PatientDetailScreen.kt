@@ -116,8 +116,11 @@ fun PatientDetailScreen(
                     ListItem(headlineContent = { Text(p.displayName) }, supportingContent = { Text(p.patientId) })
                     HorizontalDivider()
                     p.gender?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_gender)) }, supportingContent = { Text(it) }) }
-                    p.birthDate?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_birth_date)) }, supportingContent = { Text(it) }) }
-                    p.medicalNotes?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_medical_notes)) }, supportingContent = { Text(it) }) }
+                    p.birthday?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_birth_date)) }, supportingContent = { Text(it) }) }
+                    p.chronicDiseases?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_chronic)) }, supportingContent = { Text(it) }) }
+                    p.medication?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_medication)) }, supportingContent = { Text(it) }) }
+                    p.allergy?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_allergy)) }, supportingContent = { Text(it) }) }
+                    p.emergencyContactPhoneMasked?.let { ListItem(headlineContent = { Text(stringResource(R.string.patient_field_emergency_phone)) }, supportingContent = { Text(it) }) }
                     HorizontalDivider()
                     MhPrimaryButton(
                         text = stringResource(R.string.patient_edit),

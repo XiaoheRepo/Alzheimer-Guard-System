@@ -43,8 +43,12 @@ import com.xiaohelab.guard.android.R
 import com.xiaohelab.guard.android.core.common.DomainException
 import com.xiaohelab.guard.android.core.common.MhResult
 import com.xiaohelab.guard.android.core.ui.components.MhLoading
-import com.xiaohelab.guard.android.feature.ai.data.AiMessageChunk
+import com.xiaohelab.guard.android.feature.ai.data.AiDoneEvent
+import com.xiaohelab.guard.android.feature.ai.data.AiErrorEvent
 import com.xiaohelab.guard.android.feature.ai.data.AiMessageRequest
+import com.xiaohelab.guard.android.feature.ai.data.AiTokenEvent
+import com.xiaohelab.guard.android.feature.ai.data.AiToolCallEvent
+import com.xiaohelab.guard.android.feature.ai.data.AiUsageEvent
 import com.xiaohelab.guard.android.feature.ai.data.IntentDto
 import com.xiaohelab.guard.android.feature.ai.domain.AiRepository
 import com.xiaohelab.guard.android.feature.ai.domain.CancelIntentUseCase
@@ -113,6 +117,16 @@ class AiChatViewModel @Inject constructor(
             _s.update { it.copy(initializing = false, sessionId = existingSessionId) }
             return
         }
+        if (patientId.isNullOrBlank()) {
+            // API V2.0 §3.5.1: patient_id 必填，缺失时拒绝创建会话。
+            _s.update {
+                it.copy(
+                    initializing = false,
+                    error = DomainException("E_AI_4002", "patient_id is required"),
+                )
+            }
+            return
+        }
         viewModelScope.launch {
             when (val r = createSession(patientId)) {
                 is MhResult.Success -> _s.update { it.copy(initializing = false, sessionId = r.data.sessionId) }
@@ -135,31 +149,39 @@ class AiChatViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            sseStream(sessionId, content).collect { chunk ->
-                if (chunk.done) {
-                    _s.update { state ->
+            sseStream(sessionId, content).collect { ev ->
+                when (ev) {
+                    is SseEvent.Token -> _s.update { state ->
+                        val msgs = state.messages.toMutableList()
+                        val lastIdx = msgs.indexOfLast { it.role == "assistant" }
+                        if (lastIdx >= 0) {
+                            msgs[lastIdx] = msgs[lastIdx].copy(text = msgs[lastIdx].text + ev.payload.content)
+                        }
+                        state.copy(messages = msgs)
+                    }
+                    is SseEvent.Usage -> Unit  // 计费埋点保留扩展位（HC-05 不在 UI 直接展示）
+                    is SseEvent.Done -> _s.update { state ->
                         val msgs = state.messages.toMutableList()
                         val lastIdx = msgs.indexOfLast { it.role == "assistant" }
                         if (lastIdx >= 0) msgs[lastIdx] = msgs[lastIdx].copy(streaming = false)
                         state.copy(streaming = false, messages = msgs)
                     }
-                    // intent 确认
-                    chunk.intentId?.let { intentId ->
-                        when (val r = aiRepo.getIntent(intentId)) {
+                    is SseEvent.ToolCall -> {
+                        // tool_call 事件：服务端规划字段，目前后端尚未发出。预留后续 GET intent 详情。
+                        when (val r = aiRepo.getIntent(ev.payload.intentId)) {
                             is MhResult.Success -> _s.update { it.copy(pendingIntent = r.data) }
                             else -> Unit
                         }
                     }
-                } else {
-                    chunk.delta?.let { delta ->
-                        _s.update { state ->
-                            val msgs = state.messages.toMutableList()
-                            val lastIdx = msgs.indexOfLast { it.role == "assistant" }
-                            if (lastIdx >= 0) {
-                                msgs[lastIdx] = msgs[lastIdx].copy(text = msgs[lastIdx].text + delta)
-                            }
-                            state.copy(messages = msgs)
-                        }
+                    is SseEvent.Error -> _s.update { state ->
+                        val msgs = state.messages.toMutableList()
+                        val lastIdx = msgs.indexOfLast { it.role == "assistant" }
+                        if (lastIdx >= 0) msgs[lastIdx] = msgs[lastIdx].copy(streaming = false)
+                        state.copy(
+                            streaming = false,
+                            messages = msgs,
+                            error = DomainException(ev.payload.code, ev.payload.message ?: ev.payload.code),
+                        )
                     }
                 }
             }
@@ -179,11 +201,16 @@ class AiChatViewModel @Inject constructor(
     }
 
     /**
-     * 手册 §11 / HC-Realtime: AI 流式 SSE 使用 okhttp-sse EventSource 桥接为 Flow<AiMessageChunk>。
+     * 手册 §11 / HC-Realtime: AI 流式 SSE 使用 okhttp-sse EventSource 桥接为 Flow<SseEvent>。
+     *
+     * 后端 SseEmitter 按事件名分发：`token` / `usage` / `done` / `error` / `tool_call`，
+     * 每种事件 `data:` JSON 结构不同，必须按 `type` 反序列化（API V2.0 §3.5.2，对齐
+     * `AiSessionController.sendMessage`）。
+     *
      * 断线退避由 EventSource 框架层处理（2^n + jitter，上限 30s）。
      */
-    private fun sseStream(sessionId: String, content: String): Flow<AiMessageChunk> = callbackFlow {
-        val body = json.encodeToString(AiMessageRequest.serializer(), AiMessageRequest(content))
+    private fun sseStream(sessionId: String, prompt: String): Flow<SseEvent> = callbackFlow {
+        val body = json.encodeToString(AiMessageRequest.serializer(), AiMessageRequest(prompt))
         val mediaType = "application/json; charset=utf-8".toMediaType()
         val requestBody = body.toRequestBody(mediaType)
         val request = Request.Builder()
@@ -193,8 +220,14 @@ class AiChatViewModel @Inject constructor(
         val listener = object : EventSourceListener() {
             override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
                 runCatching {
-                    val chunk = json.decodeFromString(AiMessageChunk.serializer(), data)
-                    trySend(chunk)
+                    when (type) {
+                        "token" -> trySend(SseEvent.Token(json.decodeFromString(AiTokenEvent.serializer(), data)))
+                        "usage" -> trySend(SseEvent.Usage(json.decodeFromString(AiUsageEvent.serializer(), data)))
+                        "done" -> trySend(SseEvent.Done(json.decodeFromString(AiDoneEvent.serializer(), data)))
+                        "error" -> trySend(SseEvent.Error(json.decodeFromString(AiErrorEvent.serializer(), data)))
+                        "tool_call" -> trySend(SseEvent.ToolCall(json.decodeFromString(AiToolCallEvent.serializer(), data)))
+                        else -> Unit  // 未知事件类型，忽略以保前向兼容
+                    }
                 }
             }
             override fun onClosed(eventSource: EventSource) { close() }
@@ -203,6 +236,15 @@ class AiChatViewModel @Inject constructor(
         val eventSource = EventSources.createFactory(okHttpClient).newEventSource(request, listener)
         awaitClose { eventSource.cancel() }
     }
+}
+
+/** SSE 事件统一类型，便于 ViewModel 内 when 分发。 */
+private sealed interface SseEvent {
+    data class Token(val payload: AiTokenEvent) : SseEvent
+    data class Usage(val payload: AiUsageEvent) : SseEvent
+    data class Done(val payload: AiDoneEvent) : SseEvent
+    data class Error(val payload: AiErrorEvent) : SseEvent
+    data class ToolCall(val payload: AiToolCallEvent) : SseEvent
 }
 
 // ─── AiIntentConfirmDialog ────────────────────────────────────────────────────

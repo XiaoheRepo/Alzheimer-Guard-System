@@ -279,6 +279,7 @@
     <string name="patient_field_weight_hint">单位：千克（kg）</string>
     <string name="patient_field_features_hint">如肤色、发型、常穿衣物、显著特征等</string>
     <string name="patient_field_gender_select">选择性别</string>
+    <string name="patient_field_avatar_url_hint">必填，OSS 头像 URL（先在「头像选择」上传后回填）</string>
 
     <!-- ==== M3-A: 标签域 (MH-TAG-*) ==== -->
     <string name="tag_list_title">标签列表</string>

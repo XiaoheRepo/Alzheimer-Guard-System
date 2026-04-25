@@ -69,10 +69,13 @@ data class PatientEditUiState(
     val step: PatientEditStep = PatientEditStep.BASIC,
     val id: String? = null,
     val name: String = "",
-    val gender: String = "",
-    val birthDate: String = "",
-    val medicalNotes: String = "",
-    val version: Long = 0,
+    val gender: String = "UNKNOWN",
+    /** yyyy-MM-dd，对齐后端 `birthday`。 */
+    val birthday: String = "",
+    /** 必填字段：avatar_url（OSS URL）。 */
+    val avatarUrl: String = "",
+    /** UI 单字段聚合 → 写回后端 `chronic_diseases`（API V2.0 字段拆分为慢病/用药/过敏，UI 暂合并到慢病）。 */
+    val chronicDiseases: String = "",
     val height: String = "",
     val weight: String = "",
     val features: String = "",
@@ -97,17 +100,17 @@ class PatientEditViewModel @Inject constructor(
         viewModelScope.launch {
             when (val r = getDetail(id)) {
                 is MhResult.Success -> _s.update {
-                    val app = r.data.appearance
+                    val d = r.data
                     it.copy(
                         loading = false,
-                        name = r.data.displayName,
-                        gender = r.data.gender.orEmpty(),
-                        birthDate = r.data.birthDate.orEmpty(),
-                        medicalNotes = r.data.medicalNotes.orEmpty(),
-                        version = r.data.version ?: 0,
-                        height = app?.height?.toString().orEmpty(),
-                        weight = app?.weight?.toString().orEmpty(),
-                        features = app?.features.orEmpty(),
+                        name = d.displayName,
+                        gender = d.gender ?: "UNKNOWN",
+                        birthday = d.birthday.orEmpty(),
+                        avatarUrl = d.avatarUrl.orEmpty(),
+                        chronicDiseases = d.chronicDiseases.orEmpty(),
+                        height = d.appearanceHeightCm?.toString().orEmpty(),
+                        weight = d.appearanceWeightKg?.toString().orEmpty(),
+                        features = d.appearanceFeatures.orEmpty(),
                     )
                 }
                 is MhResult.Failure -> _s.update { it.copy(loading = false, error = r.error) }
@@ -127,8 +130,9 @@ class PatientEditViewModel @Inject constructor(
 
     fun onName(v: String) = _s.update { it.copy(name = v, error = null) }
     fun onGender(v: String) = _s.update { it.copy(gender = v, error = null) }
-    fun onBirth(v: String) = _s.update { it.copy(birthDate = v, error = null) }
-    fun onNotes(v: String) = _s.update { it.copy(medicalNotes = v, error = null) }
+    fun onBirth(v: String) = _s.update { it.copy(birthday = v, error = null) }
+    fun onNotes(v: String) = _s.update { it.copy(chronicDiseases = v, error = null) }
+    fun onAvatarUrl(v: String) = _s.update { it.copy(avatarUrl = v, error = null) }
     fun onHeight(v: String) = _s.update { it.copy(height = v, error = null) }
     fun onWeight(v: String) = _s.update { it.copy(weight = v, error = null) }
     fun onFeatures(v: String) = _s.update { it.copy(features = v, error = null) }
@@ -136,6 +140,17 @@ class PatientEditViewModel @Inject constructor(
     fun submit() {
         val s = _s.value
         if (s.loading || s.name.isBlank()) return
+        // 创建态：avatar_url / gender / birthday 为后端必填，缺失立即拒绝避免 400。
+        if (s.id == null) {
+            if (s.avatarUrl.isBlank()) {
+                _s.update { it.copy(error = DomainException("E_PRO_4014", "avatar_url 必填")) }
+                return
+            }
+            if (s.birthday.isBlank()) {
+                _s.update { it.copy(error = DomainException("E_PRO_4002", "birthday 必填")) }
+                return
+            }
+        }
         _s.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
             val heightInt = s.height.trim().toIntOrNull()
@@ -144,36 +159,43 @@ class PatientEditViewModel @Inject constructor(
 
             if (s.id == null) {
                 when (val createResult = createUseCase(
-                    s.name, s.gender.ifBlank { null }, s.birthDate.ifBlank { null }, s.medicalNotes.ifBlank { null }
+                    name = s.name,
+                    gender = s.gender.ifBlank { "UNKNOWN" },
+                    birthday = s.birthday,
+                    avatarUrl = s.avatarUrl,
+                    chronicDiseases = s.chronicDiseases.ifBlank { null },
+                    appearanceHeightCm = heightInt,
+                    appearanceWeightKg = weightInt,
+                    appearanceFeatures = featuresStr,
                 )) {
                     is MhResult.Failure -> _s.update { it.copy(loading = false, error = createResult.error) }
+                    is MhResult.Success -> _s.update { it.copy(loading = false, success = true) }
+                }
+            } else {
+                when (val profileResult = updateUseCase(
+                    id = s.id,
+                    name = s.name,
+                    gender = s.gender.ifBlank { null },
+                    birthday = s.birthday.ifBlank { null },
+                    avatarUrl = s.avatarUrl.ifBlank { null },
+                    chronicDiseases = s.chronicDiseases.ifBlank { null },
+                )) {
+                    is MhResult.Failure -> _s.update { it.copy(loading = false, error = profileResult.error) }
                     is MhResult.Success -> {
-                        val patient = createResult.data
+                        // 外观若有变更则单独同步（后端独立端点，无 version 字段）。
                         val hasAppearance = heightInt != null || weightInt != null || featuresStr != null
                         if (hasAppearance) {
                             when (val appResult = updateAppearanceUseCase(
-                                patient.patientId, heightInt, weightInt, featuresStr, patient.version ?: 0
+                                id = s.id,
+                                heightCm = heightInt,
+                                weightKg = weightInt,
+                                features = featuresStr,
                             )) {
                                 is MhResult.Failure -> _s.update { it.copy(loading = false, error = appResult.error) }
                                 is MhResult.Success -> _s.update { it.copy(loading = false, success = true) }
                             }
                         } else {
                             _s.update { it.copy(loading = false, success = true) }
-                        }
-                    }
-                }
-            } else {
-                when (val profileResult = updateUseCase(
-                    s.id, s.name, s.gender.ifBlank { null }, s.birthDate.ifBlank { null }, s.medicalNotes.ifBlank { null }, s.version
-                )) {
-                    is MhResult.Failure -> _s.update { it.copy(loading = false, error = profileResult.error) }
-                    is MhResult.Success -> {
-                        val updatedVersion = profileResult.data.version ?: (s.version + 1)
-                        when (val appResult = updateAppearanceUseCase(
-                            s.id, heightInt, weightInt, featuresStr, updatedVersion
-                        )) {
-                            is MhResult.Failure -> _s.update { it.copy(loading = false, error = appResult.error) }
-                            is MhResult.Success -> _s.update { it.copy(loading = false, success = true) }
                         }
                     }
                 }
@@ -324,7 +346,7 @@ private fun StepBasic(
         }
 
         OutlinedTextField(
-            value = state.birthDate,
+            value = state.birthday,
             onValueChange = vm::onBirth,
             label = { Text(stringResource(R.string.patient_field_birth_date)) },
             supportingText = { Text(stringResource(R.string.patient_field_birth_date_hint)) },
@@ -333,7 +355,16 @@ private fun StepBasic(
         )
 
         OutlinedTextField(
-            value = state.medicalNotes,
+            value = state.avatarUrl,
+            onValueChange = vm::onAvatarUrl,
+            label = { Text(stringResource(R.string.patient_field_avatar_url) + " *") },
+            supportingText = { Text(stringResource(R.string.patient_field_avatar_url_hint)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        OutlinedTextField(
+            value = state.chronicDiseases,
             onValueChange = vm::onNotes,
             label = { Text(stringResource(R.string.patient_field_medical_notes)) },
             supportingText = { Text(stringResource(R.string.patient_field_medical_notes_hint)) },

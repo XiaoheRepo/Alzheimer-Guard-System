@@ -123,8 +123,8 @@ fun AiSessionsListScreen(
                 else -> LazyColumn {
                     items(s.sessions, key = { it.sessionId }) { item ->
                         ListItem(
-                            headlineContent = { Text(item.title ?: item.sessionId) },
-                            supportingContent = { Text(item.createdAt ?: item.status) },
+                            headlineContent = { Text(item.sessionId) },
+                            supportingContent = { Text(item.createdAt ?: item.status ?: "") },
                             trailingContent = {
                                 IconButton(onClick = { vm.askDelete(item) }) {
                                     Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.ai_session_delete))
@@ -147,7 +147,7 @@ fun AiSessionsListScreen(
         AlertDialog(
             onDismissRequest = vm::dismissDelete,
             title = { Text(stringResource(R.string.ai_session_delete)) },
-            text = { Text(stringResource(R.string.ai_session_delete_confirm, target.title ?: target.sessionId)) },
+            text = { Text(stringResource(R.string.ai_session_delete_confirm, target.sessionId)) },
             confirmButton = {
                 TextButton(onClick = vm::confirmDelete) {
                     Text(stringResource(R.string.common_confirm))

@@ -59,7 +59,8 @@ data class FenceEditUiState(
     val centerLat: String = "",
     val centerLng: String = "",
     val radiusM: String = "",
-    val version: Long = 0L,
+    /** 围栏开关；后端必填字段（API V2.0 §3.3.4 / 后端 FenceUpdateRequest.fence_enabled）。 */
+    val enabled: Boolean = false,
     val submitting: Boolean = false,
     val error: DomainException? = null,
     val success: Boolean = false,
@@ -84,13 +85,13 @@ class FenceEditViewModel @Inject constructor(
         viewModelScope.launch {
             when (val r = profileRepo.detail(patientId)) {
                 is MhResult.Success -> {
-                    val fence = r.data.fence
+                    val d = r.data
                     _s.update {
                         it.copy(
-                            centerLat = fence?.centerLat?.toString() ?: "",
-                            centerLng = fence?.centerLng?.toString() ?: "",
-                            radiusM = fence?.radiusM?.toString() ?: "",
-                            version = r.data.version ?: 0L,
+                            centerLat = d.fenceCenterLat?.toString() ?: "",
+                            centerLng = d.fenceCenterLng?.toString() ?: "",
+                            radiusM = d.fenceRadiusM?.toString() ?: "",
+                            enabled = d.fenceEnabled ?: false,
                         )
                     }
                 }
@@ -102,29 +103,40 @@ class FenceEditViewModel @Inject constructor(
     fun onLatChange(v: String) = _s.update { it.copy(centerLat = v, error = null) }
     fun onLngChange(v: String) = _s.update { it.copy(centerLng = v, error = null) }
     fun onRadiusChange(v: String) = _s.update { it.copy(radiusM = v, error = null) }
+    fun onEnabledChange(enabled: Boolean) = _s.update { it.copy(enabled = enabled, error = null) }
 
     fun submit(patientId: String) {
         val s = _s.value
-        val lat = s.centerLat.toDoubleOrNull() ?: return
-        val lng = s.centerLng.toDoubleOrNull() ?: return
-        val radius = s.radiusM.toIntOrNull() ?: return
-        if (radius < s.radiusMinM || radius > s.radiusMaxM) {
-            _s.update {
-                it.copy(
-                    error = DomainException(
-                        "E_PRO_4221",
-                        "Radius out of range [${s.radiusMinM}, ${s.radiusMaxM}]"
+        // 启用围栏时校验中心点 + 半径；关闭围栏只发 fence_enabled=false 即可。
+        val body = if (s.enabled) {
+            val lat = s.centerLat.toDoubleOrNull() ?: return
+            val lng = s.centerLng.toDoubleOrNull() ?: return
+            val radius = s.radiusM.toIntOrNull() ?: return
+            if (radius < s.radiusMinM || radius > s.radiusMaxM) {
+                _s.update {
+                    it.copy(
+                        error = DomainException(
+                            "E_PRO_4221",
+                            "Radius out of range [${s.radiusMinM}, ${s.radiusMaxM}]",
+                        ),
                     )
-                )
+                }
+                return
             }
-            return
+            PatientFenceUpdateRequest(
+                fenceEnabled = true,
+                fenceCenterLat = lat,
+                fenceCenterLng = lng,
+                fenceRadiusM = radius,
+                // HC-Coord: Android 端坐标采集为 GCJ-02（高德），上报时显式声明坐标系。
+                fenceCoordSystem = "GCJ-02",
+            )
+        } else {
+            PatientFenceUpdateRequest(fenceEnabled = false)
         }
         _s.update { it.copy(submitting = true, error = null) }
         viewModelScope.launch {
-            when (val r = profileRepo.updateFence(
-                patientId,
-                PatientFenceUpdateRequest(lat, lng, radius, s.version)
-            )) {
+            when (val r = profileRepo.updateFence(patientId, body)) {
                 is MhResult.Success -> _s.update { it.copy(submitting = false, success = true) }
                 is MhResult.Failure -> _s.update { it.copy(submitting = false, error = r.error) }
             }

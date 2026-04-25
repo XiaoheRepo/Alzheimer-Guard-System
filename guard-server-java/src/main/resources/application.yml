@@ -144,8 +144,8 @@ ai:
   dashscope:
     api-key: ${AI_DASHSCOPE_API_KEY:}
     chat:
-      model: ${AI_CHAT_MODEL:qwen-max}
-      fallback-model: ${AI_CHAT_FALLBACK_MODEL:qwen-turbo}
+      model: ${AI_CHAT_MODEL:glm-5.1}
+      fallback-model: ${AI_CHAT_FALLBACK_MODEL:glm-5.1}
       timeout-ms: 30000
       max-tokens: 4096
     image:

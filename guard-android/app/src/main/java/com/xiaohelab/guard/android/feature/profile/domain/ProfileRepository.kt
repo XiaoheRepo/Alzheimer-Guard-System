@@ -9,6 +9,7 @@ import com.xiaohelab.guard.android.feature.profile.data.FenceDto
 import com.xiaohelab.guard.android.feature.profile.data.GuardianInvitationDto
 import com.xiaohelab.guard.android.feature.profile.data.GuardianInviteRequest
 import com.xiaohelab.guard.android.feature.profile.data.GuardianRespondRequest
+import com.xiaohelab.guard.android.feature.profile.data.MissingPendingConfirmRequest
 import com.xiaohelab.guard.android.feature.profile.data.PatientApi
 import com.xiaohelab.guard.android.feature.profile.data.PatientAppearanceUpdateRequest
 import com.xiaohelab.guard.android.feature.profile.data.PatientCreateRequest
@@ -34,6 +35,8 @@ interface ProfileRepository {
     suspend fun updateProfile(id: String, req: PatientProfileUpdateRequest): MhResult<PatientDto>
     suspend fun updateAppearance(id: String, req: PatientAppearanceUpdateRequest): MhResult<PatientDto>
     suspend fun updateFence(id: String, req: PatientFenceUpdateRequest): MhResult<PatientDto>
+    /** API V2.0 §3.3.5：CONFIRM_MISSING / CONFIRM_SAFE。 */
+    suspend fun confirmMissingPending(id: String, action: String, remark: String? = null): MhResult<Unit>
     suspend fun archive(id: String): MhResult<Unit>
     suspend fun invite(patientId: String, req: GuardianInviteRequest): MhResult<GuardianInvitationDto>
     suspend fun respondInvitation(patientId: String, inviteId: String, accept: Boolean): MhResult<Unit>
@@ -67,6 +70,16 @@ class ProfileRepositoryImpl @Inject constructor(
     override suspend fun updateProfile(id: String, req: PatientProfileUpdateRequest) = handleEnvelope { api.updateProfile(id, req) }
     override suspend fun updateAppearance(id: String, req: PatientAppearanceUpdateRequest) = handleEnvelope { api.updateAppearance(id, req) }
     override suspend fun updateFence(id: String, req: PatientFenceUpdateRequest) = handleEnvelope { api.updateFence(id, req) }
+    override suspend fun confirmMissingPending(id: String, action: String, remark: String?) =
+        when (val r = handleEnvelope {
+            api.confirmMissingPending(
+                id,
+                MissingPendingConfirmRequest(action = action, remark = remark),
+            )
+        }) {
+            is MhResult.Success -> MhResult.Success(Unit, r.trace)
+            is MhResult.Failure -> r
+        }
     override suspend fun archive(id: String) = when (val r = handleEnvelope { api.archive(id) }) {
         is MhResult.Success -> MhResult.Success(Unit, r.trace)
         is MhResult.Failure -> r
@@ -88,26 +101,123 @@ class ProfileRepositoryImpl @Inject constructor(
 // --- UseCases (domain API) ---
 class ListPatientsUseCase @Inject constructor(private val repo: ProfileRepository) { suspend operator fun invoke() = repo.list() }
 class GetPatientDetailUseCase @Inject constructor(private val repo: ProfileRepository) { suspend operator fun invoke(id: String) = repo.detail(id) }
-class CreatePatientUseCase @Inject constructor(private val repo: ProfileRepository) {
-    suspend operator fun invoke(name: String, gender: String?, birthDate: String?, medicalNotes: String?) =
-        repo.create(PatientCreateRequest(name, gender, birthDate, medicalNotes))
-}
-class UpdatePatientProfileUseCase @Inject constructor(private val repo: ProfileRepository) {
-    suspend operator fun invoke(id: String, name: String?, gender: String?, birthDate: String?, medicalNotes: String?, version: Long) =
-        repo.updateProfile(id, PatientProfileUpdateRequest(name, gender, birthDate, medicalNotes, version))
-}
-class UpdateAppearanceUseCase @Inject constructor(private val repo: ProfileRepository) {
-    suspend operator fun invoke(id: String, a: AppearanceDto, version: Long) =
-        repo.updateAppearance(id, PatientAppearanceUpdateRequest(a.height, a.weight, a.features, a.photoUrls, version))
 
-    suspend operator fun invoke(id: String, height: Int?, weight: Int?, features: String?, version: Long) =
-        invoke(id, AppearanceDto(height, weight, features), version)
+/**
+ * 创建患者档案。
+ *
+ * 对齐后端 PatientCreateRequest：`name` / `gender` / `birthday` / `avatar_url` 均必填，
+ * 其余慢病、过敏、外观、紧急联系人均可选。
+ *
+ * 旧签名（仅 name/gender/birthDate/medicalNotes）已废弃；UI 现在必须采集 avatar_url 与拆分的
+ * 慢病/用药/过敏字段（chronic_diseases / medication / allergy）。
+ */
+class CreatePatientUseCase @Inject constructor(private val repo: ProfileRepository) {
+    suspend operator fun invoke(
+        name: String,
+        gender: String,
+        birthday: String,
+        avatarUrl: String,
+        chronicDiseases: String? = null,
+        medication: String? = null,
+        allergy: String? = null,
+        emergencyContactPhone: String? = null,
+        longTextProfile: String? = null,
+        appearanceHeightCm: Int? = null,
+        appearanceWeightKg: Int? = null,
+        appearanceClothing: String? = null,
+        appearanceFeatures: String? = null,
+    ) = repo.create(
+        PatientCreateRequest(
+            name = name,
+            gender = gender,
+            birthday = birthday,
+            avatarUrl = avatarUrl,
+            chronicDiseases = chronicDiseases,
+            medication = medication,
+            allergy = allergy,
+            emergencyContactPhone = emergencyContactPhone,
+            longTextProfile = longTextProfile,
+            appearanceHeightCm = appearanceHeightCm,
+            appearanceWeightKg = appearanceWeightKg,
+            appearanceClothing = appearanceClothing,
+            appearanceFeatures = appearanceFeatures,
+        )
+    )
 }
+
+class UpdatePatientProfileUseCase @Inject constructor(private val repo: ProfileRepository) {
+    suspend operator fun invoke(
+        id: String,
+        name: String? = null,
+        gender: String? = null,
+        birthday: String? = null,
+        avatarUrl: String? = null,
+        chronicDiseases: String? = null,
+        medication: String? = null,
+        allergy: String? = null,
+        emergencyContactPhone: String? = null,
+        longTextProfile: String? = null,
+    ) = repo.updateProfile(
+        id,
+        PatientProfileUpdateRequest(
+            name = name,
+            gender = gender,
+            birthday = birthday,
+            avatarUrl = avatarUrl,
+            chronicDiseases = chronicDiseases,
+            medication = medication,
+            allergy = allergy,
+            emergencyContactPhone = emergencyContactPhone,
+            longTextProfile = longTextProfile,
+        ),
+    )
+}
+
+class UpdateAppearanceUseCase @Inject constructor(private val repo: ProfileRepository) {
+    suspend operator fun invoke(
+        id: String,
+        heightCm: Int? = null,
+        weightKg: Int? = null,
+        clothing: String? = null,
+        features: String? = null,
+    ) = repo.updateAppearance(
+        id,
+        PatientAppearanceUpdateRequest(
+            heightCm = heightCm,
+            weightKg = weightKg,
+            clothing = clothing,
+            features = features,
+        ),
+    )
+
+    suspend operator fun invoke(id: String, a: AppearanceDto) =
+        invoke(id, a.heightCm, a.weightKg, a.clothing, a.features)
+}
+
 class SetFenceUseCase @Inject constructor(private val repo: ProfileRepository) {
-    suspend operator fun invoke(id: String, f: FenceDto, version: Long) =
-        repo.updateFence(id, PatientFenceUpdateRequest(f.centerLat, f.centerLng, f.radiusM, version))
+    suspend operator fun invoke(id: String, f: FenceDto) =
+        repo.updateFence(
+            id,
+            PatientFenceUpdateRequest(
+                fenceEnabled = f.enabled,
+                fenceCenterLat = f.centerLat,
+                fenceCenterLng = f.centerLng,
+                fenceRadiusM = f.radiusM,
+                fenceCoordSystem = f.coordSystem ?: "WGS84",
+            ),
+        )
+
+    /** 关闭围栏（HC-Coord 兼容；其他参数置空）。 */
+    suspend fun disable(id: String) =
+        repo.updateFence(id, PatientFenceUpdateRequest(fenceEnabled = false))
 }
 class ArchivePatientUseCase @Inject constructor(private val repo: ProfileRepository) { suspend operator fun invoke(id: String) = repo.archive(id) }
+
+/** 走失/安全确认（API V2.0 §3.3.5）。action ∈ {CONFIRM_MISSING, CONFIRM_SAFE}。 */
+class ConfirmMissingPendingUseCase @Inject constructor(private val repo: ProfileRepository) {
+    suspend operator fun invoke(patientId: String, action: String, remark: String? = null) =
+        repo.confirmMissingPending(patientId, action, remark)
+}
 class InviteGuardianUseCase @Inject constructor(private val repo: ProfileRepository) {
     suspend operator fun invoke(patientId: String, identifier: String, relationship: String?) =
         repo.invite(patientId, GuardianInviteRequest(identifier, relationship))
