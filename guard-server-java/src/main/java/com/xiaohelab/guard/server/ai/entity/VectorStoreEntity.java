@@ -25,14 +25,25 @@ public class VectorStoreEntity extends AuditOnlyEntity {
     @Column(name = "source_version", nullable = false)
     private Long sourceVersion = 1L;
 
+    @Column(name = "chunk_index", nullable = false)
+    private Integer chunkIndex = 0;
+
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "embedding", columnDefinition = "TEXT")
-    private String embedding;
+    /**
+     * 1024 维向量列，PostgreSQL `vector(1024)` 类型。
+     * Hibernate 6 没有内置 vector 映射，故标记 {@link Transient}：
+     * 写入/查询统一走 {@code VectorStoreNativeDao}（JdbcTemplate + ::vector 字面量）。
+     */
+    @Transient
+    private float[] embedding;
 
     @Column(name = "valid", nullable = false)
     private Boolean valid = true;
+
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 
     @Column(name = "superseded_at")
     private OffsetDateTime supersededAt;
@@ -53,12 +64,16 @@ public class VectorStoreEntity extends AuditOnlyEntity {
     public void setSourceId(String sourceId) { this.sourceId = sourceId; }
     public Long getSourceVersion() { return sourceVersion; }
     public void setSourceVersion(Long sourceVersion) { this.sourceVersion = sourceVersion; }
+    public Integer getChunkIndex() { return chunkIndex; }
+    public void setChunkIndex(Integer chunkIndex) { this.chunkIndex = chunkIndex; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
-    public String getEmbedding() { return embedding; }
-    public void setEmbedding(String embedding) { this.embedding = embedding; }
+    public float[] getEmbedding() { return embedding; }
+    public void setEmbedding(float[] embedding) { this.embedding = embedding; }
     public Boolean getValid() { return valid; }
     public void setValid(Boolean valid) { this.valid = valid; }
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
     public OffsetDateTime getSupersededAt() { return supersededAt; }
     public void setSupersededAt(OffsetDateTime supersededAt) { this.supersededAt = supersededAt; }
     public OffsetDateTime getDeletedAt() { return deletedAt; }

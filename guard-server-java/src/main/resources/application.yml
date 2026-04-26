@@ -140,6 +140,24 @@ aliyun:
     max-file-size-mb: 10
     public-cdn: ${ALIYUN_OSS_CDN:}
 
+# ===== Spring AI Alibaba 标准配置（API V2.0 §1.10 / backend_handbook §3.4.2） =====
+# Spring AI 自动装配读取 spring.ai.dashscope.* 创建 ChatModel / EmbeddingModel Bean。
+# 若 AI_DASHSCOPE_API_KEY 为空，DashScopeClient / EmbeddingClient 将通过 ObjectProvider 降级为 stub。
+spring:
+  ai:
+    dashscope:
+      api-key: ${AI_DASHSCOPE_API_KEY:}
+      chat:
+        options:
+          model: ${AI_CHAT_MODEL:qwen-max}
+      embedding:
+        options:
+          model: ${AI_EMBEDDING_MODEL:text-embedding-v3}
+
+# ===== 旧版 ai.dashscope.* 配置（DashScopeProperties 仍用于 chat fallback / image / 模型名读取） =====
+# 与 spring.ai.dashscope.* 并存，互不影响：
+#   - spring.ai.dashscope.* 喂给 Spring AI 自动装配
+#   - ai.dashscope.*        喂给 DashScopeProperties（fallback model、image 模型、超时、max-tokens）
 ai:
   dashscope:
     api-key: ${AI_DASHSCOPE_API_KEY:}
@@ -152,7 +170,14 @@ ai:
       model: ${AI_IMAGE_MODEL:wanx-v1}
       size: 1024*1024
     embedding:
-      model: text-embedding-v3
+      model: ${AI_EMBEDDING_MODEL:text-embedding-v3}
+  # ===== Phase 2 RAG 配置（FR-AI-004 / LLD §7.1.3） =====
+  # TODO: HC-05 后续迁到 sys_config 动态下发
+  rag:
+    top-k: ${AI_RAG_TOP_K:5}
+    similarity-threshold: ${AI_RAG_SIMILARITY_THRESHOLD:0.7}
+    chunk-size: ${AI_RAG_CHUNK_SIZE:512}
+    chunk-overlap: ${AI_RAG_CHUNK_OVERLAP:100}
 
 notification:
   jpush-enabled: ${JPUSH_ENABLED:false}

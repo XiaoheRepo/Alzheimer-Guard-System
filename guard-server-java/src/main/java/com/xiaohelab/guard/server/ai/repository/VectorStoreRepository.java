@@ -10,4 +10,8 @@ public interface VectorStoreRepository extends JpaRepository<VectorStoreEntity, 
     List<VectorStoreEntity> findByPatientIdAndValidTrueOrderByCreatedAtDesc(Long patientId);
 
     List<VectorStoreEntity> findBySourceTypeAndSourceIdAndValidTrue(String sourceType, String sourceId);
+
+    /** Phase 2：覆盖式重建 / 失效时按 (patientId, sourceType, sourceId) 定位有效记录。 */
+    List<VectorStoreEntity> findByPatientIdAndSourceTypeAndSourceIdAndValidTrue(
+            Long patientId, String sourceType, String sourceId);
 }

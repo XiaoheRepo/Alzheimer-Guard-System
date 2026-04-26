@@ -1,5 +1,6 @@
 package com.xiaohelab.guard.server.patient.service;
 
+import com.xiaohelab.guard.server.ai.service.VectorIndexService;
 import com.xiaohelab.guard.server.common.error.ErrorCode;
 import com.xiaohelab.guard.server.common.exception.BizException;
 import com.xiaohelab.guard.server.common.event.OutboxTopics;
@@ -44,15 +45,18 @@ public class PatientService {
     private final GuardianRelationRepository relationRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
+    private final VectorIndexService vectorIndexService;
 
     public PatientService(PatientProfileRepository patientRepository,
                           GuardianRelationRepository relationRepository,
                           GuardianAuthorizationService authorizationService,
-                          OutboxService outboxService) {
+                          OutboxService outboxService,
+                          VectorIndexService vectorIndexService) {
         this.patientRepository = patientRepository;
         this.relationRepository = relationRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
+        this.vectorIndexService = vectorIndexService;
     }
 
     /** 创建患者档案，创建者自动成为主监护人。 */
@@ -122,6 +126,8 @@ public class PatientService {
                 String.valueOf(p.getId()), payload);
 
         log.info("[Patient] created patientId={} byUser={}", p.getId(), user.getUserId());
+        // FR-PRO-002：建档时若已带长文本，立即异步索引
+        triggerProfileIndex(p);
         return toResponse(p);
     }
 
@@ -174,6 +180,8 @@ public class PatientService {
         outboxService.publish(OutboxTopics.PROFILE_UPDATED, String.valueOf(p.getId()),
                 String.valueOf(p.getId()),
                 Map.of("patient_id", p.getId(), "profile_version", p.getProfileVersion()));
+        // FR-PRO-002：长文本档案变更后异步重建向量索引（覆盖旧版本）
+        triggerProfileIndex(p);
         return toResponse(p);
     }
 
@@ -193,6 +201,45 @@ public class PatientService {
         }
         outboxService.publish(OutboxTopics.PROFILE_DELETED_LOGICAL, String.valueOf(p.getId()),
                 String.valueOf(p.getId()), Map.of("patient_id", p.getId()));
+        // FR-PRO-009：注销时异步删除该患者全部 Embedding
+        try {
+            vectorIndexService.deletePatient(p.getId());
+        } catch (Exception ignore) {
+            log.warn("[Patient] FR-PRO-009 异步删除向量调度失败 patientId={}", p.getId());
+        }
+    }
+
+    /**
+     * 触发 RAG 索引：拼接长文本 / 慢病 / 用药 / 过敏 / 外观备注后异步重建。
+     * <p>FR-PRO-002 / LLD §7.1.3。</p>
+     */
+    private void triggerProfileIndex(PatientProfileEntity p) {
+        StringBuilder sb = new StringBuilder();
+        if (p.getLongTextProfile() != null && !p.getLongTextProfile().isBlank()) {
+            sb.append(p.getLongTextProfile()).append('\n');
+        }
+        if (p.getChronicDiseases() != null && !p.getChronicDiseases().isBlank()) {
+            sb.append("慢病史：").append(p.getChronicDiseases()).append('\n');
+        }
+        if (p.getMedication() != null && !p.getMedication().isBlank()) {
+            sb.append("常用药物：").append(p.getMedication()).append('\n');
+        }
+        if (p.getAllergy() != null && !p.getAllergy().isBlank()) {
+            sb.append("过敏史：").append(p.getAllergy()).append('\n');
+        }
+        if (p.getAppearanceClothing() != null && !p.getAppearanceClothing().isBlank()) {
+            sb.append("常见衣着：").append(p.getAppearanceClothing()).append('\n');
+        }
+        if (p.getAppearanceFeatures() != null && !p.getAppearanceFeatures().isBlank()) {
+            sb.append("体貌特征：").append(p.getAppearanceFeatures()).append('\n');
+        }
+        if (sb.length() == 0) return;
+        try {
+            vectorIndexService.indexProfile(p.getId(), String.valueOf(p.getId()), sb.toString());
+        } catch (Exception e) {
+            log.warn("[Patient] FR-PRO-002 indexProfile 调度失败 patientId={} err={}",
+                    p.getId(), e.getMessage());
+        }
     }
 
     /** 更新围栏（API V2.0 §3.3.4：请求体嵌套 fence{}）。 */

@@ -21,7 +21,26 @@
         <aliyun-oss.version>3.17.4</aliyun-oss.version>
         <dashscope.version>2.18.2</dashscope.version>
         <jpush.version>3.7.7</jpush.version>
+        <!--
+          Spring AI Alibaba BOM 版本（API V2.0 §1.10 / backend_handbook §3.4.2 基线）。
+          1.0.0.x 系列要求 Spring Boot 3.4+，与本项目 3.4.5 匹配。
+          如需切换到更高版本（1.1.x），请同步调整并验证 ChatClient API 兼容性。
+        -->
+        <spring-ai-alibaba.version>1.0.0.3</spring-ai-alibaba.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring AI Alibaba BOM：统一管理 spring-ai / spring-ai-alibaba 版本 -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-bom</artifactId>
+                <version>${spring-ai-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <!-- Web -->
         <dependency>
@@ -130,7 +149,23 @@
             <version>${aliyun-oss.version}</version>
         </dependency>
 
-        <!-- 阿里云百炼 DashScope（通义千问 / WanX 文生图） -->
+        <!--
+          Spring AI Alibaba DashScope Starter（API V2.0 §1.10 / backend_handbook §3.4.2）。
+          为 ChatClient / EmbeddingModel 提供自动装配；底层仍依赖 DashScope SDK。
+          运行时若 spring.ai.dashscope.api-key 缺失，本工程通过 ObjectProvider 容错，不会让上下文启动失败。
+        -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
+        </dependency>
+
+        <!--
+          阿里云百炼 DashScope SDK 直依赖：
+          Phase 1 仍由 DashScopeClient.generateImage(...) 直接调用 ImageSynthesis
+          （Spring AI 1.0.0.x 的图像 API 此版本不稳定，过渡期保留）。
+          注：spring-ai-alibaba-starter-dashscope 也会传递引入 dashscope-sdk-java，
+          这里显式声明仅为锁定版本。Phase 2/3 切到统一抽象后可移除。
+        -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>dashscope-sdk-java</artifactId>

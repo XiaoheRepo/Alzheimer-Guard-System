@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaohelab.guard.server.ai.dto.AiChatRequest;
 import com.xiaohelab.guard.server.ai.dto.AiSessionCreateRequest;
+import com.xiaohelab.guard.server.ai.dto.RagHit;
 import com.xiaohelab.guard.server.ai.entity.AiSessionEntity;
 import com.xiaohelab.guard.server.ai.repository.AiSessionRepository;
 import com.xiaohelab.guard.server.common.dto.CursorResponse;
@@ -51,6 +52,7 @@ public class AiSessionService {
     private final AuditLogger auditLogger;
     private final StringRedisTemplate redis;
     private final DashScopeClient dashScopeClient;
+    private final RagRetrievalService ragRetrievalService;
 
     public AiSessionService(AiSessionRepository sessionRepository,
                             GuardianAuthorizationService authorizationService,
@@ -58,7 +60,8 @@ public class AiSessionService {
                             OutboxService outboxService,
                             AuditLogger auditLogger,
                             StringRedisTemplate redis,
-                            DashScopeClient dashScopeClient) {
+                            DashScopeClient dashScopeClient,
+                            RagRetrievalService ragRetrievalService) {
         this.sessionRepository = sessionRepository;
         this.authorizationService = authorizationService;
         this.quotaService = quotaService;
@@ -66,6 +69,7 @@ public class AiSessionService {
         this.auditLogger = auditLogger;
         this.redis = redis;
         this.dashScopeClient = dashScopeClient;
+        this.ragRetrievalService = ragRetrievalService;
     }
 
     /**
@@ -187,12 +191,24 @@ public class AiSessionService {
     private String buildStubReply(String prompt, AiSessionEntity s) {
         // 1. 优先调用百炼 DashScope（V2.1 §19.4）
         if (dashScopeClient != null && dashScopeClient.isEnabled()) {
-            String system = "你是「码上回家」阿尔兹海默症协同寻回系统的智能助手，"
+            String baseSystem = "你是「码上回家」阿尔兹海默症协同寻回系统的智能助手，"
                     + "面向走失患者的家属，帮助分析行为、轨迹、走失风险与寻回建议。"
                     + "回答务必简洁、可执行；不得编造未提供的事实。"
                     + "当前对话患者 ID=" + s.getPatientId()
                     + (s.getTaskId() != null ? "，关联寻回任务 ID=" + s.getTaskId() : "")
                     + "。请使用中文。";
+            // FR-AI-004：拼入 RAG 上下文（降级为空时自动忽略）
+            List<RagHit> hits = (ragRetrievalService != null)
+                    ? ragRetrievalService.retrieveContext(s.getPatientId(), prompt)
+                    : List.of();
+            String system = appendRagContext(baseSystem, hits);
+            if (!hits.isEmpty()) {
+                // FR-AI-006 可解释性：记录引用来源 ID（前端展示见 Phase 4）
+                List<String> refs = new ArrayList<>(hits.size());
+                for (RagHit h : hits) refs.add(h.sourceType() + ":" + h.sourceId());
+                log.info("[AI] RAG hit sessionId={} patientId={} refs={}",
+                        s.getSessionId(), s.getPatientId(), refs);
+            }
             var reply = dashScopeClient.chat(system, prompt);
             if (reply.isPresent() && !reply.get().isBlank()) {
                 return reply.get();
@@ -202,6 +218,20 @@ public class AiSessionService {
         // 2. 降级桩
         return "[本地桩回复] 针对患者 ID=" + s.getPatientId() + " 您的问题：" + prompt
                 + "\n建议：保持冷静、优先查看患者常规轨迹点、联系监护成员协同寻回。";
+    }
+
+    /** 把 RAG 命中拼到 systemPrompt 末尾；空命中时原样返回。 */
+    private String appendRagContext(String baseSystem, List<RagHit> hits) {
+        if (hits == null || hits.isEmpty()) return baseSystem;
+        StringBuilder sb = new StringBuilder(baseSystem);
+        sb.append("\n\n=== 患者背景知识（请优先参考） ===");
+        for (int i = 0; i < hits.size(); i++) {
+            RagHit h = hits.get(i);
+            sb.append("\n[").append(i + 1).append("][").append(h.sourceType()).append("] ")
+              .append(h.content()).append(" (相似度 ").append(String.format("%.2f", h.similarity())).append(")");
+        }
+        sb.append("\n===");
+        return sb.toString();
     }
 
     // ============================================================

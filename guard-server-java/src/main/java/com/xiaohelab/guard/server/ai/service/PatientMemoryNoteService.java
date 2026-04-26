@@ -29,13 +29,16 @@ public class PatientMemoryNoteService {
     private final PatientMemoryNoteRepository noteRepository;
     private final GuardianAuthorizationService authorizationService;
     private final OutboxService outboxService;
+    private final VectorIndexService vectorIndexService;
 
     public PatientMemoryNoteService(PatientMemoryNoteRepository noteRepository,
                                     GuardianAuthorizationService authorizationService,
-                                    OutboxService outboxService) {
+                                    OutboxService outboxService,
+                                    VectorIndexService vectorIndexService) {
         this.noteRepository = noteRepository;
         this.authorizationService = authorizationService;
         this.outboxService = outboxService;
+        this.vectorIndexService = vectorIndexService;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -57,6 +60,10 @@ public class PatientMemoryNoteService {
         outboxService.publish(OutboxTopics.MEMORY_APPENDED, n.getNoteId(),
                 String.valueOf(req.getPatientId()),
                 Map.of("note_id", n.getNoteId(), "patient_id", req.getPatientId(), "kind", req.getKind()));
+        // FR-PRO-002：记忆笔记入库后异步建索引（patientId 隔离 + sourceType=MEMORY）
+        try {
+            vectorIndexService.indexMemory(n.getPatientId(), n.getNoteId(), n.getKind(), n.getContent());
+        } catch (Exception ignore) { /* 降级 */ }
         return n;
     }
 

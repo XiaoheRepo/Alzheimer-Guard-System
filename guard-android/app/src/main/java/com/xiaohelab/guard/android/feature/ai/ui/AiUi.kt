@@ -112,13 +112,13 @@ class AiChatViewModel @Inject constructor(
     private val _s = MutableStateFlow(AiChatUiState())
     val state: StateFlow<AiChatUiState> = _s.asStateFlow()
 
-    fun init(existingSessionId: String?, patientId: String?) {
+    fun init(existingSessionId: String?, patientId: String?, taskId: String? = null) {
         if (existingSessionId != null) {
             _s.update { it.copy(initializing = false, sessionId = existingSessionId) }
             return
         }
+        // API V2.0 §3.5.1: patient_id / task_id 均必填。任一缺失即拒绝创建会话。
         if (patientId.isNullOrBlank()) {
-            // API V2.0 §3.5.1: patient_id 必填，缺失时拒绝创建会话。
             _s.update {
                 it.copy(
                     initializing = false,
@@ -127,8 +127,17 @@ class AiChatViewModel @Inject constructor(
             }
             return
         }
+        if (taskId.isNullOrBlank()) {
+            _s.update {
+                it.copy(
+                    initializing = false,
+                    error = DomainException("E_AI_4002", "task_id is required"),
+                )
+            }
+            return
+        }
         viewModelScope.launch {
-            when (val r = createSession(patientId)) {
+            when (val r = createSession(patientId, taskId)) {
                 is MhResult.Success -> _s.update { it.copy(initializing = false, sessionId = r.data.sessionId) }
                 is MhResult.Failure -> _s.update { it.copy(initializing = false, error = r.error) }
             }
@@ -284,13 +293,14 @@ fun AiIntentConfirmDialog(
 fun AiChatScreen(
     sessionId: String?,
     patientId: String? = null,
+    taskId: String? = null,
     onBack: () -> Unit,
     vm: AiChatViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
     val listState = rememberLazyListState()
 
-    LaunchedEffect(sessionId) { vm.init(sessionId, patientId) }
+    LaunchedEffect(sessionId) { vm.init(sessionId, patientId, taskId) }
     LaunchedEffect(state.messages.size) {
         if (state.messages.isNotEmpty()) {
             listState.animateScrollToItem(state.messages.lastIndex)
