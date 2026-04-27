@@ -1,7 +1,6 @@
 package com.xiaohelab.guard.server.user.repository;
 
 import com.xiaohelab.guard.server.user.entity.UserEntity;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
